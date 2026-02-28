@@ -121,6 +121,13 @@ public partial class MainViewModel : ViewModelBase
             {
                 status = _processService.GetStatus(config);
 
+                // Keep ProcessId in sync with the live process so Stop works correctly
+                // even when AppPilot was restarted and the process was already running.
+                if (status == ServiceStatus.Running)
+                    service.ProcessId ??= _processService.GetProcessId(config);
+                else if (status == ServiceStatus.Stopped)
+                    service.ProcessId = null;
+
                 if (status == ServiceStatus.Running && !string.IsNullOrEmpty(config.HealthCheckUrl))
                 {
                     healthError = await _healthChecker.CheckHealthAsync(config.HealthCheckUrl);

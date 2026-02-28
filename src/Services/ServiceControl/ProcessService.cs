@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,6 +18,7 @@ public interface IProcessService
     bool IsRunning(ManagedServiceConfig config);
     int? GetProcessId(ManagedServiceConfig config);
     ServiceStatus GetStatus(ManagedServiceConfig config);
+    string? GetPortOwner(int port);
 }
 
 public class ProcessService : IProcessService
@@ -174,5 +176,81 @@ public class ProcessService : IProcessService
         {
             return ServiceStatus.Stopped;
         }
+    }
+
+    public string? GetPortOwner(int port)
+    {
+        try
+        {
+            var isInUse = IPGlobalProperties.GetIPGlobalProperties()
+                .GetActiveTcpListeners()
+                .Any(ep => ep.Port == port);
+
+            if (!isInUse)
+                return null;
+
+            return FindPortOwnerProcess(port);
+        }
+        catch (Exception ex)
+        {
+            _logger.Warning(ex, "Failed to check port {Port}", port);
+            return null; // Don't block the start attempt if the check itself fails
+        }
+    }
+
+    private string FindPortOwnerProcess(int port)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "netstat",
+                Arguments = "-ano",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+
+            using var proc = Process.Start(psi);
+            if (proc == null)
+                return $"Port {port} is already in use by another process.";
+
+            var output = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(3000);
+
+            foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = line.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // netstat -ano TCP line: [TCP] [LocalAddr:Port] [ForeignAddr] [State] [PID]
+                if (parts.Length < 5)
+                    continue;
+                if (!parts[0].Equals("TCP", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!parts[1].EndsWith($":{port}", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!parts[3].Equals("LISTENING", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (int.TryParse(parts[^1], out var pid))
+                {
+                    try
+                    {
+                        var owner = Process.GetProcessById(pid);
+                        return $"Port {port} is already in use by '{owner.ProcessName}' (PID {pid}).";
+                    }
+                    catch
+                    {
+                        return $"Port {port} is already in use by PID {pid}.";
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Debug(ex, "Failed to identify process using port {Port}", port);
+        }
+
+        return $"Port {port} is already in use by another process.";
     }
 }

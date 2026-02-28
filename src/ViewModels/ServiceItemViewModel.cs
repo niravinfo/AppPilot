@@ -73,6 +73,17 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             ErrorMessage = string.Empty;
 
+            if (Config.Port.HasValue)
+            {
+                var portError = _processService.GetPortOwner(Config.Port.Value);
+                if (portError != null)
+                {
+                    ErrorMessage = portError;
+                    Status = ServiceStatus.Error;
+                    return;
+                }
+            }
+
             if (Config.Type == ServiceType.Worker)
             {
                 if (Status == ServiceStatus.NotInstalled)
@@ -148,10 +159,15 @@ public partial class ServiceItemViewModel : ViewModelBase
             }
             else
             {
-                if (ProcessId.HasValue)
+                var pidToStop = ProcessId ?? _processService.GetProcessId(Config);
+                if (pidToStop.HasValue)
                 {
-                    await _processService.StopAsync(Config, ProcessId.Value);
+                    await _processService.StopAsync(Config, pidToStop.Value);
                     ProcessId = null;
+                }
+                else
+                {
+                    ErrorMessage = $"Cannot find the running process for '{Config.DisplayName}'.";
                 }
             }
 
