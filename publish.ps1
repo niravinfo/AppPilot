@@ -93,9 +93,8 @@ if (Test-Path $PublishDir) { Remove-Item $PublishDir -Recurse -Force }
 dotnet publish $ProjectFile `
     --configuration Release `
     --runtime win-x64 `
-    --self-contained `
+    --no-self-contained `
     -p:PublishSingleFile=true `
-    -p:EnableCompressionInSingleFile=true `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     --output $PublishDir
 
@@ -110,13 +109,13 @@ if (Test-Path $ReleasesDir) { Remove-Item $ReleasesDir -Recurse -Force }
 New-Item -ItemType Directory -Path $ReleasesDir | Out-Null
 
 vpk pack `
-    --packId    "AppPilot" `
-    --packTitle "AppPilot" `
-    --packVersion $Version `
-    --packDir   $PublishDir `
-    --mainExe   $MainExe `
-    --channel   $Channel `
-    --outputDir $ReleasesDir
+    --packId       "AppPilot" `
+    --packTitle    "AppPilot" `
+    --packVersion  $Version `
+    --packDir      $PublishDir `
+    --mainExe      $MainExe `
+    --channel      $Channel `
+    --outputDir    $ReleasesDir
 
 if ($LASTEXITCODE -ne 0) { throw "vpk pack failed (exit code $LASTEXITCODE)" }
 
