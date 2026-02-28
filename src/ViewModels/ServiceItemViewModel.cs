@@ -33,6 +33,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     private bool _isBusy;
 
     public string DisplayName => Config.DisplayName;
+    public string GroupName => Config.GroupName;
     public string TypeName => Config.Type.ToString();
     public string Port => Config.Port?.ToString() ?? "-";
     public string StatusText => Status.ToString();

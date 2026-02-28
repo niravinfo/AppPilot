@@ -1,3 +1,4 @@
+using AppPilot.Services;
 using AppPilot.Services.Configuration;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
@@ -122,6 +123,8 @@ public partial class App : Application
     {
         try
         {
+            ThemeManager.Initialize();
+
             var configurationService = new ConfigurationService(_logger);
             var windowsServiceController = new WindowsServiceController(_logger);
             var processService = new ProcessService(_logger);

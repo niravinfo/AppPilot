@@ -7,6 +7,7 @@ public class ManagedServiceConfig
 {
     public string Name { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
+    public string GroupName { get; set; } = string.Empty;
     public ServiceType Type { get; set; }
     public string ExecutablePath { get; set; } = string.Empty;
     public string Arguments { get; set; } = string.Empty;

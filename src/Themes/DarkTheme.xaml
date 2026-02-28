@@ -1,0 +1,82 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Window / surface -->
+    <SolidColorBrush x:Key="WindowBg"        Color="#12121A"/>
+    <SolidColorBrush x:Key="HeaderBg"        Color="#0C0C14"/>
+    <SolidColorBrush x:Key="HeaderBorder"    Color="#1C1C2E"/>
+
+    <!-- Cards -->
+    <SolidColorBrush x:Key="CardBg"          Color="#1A1A27"/>
+    <SolidColorBrush x:Key="CardBorder"      Color="#26263A"/>
+    <SolidColorBrush x:Key="CardHoverBg"     Color="#1F1F2F"/>
+    <SolidColorBrush x:Key="CardErrorBorder" Color="#4D1A1A"/>
+
+    <!-- Toolbar buttons -->
+    <SolidColorBrush x:Key="BtnBg"           Color="#1C1C2E"/>
+    <SolidColorBrush x:Key="BtnBorder"       Color="#28283C"/>
+    <SolidColorBrush x:Key="BtnFg"           Color="#8892A4"/>
+    <SolidColorBrush x:Key="BtnHoverBg"      Color="#252540"/>
+    <SolidColorBrush x:Key="BtnHoverBorder"  Color="#35354E"/>
+    <SolidColorBrush x:Key="BtnHoverFg"      Color="#E8ECF5"/>
+    <SolidColorBrush x:Key="BtnPressedBg"    Color="#1E1E38"/>
+
+    <!-- Accent (Start All) -->
+    <SolidColorBrush x:Key="AccentBg"        Color="#0F2540"/>
+    <SolidColorBrush x:Key="AccentBorder"    Color="#1A3A5E"/>
+    <SolidColorBrush x:Key="AccentFg"        Color="#4C8EF8"/>
+
+    <!-- Danger (Stop All) -->
+    <SolidColorBrush x:Key="DangerBg"        Color="#260F0F"/>
+    <SolidColorBrush x:Key="DangerBorder"    Color="#401A1A"/>
+    <SolidColorBrush x:Key="DangerFg"        Color="#EF4444"/>
+
+    <!-- Card icon buttons -->
+    <SolidColorBrush x:Key="CardBtnFg"        Color="#575F73"/>
+    <SolidColorBrush x:Key="CardBtnHoverBg"   Color="#1E1E38"/>
+    <SolidColorBrush x:Key="CardBtnHoverFg"   Color="#94A3B8"/>
+    <SolidColorBrush x:Key="CardBtnPressedBg" Color="#25254A"/>
+
+    <!-- Status accent bar / dot -->
+    <SolidColorBrush x:Key="StatusStoppedColor"   Color="#6B7280"/>
+    <SolidColorBrush x:Key="StatusRunningColor"   Color="#22C55E"/>
+    <SolidColorBrush x:Key="StatusTransientColor" Color="#F59E0B"/>
+    <SolidColorBrush x:Key="StatusErrorColor"     Color="#EF4444"/>
+
+    <!-- Type badge chip -->
+    <SolidColorBrush x:Key="TypeBadgeBg"  Color="#20203A"/>
+    <SolidColorBrush x:Key="TypeBadgeFg"  Color="#8892A4"/>
+
+    <!-- Status pill backgrounds -->
+    <SolidColorBrush x:Key="PillDefaultBg"   Color="#1A2030"/>
+    <SolidColorBrush x:Key="PillRunningBg"   Color="#08221A"/>
+    <SolidColorBrush x:Key="PillTransientBg" Color="#281E08"/>
+    <SolidColorBrush x:Key="PillErrorBg"     Color="#280808"/>
+
+    <!-- Status pill text -->
+    <SolidColorBrush x:Key="PillDefaultFg"   Color="#6B7280"/>
+    <SolidColorBrush x:Key="PillRunningFg"   Color="#22C55E"/>
+    <SolidColorBrush x:Key="PillTransientFg" Color="#F59E0B"/>
+    <SolidColorBrush x:Key="PillErrorFg"     Color="#EF4444"/>
+
+    <!-- Typography -->
+    <SolidColorBrush x:Key="TextPrimary"   Color="#E8ECF5"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#575F73"/>
+    <SolidColorBrush x:Key="PortFg"        Color="#8892A4"/>
+
+    <!-- Card internals -->
+    <SolidColorBrush x:Key="CardDivider"       Color="#26263A"/>
+    <SolidColorBrush x:Key="ErrorPanelBg"      Color="#180808"/>
+    <SolidColorBrush x:Key="ErrorPanelBorder"  Color="#401515"/>
+    <SolidColorBrush x:Key="ErrorIconFg"       Color="#EF4444"/>
+    <SolidColorBrush x:Key="ErrorTextFg"       Color="#FC8181"/>
+
+    <!-- Scrollbar -->
+    <SolidColorBrush x:Key="ScrollThumb" Color="#38385A"/>
+
+    <!-- Group header -->
+    <SolidColorBrush x:Key="GroupHeaderBg"     Color="#0F0F1A"/>
+    <SolidColorBrush x:Key="GroupHeaderFg"     Color="#8892A4"/>
+    <SolidColorBrush x:Key="GroupHeaderBorder" Color="#26263A"/>
+
+</ResourceDictionary>

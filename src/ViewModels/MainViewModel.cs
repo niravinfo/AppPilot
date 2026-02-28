@@ -1,5 +1,6 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
+using AppPilot.Services;
 using AppPilot.Services.Configuration;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
@@ -27,6 +28,12 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = new();
+
+    [ObservableProperty]
+    private ObservableCollection<ServiceGroupViewModel> _groups = new();
+
+    [ObservableProperty]
+    private bool _isLightTheme = ThemeManager.IsLight;
 
     [ObservableProperty]
     private string _statusText = "Ready";
@@ -82,6 +89,7 @@ public partial class MainViewModel : ViewModelBase
             Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _logger, this));
         }
 
+        RebuildGroups();
         StatusText = $"Loaded {_serviceConfigs.Count} services";
     }
 
@@ -208,6 +216,32 @@ public partial class MainViewModel : ViewModelBase
     public async Task StopServiceAsync(ServiceItemViewModel service)
     {
         await service.StopAsync();
+    }
+
+    private void RebuildGroups()
+    {
+        Groups.Clear();
+        var grouped = Services
+            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupName) ? "General" : s.Config.GroupName)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].Key != "General");
+
+        foreach (var g in grouped)
+        {
+            var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
+            foreach (var svc in g)
+                group.Items.Add(svc);
+            Groups.Add(group);
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        ThemeManager.Toggle();
+        IsLightTheme = ThemeManager.IsLight;
     }
 
     public void Shutdown()
