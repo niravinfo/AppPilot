@@ -27,8 +27,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
-    [ObservableProperty]
-    private DateTime _lastChecked;
+    public DateTime LastChecked { get; set; }
 
     [ObservableProperty]
     private bool _isBusy;
@@ -132,11 +131,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
-            OnPropertyChanged(nameof(CanInstall));
-            OnPropertyChanged(nameof(CanUninstall));
-            OnPropertyChanged(nameof(CanStart));
-            OnPropertyChanged(nameof(CanStop));
-            OnPropertyChanged(nameof(CanRestart));
         }
     }
 
@@ -181,11 +175,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
-            OnPropertyChanged(nameof(CanInstall));
-            OnPropertyChanged(nameof(CanUninstall));
-            OnPropertyChanged(nameof(CanStart));
-            OnPropertyChanged(nameof(CanStop));
-            OnPropertyChanged(nameof(CanRestart));
         }
     }
 
@@ -233,8 +222,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
-            OnPropertyChanged(nameof(CanInstall));
-            OnPropertyChanged(nameof(CanUninstall));
         }
     }
 
@@ -262,8 +249,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
-            OnPropertyChanged(nameof(CanInstall));
-            OnPropertyChanged(nameof(CanUninstall));
         }
     }
 

@@ -93,11 +93,7 @@ public partial class MainViewModel : ViewModelBase
 
     private async Task RefreshStatusAsync()
     {
-        foreach (var service in Services)
-        {
-            await UpdateServiceStatusAsync(service);
-        }
-
+        await Task.WhenAll(Services.Select(UpdateServiceStatusAsync));
         LastUpdateTime = DateTime.Now.ToString("HH:mm:ss");
     }
 
