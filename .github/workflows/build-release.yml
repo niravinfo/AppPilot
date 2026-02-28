@@ -1,0 +1,87 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version_override:
+        description: 'Version to release (e.g. 1.2.3). Leave blank to use version from .csproj.'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # - name: Setup .NET 10
+      #   uses: actions/setup-dotnet@v5
+      #   with:
+      #     dotnet-version: '10.0.x'
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            # Tag push: version is already in the tag name, e.g. v0.0.2
+            TAG="${{ github.ref_name }}"
+            VERSION="${TAG#v}"
+            echo "Using tag version: $VERSION"
+          elif [ -n "${{ github.event.inputs.version_override }}" ]; then
+            # Manual run with explicit override
+            VERSION="${{ github.event.inputs.version_override }}"
+            echo "Using override version: $VERSION"
+          else
+            # Manual run with no override: fall back to .csproj
+            VERSION=$(dotnet msbuild src/AppPilot.csproj -getProperty:Version -nologo 2>/dev/null | tr -d '[:space:]')
+            echo "Using .csproj version: $VERSION"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Publish single-file framework-dependent exe
+        run: |
+          dotnet publish src/AppPilot.csproj \
+            --configuration Release \
+            --runtime win-x64 \
+            --no-self-contained \
+            -p:PublishSingleFile=true \
+            -p:DebugType=None \
+            -p:DebugSymbols=false \
+            --output publish/build
+
+      - name: Bundle artifact
+        run: |
+          mkdir -p publish/artifact
+          cp publish/build/AppPilot.exe publish/artifact/AppPilot.exe
+          cp src/appsettings.example.json publish/artifact/appsettings.example.json
+          cd publish/artifact
+          zip -j ../../AppPilot-v${{ env.VERSION }}-win-x64.zip AppPilot.exe appsettings.example.json
+
+      # softprops/action-gh-release automatically creates the release if the tag
+      # does not exist, or updates it (replacing assets) if it already does.
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: AppPilot v${{ env.VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: AppPilot-v${{ env.VERSION }}-win-x64.zip
+          body: |
+            ## AppPilot v${{ env.VERSION }}
+
+            ### Installation
+            1. Download `AppPilot-v${{ env.VERSION }}-win-x64.zip`
+            2. Extract the zip
+            3. Copy `appsettings.example.json` to `appsettings.json` and configure it
+            4. Run `AppPilot.exe`
+
+            > **Requires:** .NET 10 runtime installed on the target machine ([download](https://dotnet.microsoft.com/download/dotnet/10.0))
