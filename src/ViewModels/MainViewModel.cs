@@ -54,7 +54,7 @@ public partial class MainViewModel : ViewModelBase
 
         _pollingTimer = new DispatcherTimer
         {
-            Interval = TimeSpan.FromSeconds(3)
+            Interval = TimeSpan.FromSeconds(5)
         };
         _pollingTimer.Tick += async (s, e) => await RefreshStatusAsync();
     }
@@ -70,11 +70,16 @@ public partial class MainViewModel : ViewModelBase
     {
         var settings = _configService.Load();
         _serviceConfigs = settings.Services;
-        
+
+        if (settings.AppPilot.PollingIntervalMs > 0)
+        {
+            _pollingTimer.Interval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
+        }
+
         Services.Clear();
         foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
         {
-            Services.Add(new ServiceItemViewModel(config, this));
+            Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _logger, this));
         }
 
         StatusText = $"Loaded {_serviceConfigs.Count} services";

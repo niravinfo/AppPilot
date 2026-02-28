@@ -49,8 +49,6 @@ public class ProcessService : IProcessService
                     ? System.IO.Path.GetDirectoryName(config.ExecutablePath) 
                     : config.WorkingDirectory,
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
                 CreateNoWindow = true
             };
 
@@ -83,7 +81,7 @@ public class ProcessService : IProcessService
     {
         try
         {
-            var process = Process.GetProcessById(processId);
+            using var process = Process.GetProcessById(processId);
 
             if (!process.HasExited)
             {
@@ -92,13 +90,21 @@ public class ProcessService : IProcessService
                 _logger.Information("Process {Name} (PID: {ProcessId}) stopped", config.Name, processId);
             }
 
-            _runningProcesses.Remove(config.Name);
+            if (_runningProcesses.Remove(config.Name, out var storedProcess))
+            {
+                storedProcess?.Dispose();
+            }
+
             return true;
         }
         catch (ArgumentException)
         {
             _logger.Warning("Process with PID {ProcessId} not found", processId);
-            _runningProcesses.Remove(config.Name);
+            if (_runningProcesses.Remove(config.Name, out var storedProcess))
+            {
+                storedProcess?.Dispose();
+            }
+
             return true;
         }
         catch (OperationCanceledException) { throw; }
@@ -116,7 +122,7 @@ public class ProcessService : IProcessService
         {
             try
             {
-                var process = Process.GetProcessById(processId.Value);
+                using var process = Process.GetProcessById(processId.Value);
                 return !process.HasExited;
             }
             catch
@@ -134,20 +140,27 @@ public class ProcessService : IProcessService
             var processName = System.IO.Path.GetFileNameWithoutExtension(config.ExecutablePath);
             var processes = Process.GetProcessesByName(processName);
 
-            foreach (var process in processes)
+            try
             {
-                try
+                foreach (var process in processes)
                 {
-                    // Match on full executable path to avoid false positives from any other
-                    // process that happens to share the same executable name.
-                    var mainModulePath = process.MainModule?.FileName;
-                    if (string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase))
-                        return process.Id;
+                    try
+                    {
+                        // Match on full executable path to avoid false positives from any other
+                        // process that happens to share the same executable name.
+                        var mainModulePath = process.MainModule?.FileName;
+                        if (string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                            return process.Id;
+                    }
+                    catch
+                    {
+                        // MainModule access can fail (access denied, process already exited).
+                    }
                 }
-                catch
-                {
-                    // MainModule access can fail (access denied, process already exited).
-                }
+            }
+            finally
+            {
+                foreach (var p in processes) p.Dispose();
             }
         }
         catch (Exception ex)
@@ -169,7 +182,7 @@ public class ProcessService : IProcessService
 
         try
         {
-            var process = Process.GetProcessById(processId.Value);
+            using var process = Process.GetProcessById(processId.Value);
             return process.HasExited ? ServiceStatus.Stopped : ServiceStatus.Running;
         }
         catch

@@ -45,22 +45,18 @@ public partial class ServiceItemViewModel : ViewModelBase
     public bool CanStop => Status == ServiceStatus.Running;
     public bool CanRestart => Status == ServiceStatus.Running;
 
-    public ServiceItemViewModel(ManagedServiceConfig config, MainViewModel mainViewModel)
+    public ServiceItemViewModel(
+        ManagedServiceConfig config,
+        IServiceController windowsServiceController,
+        IProcessService processService,
+        ILogger logger,
+        MainViewModel mainViewModel)
     {
         Config = config;
         _mainViewModel = mainViewModel;
-        _windowsServiceController = mainViewModel.GetType()
-            .GetField("_windowsServiceController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(mainViewModel) as IServiceController
-            ?? throw new InvalidOperationException("WindowsServiceController not found");
-        _processService = mainViewModel.GetType()
-            .GetField("_processService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(mainViewModel) as IProcessService
-            ?? throw new InvalidOperationException("ProcessService not found");
-        _logger = mainViewModel.GetType()
-            .GetField("_logger", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(mainViewModel) as ILogger
-            ?? throw new InvalidOperationException("Logger not found");
+        _windowsServiceController = windowsServiceController;
+        _processService = processService;
+        _logger = logger;
     }
 
     [RelayCommand]
