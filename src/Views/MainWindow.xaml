@@ -6,41 +6,99 @@
         xmlns:vm="clr-namespace:AppPilot.ViewModels"
         mc:Ignorable="d"
         Title="AppPilot"
-        Height="500"
-        Width="800"
-        MinHeight="400"
-        MinWidth="600"
-        Background="#1E1E1E"
-        WindowStartupLocation="CenterScreen">
+        Height="660"
+        Width="960"
+        MinHeight="480"
+        MinWidth="720"
+        Background="#12121A"
+        WindowStartupLocation="CenterScreen"
+        Icon="/Assets/app.ico">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Background" Value="#0078D4"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="Margin" Value="2"/>
+        <!-- Scrollbar thumb -->
+        <Style x:Key="DarkScrollThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border Background="#38385A" CornerRadius="3" Margin="2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Transparent page repeat button for scrollbar -->
+        <Style x:Key="ScrollPageBtn" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Dark thin scrollbar -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Border Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollPageBtn}" Command="ScrollBar.PageUpCommand"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource DarkScrollThumb}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollPageBtn}" Command="ScrollBar.PageDownCommand"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Toolbar button -->
+        <Style x:Key="ToolbarBtn" TargetType="Button">
+            <Setter Property="Background" Value="#1C1C2E"/>
+            <Setter Property="Foreground" Value="#8892A4"/>
+            <Setter Property="BorderBrush" Value="#28283C"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="3"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="7"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#1E90FF"/>
+                                <Setter Property="Background" Value="#252540"/>
+                                <Setter Property="BorderBrush" Value="#35354E"/>
+                                <Setter Property="Foreground" Value="#E8ECF5"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Background" Value="#005A9E"/>
+                                <Setter Property="Background" Value="#1E1E38"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Background" Value="#3C3C3C"/>
-                                <Setter Property="Foreground" Value="#808080"/>
+                                <Setter Property="Opacity" Value="0.4"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -48,14 +106,49 @@
             </Setter>
         </Style>
 
-        <Style x:Key="ToolbarButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
-            <Setter Property="Padding" Value="12,6"/>
+        <!-- Accent button (Start All) -->
+        <Style x:Key="AccentBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
+            <Setter Property="Background" Value="#0F2540"/>
+            <Setter Property="BorderBrush" Value="#1A3A5E"/>
+            <Setter Property="Foreground" Value="#4C8EF8"/>
         </Style>
 
-        <Style x:Key="StatusIndicator" TargetType="Ellipse">
-            <Setter Property="Width" Value="10"/>
-            <Setter Property="Height" Value="10"/>
-            <Setter Property="Margin" Value="5,0"/>
+        <!-- Danger button (Stop All) -->
+        <Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource ToolbarBtn}">
+            <Setter Property="Background" Value="#260F0F"/>
+            <Setter Property="BorderBrush" Value="#401A1A"/>
+            <Setter Property="Foreground" Value="#EF4444"/>
+        </Style>
+
+        <!-- Icon action button (inside cards) -->
+        <Style x:Key="CardBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#575F73"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1E1E38"/>
+                                <Setter Property="Foreground" Value="#94A3B8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#25254A"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.25"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
@@ -66,196 +159,295 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Toolbar -->
-        <Border Grid.Row="0" Background="#252526" Padding="10">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="Refresh"
-                        Style="{StaticResource ToolbarButton}"
-                        Command="{Binding RefreshCommand}"/>
-                <Button Content="Start All"
-                        Style="{StaticResource ToolbarButton}"
-                        Command="{Binding StartAllCommand}"
-                        Margin="10,0,0,0"/>
-                <Button Content="Stop All"
-                        Style="{StaticResource ToolbarButton}"
-                        Command="{Binding StopAllCommand}"
-                        Margin="5,0,0,0"/>
-            </StackPanel>
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="#0C0C14"
+                BorderBrush="#1C1C2E"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <Grid>
+                <!-- App branding -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="38" Height="38" CornerRadius="10" Margin="0,0,12,0">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#4C8EF8" Offset="0"/>
+                                <GradientStop Color="#7C50D8" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <TextBlock Text="⚡" FontSize="18"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="AppPilot"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="#E8ECF5"/>
+                        <TextBlock Text="Local Service Manager"
+                                   FontSize="10.5" Foreground="#575F73"
+                                   Margin="0,1,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Global action buttons -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource ToolbarBtn}"
+                            Command="{Binding RefreshCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="↺" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource AccentBtn}"
+                            Command="{Binding StartAllCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="▶" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Start All" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DangerBtn}" Margin="0"
+                            Command="{Binding StopAllCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="■" FontSize="9" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Stop All" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Services Grid -->
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding Services}"
-                  AutoGenerateColumns="False"
-                  Background="#1E1E1E"
-                  Foreground="White"
-                  BorderThickness="0"
-                  GridLinesVisibility="None"
-                  HeadersVisibility="Column"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  SelectionMode="Single"
-                  IsReadOnly="True"
-                  RowBackground="#1E1E1E"
-                  AlternatingRowBackground="#252526"
-                  VirtualizingPanel.IsVirtualizing="True"
-                  VirtualizingPanel.VirtualizationMode="Recycling">
+        <!-- Service card list -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="16,8,10,8">
+            <ItemsControl ItemsSource="{Binding Services}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,8"
+                                CornerRadius="10"
+                                BorderThickness="1"
+                                ClipToBounds="True">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#1A1A27"/>
+                                    <Setter Property="BorderBrush" Value="#26263A"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1F1F2F"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#4D1A1A"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <!-- Main row -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="5"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-            <DataGrid.ColumnHeaderStyle>
-                <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background" Value="#2D2D30"/>
-                    <Setter Property="Foreground" Value="#CCCCCC"/>
-                    <Setter Property="Padding" Value="10,8"/>
-                    <Setter Property="BorderThickness" Value="0"/>
-                    <Setter Property="FontWeight" Value="SemiBold"/>
-                </Style>
-            </DataGrid.ColumnHeaderStyle>
+                                    <!-- Status accent bar -->
+                                    <Border Grid.Column="0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#6B7280"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                        <Setter Property="Background" Value="#22C55E"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Starting">
+                                                        <Setter Property="Background" Value="#F59E0B"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Stopping">
+                                                        <Setter Property="Background" Value="#F59E0B"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                        <Setter Property="Background" Value="#EF4444"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
 
-            <DataGrid.CellStyle>
-                <Style TargetType="DataGridCell">
-                    <Setter Property="BorderThickness" Value="0"/>
-                    <Setter Property="Padding" Value="10,8"/>
-                    <Setter Property="Foreground" Value="White"/>
-                    <Style.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter Property="Background" Value="#094771"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.CellStyle>
+                                    <!-- Service name + type chip -->
+                                    <StackPanel Grid.Column="1" Margin="14,12,10,12" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding DisplayName}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#E8ECF5"/>
+                                            <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
+                                                    Background="#20203A" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding TypeName}"
+                                                           FontSize="10" Foreground="#8892A4"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
 
-            <DataGrid.RowStyle>
-                <Style TargetType="DataGridRow">
-                    <Setter Property="DetailsVisibility" Value="Collapsed"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasError}" Value="True">
-                            <Setter Property="DetailsVisibility" Value="Visible"/>
-                        </DataTrigger>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#2A2D2E"/>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </DataGrid.RowStyle>
+                                    <!-- Status pill -->
+                                    <Border Grid.Column="2" Margin="0,0,10,0"
+                                            Padding="10,4" CornerRadius="20"
+                                            VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1A2030"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                        <Setter Property="Background" Value="#08221A"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Starting">
+                                                        <Setter Property="Background" Value="#281E08"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Stopping">
+                                                        <Setter Property="Background" Value="#281E08"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                        <Setter Property="Background" Value="#280808"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="#6B7280"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                                <Setter Property="Fill" Value="#22C55E"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Starting">
+                                                                <Setter Property="Fill" Value="#F59E0B"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Stopping">
+                                                                <Setter Property="Fill" Value="#F59E0B"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                                <Setter Property="Fill" Value="#EF4444"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <TextBlock Text="{Binding StatusText}" FontSize="11" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#6B7280"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Running">
+                                                                <Setter Property="Foreground" Value="#22C55E"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Starting">
+                                                                <Setter Property="Foreground" Value="#F59E0B"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Stopping">
+                                                                <Setter Property="Foreground" Value="#F59E0B"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                                <Setter Property="Foreground" Value="#EF4444"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Border>
 
-            <DataGrid.RowDetailsTemplate>
-                <DataTemplate>
-                    <Border Background="#3C1010" Padding="10,6" BorderThickness="0,1,0,0" BorderBrush="#6B1010">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="&#x26A0;  " Foreground="#FF6B6B" FontSize="11" VerticalAlignment="Top"/>
-                            <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" TextWrapping="Wrap"/>
-                        </Grid>
-                    </Border>
-                </DataTemplate>
-            </DataGrid.RowDetailsTemplate>
+                                    <!-- Port -->
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding Port}"
+                                               FontSize="12"
+                                               FontFamily="Consolas"
+                                               Foreground="#8892A4"
+                                               VerticalAlignment="Center"/>
 
-            <DataGrid.Columns>
-                <!-- Status -->
-                <DataGridTemplateColumn Header="Status" Width="80">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Ellipse Width="10" Height="10" Margin="5,0">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="#808080"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status}" Value="Running">
-                                                <Setter Property="Fill" Value="#4CAF50"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Stopped">
-                                                <Setter Property="Fill" Value="#808080"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="NotInstalled">
-                                                <Setter Property="Fill" Value="#808080"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Starting">
-                                                <Setter Property="Fill" Value="#FF9800"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Stopping">
-                                                <Setter Property="Fill" Value="#FF9800"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                <Setter Property="Fill" Value="#F44336"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                                    <!-- Action buttons -->
+                                    <StackPanel Grid.Column="4"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Center"
+                                                Margin="0,0,10,0">
+                                        <Button Style="{StaticResource CardBtn}"
+                                                Command="{Binding StartCommand}"
+                                                IsEnabled="{Binding CanStart}"
+                                                ToolTip="Start">
+                                            <TextBlock Text="▶" FontSize="11"/>
+                                        </Button>
+                                        <Button Style="{StaticResource CardBtn}"
+                                                Command="{Binding StopCommand}"
+                                                IsEnabled="{Binding CanStop}"
+                                                ToolTip="Stop">
+                                            <TextBlock Text="⏹" FontSize="11"/>
+                                        </Button>
+                                        <Button Style="{StaticResource CardBtn}"
+                                                Command="{Binding RestartCommand}"
+                                                IsEnabled="{Binding CanRestart}"
+                                                ToolTip="Restart">
+                                            <TextBlock Text="↺" FontSize="13"/>
+                                        </Button>
+                                        <Rectangle Width="1" Height="14" Fill="#26263A" Margin="3,0" VerticalAlignment="Center"/>
+                                        <Button Style="{StaticResource CardBtn}"
+                                                Command="{Binding InstallCommand}"
+                                                IsEnabled="{Binding CanInstall}"
+                                                ToolTip="Install">
+                                            <TextBlock Text="⬇" FontSize="11"/>
+                                        </Button>
+                                        <Button Style="{StaticResource CardBtn}"
+                                                Command="{Binding UninstallCommand}"
+                                                IsEnabled="{Binding CanUninstall}"
+                                                ToolTip="Uninstall">
+                                            <TextBlock Text="✕" FontSize="10"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
 
-                <!-- Name -->
-                <DataGridTextColumn Header="Name"
-                                    Binding="{Binding DisplayName}"
-                                    Width="*"/>
-
-                <!-- Type -->
-                <DataGridTextColumn Header="Type"
-                                    Binding="{Binding TypeName}"
-                                    Width="80"/>
-
-                <!-- Status Text -->
-                <DataGridTextColumn Header="Status"
-                                    Binding="{Binding StatusText}"
-                                    Width="100"/>
-
-                <!-- Port -->
-                <DataGridTextColumn Header="Port"
-                                    Binding="{Binding Port}"
-                                    Width="60"/>
-
-                <!-- Actions -->
-                <DataGridTemplateColumn Header="Actions" Width="Auto">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="▶"
-                                        Style="{StaticResource ActionButton}"
-                                        Command="{Binding StartCommand}"
-                                        IsEnabled="{Binding CanStart}"
-                                        ToolTip="Start"/>
-                                <Button Content="■"
-                                        Style="{StaticResource ActionButton}"
-                                        Command="{Binding StopCommand}"
-                                        IsEnabled="{Binding CanStop}"
-                                        ToolTip="Stop"/>
-                                <Button Content="↻"
-                                        Style="{StaticResource ActionButton}"
-                                        Command="{Binding RestartCommand}"
-                                        IsEnabled="{Binding CanRestart}"
-                                        ToolTip="Restart"/>
-                                <Button Content="📋"
-                                        Style="{StaticResource ActionButton}"
-                                        Command="{Binding InstallCommand}"
-                                        IsEnabled="{Binding CanInstall}"
-                                        ToolTip="Install"/>
-                                <Button Content="✕"
-                                        Style="{StaticResource ActionButton}"
-                                        Command="{Binding UninstallCommand}"
-                                        IsEnabled="{Binding CanUninstall}"
-                                        ToolTip="Uninstall"/>
+                                <!-- Error panel -->
+                                <Border Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"
+                                        Background="#180808"
+                                        BorderBrush="#401515"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="14,8,14,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="⚠" Foreground="#EF4444"
+                                                   FontSize="12" Margin="0,0,8,0" VerticalAlignment="Top"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding ErrorMessage}"
+                                                   Foreground="#FC8181" FontSize="11"
+                                                   TextWrapping="Wrap"/>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
 
-        <!-- Status Bar -->
-        <Border Grid.Row="2" Background="#007ACC" Padding="10,6">
+        <!-- Status bar -->
+        <Border Grid.Row="2"
+                Background="#0C0C14"
+                BorderBrush="#1C1C2E"
+                BorderThickness="0,1,0,0"
+                Padding="20,7">
             <Grid>
                 <TextBlock Text="{Binding StatusText}"
-                           Foreground="White"
-                           FontSize="12"/>
-                <TextBlock Text="{Binding LastUpdateTime, StringFormat='Last update: {0}'}"
-                           Foreground="White"
-                           FontSize="12"
-                           HorizontalAlignment="Right"/>
+                           Foreground="#575F73" FontSize="11"
+                           VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding LastUpdateTime, StringFormat='Updated: {0}'}"
+                           Foreground="#575F73" FontSize="11"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

@@ -14,10 +14,12 @@
     <Company>AppPilot</Company>
     <Product>AppPilot</Product>
     <Description>A lightweight Windows desktop application for managing multiple .NET services locally during development</Description>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include=".github\copilot-instructions.md" />
+    <Resource Include="Assets\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
