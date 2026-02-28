@@ -37,6 +37,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     public string TypeName => Config.Type.ToString();
     public string Port => Config.Port?.ToString() ?? "-";
     public string StatusText => Status.ToString();
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     public bool CanInstall => Config.Type == ServiceType.Worker && Status == ServiceStatus.NotInstalled;
     public bool CanUninstall => Config.Type == ServiceType.Worker && Status != ServiceStatus.NotInstalled;
@@ -72,10 +73,18 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             bool result;
 
+            ErrorMessage = string.Empty;
+
             if (Config.Type == ServiceType.Worker)
             {
                 if (Status == ServiceStatus.NotInstalled)
                 {
+                    if (!System.IO.File.Exists(Config.ExecutablePath))
+                    {
+                        ErrorMessage = $"Executable not found: {Config.ExecutablePath}";
+                        Status = ServiceStatus.Error;
+                        return;
+                    }
                     result = _windowsServiceController.Install(Config);
                     if (!result)
                     {
@@ -92,6 +101,12 @@ public partial class ServiceItemViewModel : ViewModelBase
             }
             else
             {
+                if (!System.IO.File.Exists(Config.ExecutablePath))
+                {
+                    ErrorMessage = $"Executable not found: {Config.ExecutablePath}";
+                    Status = ServiceStatus.Error;
+                    return;
+                }
                 var process = _processService.Start(Config);
                 if (process == null)
                 {
@@ -131,6 +146,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
         try
         {
+            ErrorMessage = string.Empty;
             if (Config.Type == ServiceType.Worker)
             {
                 _windowsServiceController.Stop(Config);
@@ -181,6 +197,13 @@ public partial class ServiceItemViewModel : ViewModelBase
 
         try
         {
+            ErrorMessage = string.Empty;
+            if (!System.IO.File.Exists(Config.ExecutablePath))
+            {
+                ErrorMessage = $"Executable not found: {Config.ExecutablePath}";
+                Status = ServiceStatus.Error;
+                return;
+            }
             var result = _windowsServiceController.Install(Config);
             if (!result)
             {
@@ -210,6 +233,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
         try
         {
+            ErrorMessage = string.Empty;
             var result = _windowsServiceController.Uninstall(Config);
             if (!result)
             {
@@ -239,5 +263,10 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanStart));
         OnPropertyChanged(nameof(CanStop));
         OnPropertyChanged(nameof(CanRestart));
+    }
+
+    partial void OnErrorMessageChanged(string value)
+    {
+        OnPropertyChanged(nameof(HasError));
     }
 }

@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="GrpcApiExample/GrpcApiExample.csproj" />
+  <Project Path="WebApiExample/WebApiExample.csproj" />
+  <Project Path="WorkerServiceExample/WorkerServiceExample.csproj" />
+</Solution>

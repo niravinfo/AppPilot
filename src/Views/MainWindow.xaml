@@ -124,13 +124,28 @@
 
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
+                    <Setter Property="DetailsVisibility" Value="Collapsed"/>
                     <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                            <Setter Property="DetailsVisibility" Value="Visible"/>
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="#2A2D2E"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
+
+            <DataGrid.RowDetailsTemplate>
+                <DataTemplate>
+                    <Border Background="#3C1010" Padding="10,5" BorderThickness="0,1,0,0" BorderBrush="#6B1010">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠  " Foreground="#FF6B6B" FontSize="11"/>
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </DataGrid.RowDetailsTemplate>
 
             <DataGrid.Columns>
                 <!-- Status -->

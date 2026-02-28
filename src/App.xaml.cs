@@ -5,7 +5,9 @@ using AppPilot.ViewModels;
 using AppPilot.Views;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,11 +20,46 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        if (!IsRunningAsAdministrator())
+        {
+            RestartAsAdministrator();
+            return;
+        }
+
         base.OnStartup(e);
 
         SetupLogging();
         SetupExceptionHandling();
         SetupDependencyInjection();
+    }
+
+    private static bool IsRunningAsAdministrator()
+    {
+        using var identity = WindowsIdentity.GetCurrent();
+        return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    private static void RestartAsAdministrator()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule!.FileName,
+                UseShellExecute = true,
+                Verb = "runas"
+            });
+        }
+        catch
+        {
+            MessageBox.Show(
+                "AppPilot requires administrator privileges to install and manage Windows services.\n\nPlease run the application as Administrator.",
+                "Administrator Required",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+
+        Environment.Exit(0);
     }
 
     private void SetupLogging()
