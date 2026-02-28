@@ -1,11 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using System;
-using System.Threading.Tasks;
 
 namespace AppPilot.ViewModels;
 
@@ -51,7 +51,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         _mainViewModel = mainViewModel;
         _windowsServiceController = mainViewModel.GetType()
             .GetField("_windowsServiceController", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-            .GetValue(mainViewModel) as IServiceController 
+            .GetValue(mainViewModel) as IServiceController
             ?? throw new InvalidOperationException("WindowsServiceController not found");
         _processService = mainViewModel.GetType()
             .GetField("_processService", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
@@ -71,8 +71,6 @@ public partial class ServiceItemViewModel : ViewModelBase
 
         try
         {
-            bool result;
-
             ErrorMessage = string.Empty;
 
             if (Config.Type == ServiceType.Worker)
@@ -85,19 +83,11 @@ public partial class ServiceItemViewModel : ViewModelBase
                         Status = ServiceStatus.Error;
                         return;
                     }
-                    result = _windowsServiceController.Install(Config);
-                    if (!result)
-                    {
-                        ErrorMessage = "Failed to install service";
-                        return;
-                    }
+
+                    await _windowsServiceController.InstallAsync(Config);
                 }
 
-                result = _windowsServiceController.Start(Config);
-                if (!result)
-                {
-                    ErrorMessage = "Failed to start service";
-                }
+                await _windowsServiceController.StartAsync(Config);
             }
             else
             {
@@ -120,6 +110,11 @@ public partial class ServiceItemViewModel : ViewModelBase
             }
 
             _mainViewModel.RefreshCommand.Execute(null);
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = "Operation timed out or was cancelled.";
+            Status = ServiceStatus.Error;
         }
         catch (Exception ex)
         {
@@ -149,18 +144,22 @@ public partial class ServiceItemViewModel : ViewModelBase
             ErrorMessage = string.Empty;
             if (Config.Type == ServiceType.Worker)
             {
-                _windowsServiceController.Stop(Config);
+                await _windowsServiceController.StopAsync(Config);
             }
             else
             {
                 if (ProcessId.HasValue)
                 {
-                    _processService.Stop(Config, ProcessId.Value);
+                    await _processService.StopAsync(Config, ProcessId.Value);
                     ProcessId = null;
                 }
             }
 
             _mainViewModel.RefreshCommand.Execute(null);
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = "Operation timed out or was cancelled.";
         }
         catch (Exception ex)
         {
@@ -190,7 +189,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void Install()
+    public async Task InstallAsync()
     {
         if (Config.Type != ServiceType.Worker || IsBusy) return;
         IsBusy = true;
@@ -204,18 +203,20 @@ public partial class ServiceItemViewModel : ViewModelBase
                 Status = ServiceStatus.Error;
                 return;
             }
-            var result = _windowsServiceController.Install(Config);
-            if (!result)
-            {
-                ErrorMessage = "Failed to install service";
-            }
 
+            await _windowsServiceController.InstallAsync(Config);
             _mainViewModel.RefreshCommand.Execute(null);
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = "Operation timed out or was cancelled.";
+            Status = ServiceStatus.Error;
         }
         catch (Exception ex)
         {
             _logger.Error(ex, "Error installing service {Name}", Config.Name);
             ErrorMessage = ex.Message;
+            Status = ServiceStatus.Error;
         }
         finally
         {
@@ -226,7 +227,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void Uninstall()
+    public async Task UninstallAsync()
     {
         if (Config.Type != ServiceType.Worker || IsBusy) return;
         IsBusy = true;
@@ -234,13 +235,12 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
-            var result = _windowsServiceController.Uninstall(Config);
-            if (!result)
-            {
-                ErrorMessage = "Failed to uninstall service";
-            }
-
+            await _windowsServiceController.UninstallAsync(Config);
             _mainViewModel.RefreshCommand.Execute(null);
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage = "Operation timed out or was cancelled.";
         }
         catch (Exception ex)
         {

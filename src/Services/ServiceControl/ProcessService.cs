@@ -5,13 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AppPilot.Services.ServiceControl;
 
 public interface IProcessService
 {
     Process? Start(ManagedServiceConfig config);
-    bool Stop(ManagedServiceConfig config, int processId);
+    Task<bool> StopAsync(ManagedServiceConfig config, int processId, CancellationToken cancellationToken = default);
     bool IsRunning(ManagedServiceConfig config);
     int? GetProcessId(ManagedServiceConfig config);
     ServiceStatus GetStatus(ManagedServiceConfig config);
@@ -75,16 +77,16 @@ public class ProcessService : IProcessService
         }
     }
 
-    public bool Stop(ManagedServiceConfig config, int processId)
+    public async Task<bool> StopAsync(ManagedServiceConfig config, int processId, CancellationToken cancellationToken = default)
     {
         try
         {
             var process = Process.GetProcessById(processId);
-            
+
             if (!process.HasExited)
             {
                 process.Kill(entireProcessTree: true);
-                process.WaitForExit(5000);
+                await process.WaitForExitAsync(cancellationToken);
                 _logger.Information("Process {Name} (PID: {ProcessId}) stopped", config.Name, processId);
             }
 
@@ -97,10 +99,11 @@ public class ProcessService : IProcessService
             _runningProcesses.Remove(config.Name);
             return true;
         }
+        catch (OperationCanceledException) { throw; }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to stop process {Name}", config.Name);
-            return false;
+            throw new InvalidOperationException($"Failed to stop '{config.DisplayName}': {ex.Message}", ex);
         }
     }
 
