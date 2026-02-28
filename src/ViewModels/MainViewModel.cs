@@ -1,0 +1,213 @@
+using AppPilot.Domain.Enums;
+using AppPilot.Models;
+using AppPilot.Services.Configuration;
+using AppPilot.Services.HealthCheck;
+using AppPilot.Services.ServiceControl;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Serilog;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Threading;
+
+namespace AppPilot.ViewModels;
+
+public partial class MainViewModel : ViewModelBase
+{
+    private readonly IConfigurationService _configService;
+    private readonly IServiceController _windowsServiceController;
+    private readonly IProcessService _processService;
+    private readonly IHealthChecker _healthChecker;
+    private readonly ILogger _logger;
+    private readonly DispatcherTimer _pollingTimer;
+
+    [ObservableProperty]
+    private ObservableCollection<ServiceItemViewModel> _services = new();
+
+    [ObservableProperty]
+    private string _statusText = "Ready";
+
+    [ObservableProperty]
+    private string _lastUpdateTime = "-";
+
+    [ObservableProperty]
+    private bool _isLoading;
+
+    private List<ManagedServiceConfig> _serviceConfigs = new();
+
+    public MainViewModel(
+        IConfigurationService configService,
+        IServiceController windowsServiceController,
+        IProcessService processService,
+        IHealthChecker healthChecker,
+        ILogger logger)
+    {
+        _configService = configService;
+        _windowsServiceController = windowsServiceController;
+        _processService = processService;
+        _healthChecker = healthChecker;
+        _logger = logger;
+
+        _pollingTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3)
+        };
+        _pollingTimer.Tick += async (s, e) => await RefreshStatusAsync();
+    }
+
+    public void Initialize()
+    {
+        LoadConfiguration();
+        _pollingTimer.Start();
+        _ = RefreshStatusAsync();
+    }
+
+    private void LoadConfiguration()
+    {
+        var settings = _configService.Load();
+        _serviceConfigs = settings.Services;
+        
+        Services.Clear();
+        foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
+        {
+            Services.Add(new ServiceItemViewModel(config, this));
+        }
+
+        StatusText = $"Loaded {_serviceConfigs.Count} services";
+    }
+
+    [RelayCommand]
+    private void Refresh()
+    {
+        _ = RefreshStatusAsync();
+    }
+
+    private async Task RefreshStatusAsync()
+    {
+        foreach (var service in Services)
+        {
+            await UpdateServiceStatusAsync(service);
+        }
+
+        LastUpdateTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private async Task UpdateServiceStatusAsync(ServiceItemViewModel service)
+    {
+        try
+        {
+            var config = service.Config;
+            ServiceStatus status;
+
+            if (config.Type == ServiceType.Worker)
+            {
+                var isInstalled = _windowsServiceController.GetStatus(config) != ServiceStatus.NotInstalled;
+                
+                if (!isInstalled)
+                {
+                    status = ServiceStatus.NotInstalled;
+                }
+                else
+                {
+                    status = _windowsServiceController.GetStatus(config);
+                }
+            }
+            else
+            {
+                status = _processService.GetStatus(config);
+
+                if (status == ServiceStatus.Running && !string.IsNullOrEmpty(config.HealthCheckUrl))
+                {
+                    var isHealthy = await _healthChecker.CheckHealthAsync(config.HealthCheckUrl);
+                    if (!isHealthy)
+                    {
+                        status = ServiceStatus.Error;
+                        service.ErrorMessage = "Health check failed";
+                    }
+                }
+            }
+
+            service.Status = status;
+            service.LastChecked = DateTime.Now;
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Error updating status for {Name}", service.Config.Name);
+            service.Status = ServiceStatus.Error;
+            service.ErrorMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task StartAllAsync()
+    {
+        IsLoading = true;
+        StatusText = "Starting all services...";
+
+        try
+        {
+            var orderedServices = Services
+                .Where(s => s.Config.AutoStart || s.Status != ServiceStatus.Running)
+                .OrderBy(s => s.Config.StartOrder)
+                .ToList();
+
+            foreach (var service in orderedServices)
+            {
+                await service.StartAsync();
+                await Task.Delay(500);
+            }
+
+            StatusText = "All services started";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task StopAllAsync()
+    {
+        IsLoading = true;
+        StatusText = "Stopping all services...";
+
+        try
+        {
+            var orderedServices = Services
+                .Where(s => s.Status == ServiceStatus.Running)
+                .OrderByDescending(s => s.Config.StartOrder)
+                .ToList();
+
+            foreach (var service in orderedServices)
+            {
+                await service.StopAsync();
+                await Task.Delay(500);
+            }
+
+            StatusText = "All services stopped";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    public async Task StartServiceAsync(ServiceItemViewModel service)
+    {
+        await service.StartAsync();
+    }
+
+    public async Task StopServiceAsync(ServiceItemViewModel service)
+    {
+        await service.StopAsync();
+    }
+
+    public void Shutdown()
+    {
+        _pollingTimer.Stop();
+    }
+}
