@@ -3,11 +3,13 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
+using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using System.Windows.Media;
 
 namespace AppPilot.ViewModels;
 
@@ -42,6 +44,15 @@ public partial class ServiceItemViewModel : ViewModelBase
     public string StatusText => Status.ToString();
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
+    [ObservableProperty]
+    private Brush _typeBadgeBrush = Brushes.Gray;
+    [ObservableProperty]
+    private Brush _typeBadgeFgBrush = Brushes.Gray;
+    [ObservableProperty]
+    private Brush _groupAccentBrush = Brushes.Gray;
+    [ObservableProperty]
+    private Brush _groupBadgeBrush = Brushes.Gray;
+
     public bool CanInstall => Config.Type == ServiceType.Worker && Status == ServiceStatus.NotInstalled;
     public bool CanUninstall => Config.Type == ServiceType.Worker && Status != ServiceStatus.NotInstalled;
     public bool CanStart => Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled;
@@ -70,6 +81,31 @@ public partial class ServiceItemViewModel : ViewModelBase
         _processService = processService;
         _buildService = buildService;
         _logger = logger;
+
+        InitializeColors();
+    }
+
+    private void InitializeColors()
+    {
+        var isDark = !ThemeManager.IsLight;
+        
+        var typeColor = ColorProvider.GetServiceTypeColor(Config.Type, isDark);
+        TypeBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 50 : 40), typeColor.R, typeColor.G, typeColor.B));
+        TypeBadgeFgBrush = new SolidColorBrush(typeColor);
+
+        var groupName = string.IsNullOrWhiteSpace(Config.GroupName) ? "General" : Config.GroupName;
+        var groupColor = ColorProvider.GetGroupColor(groupName, isDark);
+        GroupAccentBrush = new SolidColorBrush(groupColor);
+        GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 30 : 25), groupColor.R, groupColor.G, groupColor.B));
+    }
+
+    public void RefreshColors()
+    {
+        InitializeColors();
+        OnPropertyChanged(nameof(TypeBadgeBrush));
+        OnPropertyChanged(nameof(TypeBadgeFgBrush));
+        OnPropertyChanged(nameof(GroupAccentBrush));
+        OnPropertyChanged(nameof(GroupBadgeBrush));
     }
 
     [RelayCommand]

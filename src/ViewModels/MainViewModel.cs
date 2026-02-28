@@ -1,6 +1,7 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
+using System.Windows.Media;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
 using AppPilot.Services.Git;
@@ -361,6 +362,22 @@ public partial class MainViewModel : ViewModelBase
     {
         ThemeManager.Toggle();
         IsLightTheme = ThemeManager.IsLight;
+        RefreshServiceColors();
+    }
+
+    private void RefreshServiceColors()
+    {
+        foreach (var service in Services)
+        {
+            service.RefreshColors();
+        }
+        foreach (var group in Groups)
+        {
+            group.GroupAccentBrush = ColorProvider.GetGroupBrush(group.GroupName, !IsLightTheme);
+            var groupColor = ColorProvider.GetGroupColor(group.GroupName, !IsLightTheme);
+            group.GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(!IsLightTheme ? 40 : 35), groupColor.R, groupColor.G, groupColor.B));
+        }
+        RebuildFilteredGroups();
     }
 
     public void Shutdown()

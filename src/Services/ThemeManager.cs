@@ -36,6 +36,7 @@ public static class ThemeManager
         var existing = dicts.FirstOrDefault(d => d.Source?.ToString().Contains("Theme.xaml") == true);
         if (existing != null) dicts.Remove(existing);
         dicts.Add(new ResourceDictionary { Source = uri });
+        ColorProvider.Initialize();
     }
 
     private static UiSettings LoadSettings()

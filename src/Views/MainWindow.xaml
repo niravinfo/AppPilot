@@ -184,24 +184,28 @@
             <Grid>
                 <!-- Branding -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="38" Height="38" CornerRadius="10" Margin="0,0,12,0">
+                    <Border Width="40" Height="40" CornerRadius="12" Margin="0,0,14,0">
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="#4C8EF8" Offset="0"/>
-                                <GradientStop Color="#7C50D8" Offset="1"/>
+                                <GradientStop Color="#6366F1" Offset="0"/>
+                                <GradientStop Color="#8B5CF6" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
-                        <TextBlock Text="⚡" FontSize="18"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"/>
+                        <Grid>
+                            <TextBlock Text="⚡" FontSize="20"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="White"
+                                       FontWeight="Bold"/>
+                        </Grid>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="AppPilot"
-                                   FontSize="16" FontWeight="SemiBold"
+                                   FontSize="18" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"/>
                         <TextBlock Text="Local Service Manager"
-                                   FontSize="10.5" Foreground="{DynamicResource TextMuted}"
-                                   Margin="0,1,0,0"/>
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}"
+                                   Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -212,21 +216,21 @@
                     <Button Style="{StaticResource ToolbarBtn}"
                             Command="{Binding RefreshCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="↺" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x21BB;" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Text="Refresh" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AccentBtn}"
                             Command="{Binding StartAllCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="▶" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x25B6;" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Text="Start All" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource DangerBtn}"
                             Command="{Binding StopAllCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="■" FontSize="9" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x25A0;" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Text="Stop All" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -240,7 +244,7 @@
                             Command="{Binding AddServiceCommand}"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="+" FontSize="14" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="+" FontSize="16" Margin="0,0,5,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock Text="Add Service" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -290,7 +294,7 @@
                     </Border.Style>
                     <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚡" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x26A1;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
                             <TextBlock FontSize="12" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -306,10 +310,10 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <Border Margin="7,0,0,0" Padding="6,1" CornerRadius="8"
+                            <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
                                     Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Services.Count}"
-                                           FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                           FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
                             </Border>
                         </StackPanel>
                     </Button>
@@ -329,7 +333,7 @@
                     </Border.Style>
                     <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⎇" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#x1F4BB;" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
                             <TextBlock FontSize="12" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -345,10 +349,10 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <Border Margin="7,0,0,0" Padding="6,1" CornerRadius="8"
+                            <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
                                     Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding GitRepositories.Count}"
-                                           FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                           FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
                             </Border>
                         </StackPanel>
                     </Button>
@@ -686,15 +690,19 @@
                                     Margin="0,0,0,4">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <!-- Colored accent bar -->
+                                        <Border Width="4" Height="16" CornerRadius="2" 
+                                                Background="{Binding GroupAccentBrush}"
+                                                Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding GroupName}"
-                                                   FontSize="11" FontWeight="SemiBold"
+                                                   FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource GroupHeaderFg}"/>
                                         <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="8"
-                                                Background="{DynamicResource TypeBadgeBg}"
+                                                Background="{Binding GroupBadgeBrush}"
                                                 VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Items.Count}"
-                                                       FontSize="10"
-                                                       Foreground="{DynamicResource TextMuted}"/>
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{Binding GroupAccentBrush}"/>
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal"
@@ -704,7 +712,7 @@
                                                 Padding="8,4" Margin="0,0,6,0"
                                                 Command="{Binding StartGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="▶" FontSize="9" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#x25B6;" FontSize="9" Margin="0,0,4,0" VerticalAlignment="Center" FontWeight="Bold"/>
                                                 <TextBlock Text="Start" FontSize="11" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
@@ -712,7 +720,7 @@
                                                 Padding="8,4" Margin="0"
                                                 Command="{Binding StopGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="■" FontSize="8" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#x25A0;" FontSize="9" Margin="0,0,4,0" VerticalAlignment="Center" FontWeight="Bold"/>
                                                 <TextBlock Text="Stop" FontSize="11" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
@@ -782,12 +790,19 @@
                                                             <TextBlock Text="{Binding DisplayName}"
                                                                        FontSize="13" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"/>
+                                                            <!-- Type badge with dynamic color -->
                                                             <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
-                                                                    Background="{DynamicResource TypeBadgeBg}"
+                                                                    Background="{Binding TypeBadgeBrush}"
+                                                                    BorderBrush="{Binding TypeBadgeFgBrush}"
+                                                                    BorderThickness="1"
                                                                     VerticalAlignment="Center">
-                                                                <TextBlock Text="{Binding TypeName}"
-                                                                           FontSize="10"
-                                                                           Foreground="{DynamicResource TypeBadgeFg}"/>
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Ellipse Width="6" Height="6" Margin="0,0,4,0" 
+                                                                             Fill="{Binding TypeBadgeFgBrush}"/>
+                                                                    <TextBlock Text="{Binding TypeName}"
+                                                                               FontSize="10" FontWeight="SemiBold"
+                                                                               Foreground="{Binding TypeBadgeFgBrush}"/>
+                                                                </StackPanel>
                                                             </Border>
                                                         </StackPanel>
                                                     </StackPanel>
@@ -878,19 +893,19 @@
                                                                 Command="{Binding StartCommand}"
                                                                 IsEnabled="{Binding CanStart}"
                                                                 ToolTip="Start">
-                                                            <TextBlock Text="▶" FontSize="14"/>
+                                                            <TextBlock Text="&#x25B6;" FontSize="13" FontWeight="Bold"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding StopCommand}"
                                                                 IsEnabled="{Binding CanStop}"
                                                                 ToolTip="Stop">
-                                                            <TextBlock Text="⏹" FontSize="14"/>
+                                                            <TextBlock Text="&#x25A0;" FontSize="13" FontWeight="Bold"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding RestartCommand}"
                                                                 IsEnabled="{Binding CanRestart}"
                                                                 ToolTip="Restart">
-                                                            <TextBlock Text="↺" FontSize="16"/>
+                                                            <TextBlock Text="&#x21BB;" FontSize="15" FontWeight="Bold"/>
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
