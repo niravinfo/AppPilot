@@ -1,7 +1,9 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
+using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
+using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,6 +27,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly IHealthChecker _healthChecker;
     private readonly ILogger _logger;
     private readonly IDialogService _dialogService;
+    private readonly IBuildService _buildService;
+    private readonly IGitService _gitService;
     private readonly DispatcherTimer _pollingTimer;
 
     [ObservableProperty]
@@ -51,6 +55,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<ServiceGroupViewModel> _filteredGroups = new();
 
+    [ObservableProperty]
+    private int _selectedTab;
+
+    [ObservableProperty]
+    private ObservableCollection<GitRepositoryViewModel> _gitRepositories = new();
+
     private List<ManagedServiceConfig> _serviceConfigs = new();
 
     public MainViewModel(
@@ -59,7 +69,9 @@ public partial class MainViewModel : ViewModelBase
         IProcessService processService,
         IHealthChecker healthChecker,
         ILogger logger,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        IBuildService buildService,
+        IGitService gitService)
     {
         _configService = configService;
         _windowsServiceController = windowsServiceController;
@@ -67,6 +79,8 @@ public partial class MainViewModel : ViewModelBase
         _healthChecker = healthChecker;
         _logger = logger;
         _dialogService = dialogService;
+        _buildService = buildService;
+        _gitService = gitService;
 
         _pollingTimer = new DispatcherTimer
         {
@@ -88,15 +102,28 @@ public partial class MainViewModel : ViewModelBase
         _serviceConfigs = settings.Services;
 
         if (settings.AppPilot.PollingIntervalMs > 0)
-        {
             _pollingTimer.Interval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
-        }
 
         Services.Clear();
         foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
+            Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _buildService, _logger, this));
+
+        // Load Git repositories and link services
+        GitRepositories.Clear();
+        foreach (var repoConfig in settings.GitRepositories)
         {
-            Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _logger, this));
+            var repoVm = new GitRepositoryViewModel(repoConfig, _buildService, _gitService, _logger);
+            foreach (var name in repoConfig.LinkedServiceNames)
+            {
+                var svc = Services.FirstOrDefault(s => s.Config.Name == name);
+                if (svc is not null)
+                    repoVm.LinkedServices.Add(svc);
+            }
+            GitRepositories.Add(repoVm);
         }
+
+        // Initialise git info in background (non-blocking)
+        _ = Task.WhenAll(GitRepositories.Select(r => r.InitializeAsync()));
 
         RebuildGroups();
         StatusText = $"Loaded {_serviceConfigs.Count} services";
@@ -285,7 +312,7 @@ public partial class MainViewModel : ViewModelBase
 
         var config = editorVm.ToConfig();
         _serviceConfigs.Add(config);
-        Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _logger, this));
+        Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _buildService, _logger, this));
         RebuildGroups();
         SaveConfiguration();
         StatusText = $"Service '{config.DisplayName}' added";
@@ -322,6 +349,12 @@ public partial class MainViewModel : ViewModelBase
         settings.Services = _serviceConfigs;
         _configService.Save(settings);
     }
+
+    [RelayCommand]
+    private void SelectServicesTab() => SelectedTab = 0;
+
+    [RelayCommand]
+    private void SelectGitTab() => SelectedTab = 1;
 
     [RelayCommand]
     private void ToggleTheme()

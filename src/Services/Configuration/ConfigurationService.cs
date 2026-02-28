@@ -69,6 +69,15 @@ public class ConfigurationService : IConfigurationService
         {
             service.ExecutablePath = ResolveSinglePath(service.ExecutablePath, basePath);
             service.WorkingDirectory = ResolveSinglePath(service.WorkingDirectory, basePath);
+            service.CsprojPath = ResolveSinglePath(service.CsprojPath, basePath);
+        }
+
+        foreach (var repo in settings.GitRepositories)
+        {
+            repo.LocalPath = ResolveSinglePath(repo.LocalPath, basePath);
+            // SolutionPath is relative to LocalPath (resolved after LocalPath is finalised)
+            if (!string.IsNullOrWhiteSpace(repo.SolutionPath))
+                repo.SolutionPath = ResolveSinglePath(repo.SolutionPath, repo.LocalPath);
         }
     }
 

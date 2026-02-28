@@ -6,6 +6,7 @@ public class AppSettings
 {
     public AppPilotSettings AppPilot { get; set; } = new();
     public List<ManagedServiceConfig> Services { get; set; } = new();
+    public List<GitRepositoryConfig> GitRepositories { get; set; } = [];
 }
 
 public class AppPilotSettings

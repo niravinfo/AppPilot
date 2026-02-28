@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
+using AppPilot.Services.Build;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,6 +15,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 {
     private readonly IServiceController _windowsServiceController;
     private readonly IProcessService _processService;
+    private readonly IBuildService _buildService;
     private readonly ILogger _logger;
     private readonly MainViewModel _mainViewModel;
 
@@ -48,6 +50,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public bool HasBrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue;
     public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
+    public bool HasCsprojPath => !string.IsNullOrWhiteSpace(Config.CsprojPath);
 
     public string BrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl)
         ? Config.HealthCheckUrl
@@ -57,6 +60,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         ManagedServiceConfig config,
         IServiceController windowsServiceController,
         IProcessService processService,
+        IBuildService buildService,
         ILogger logger,
         MainViewModel mainViewModel)
     {
@@ -64,6 +68,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         _mainViewModel = mainViewModel;
         _windowsServiceController = windowsServiceController;
         _processService = processService;
+        _buildService = buildService;
         _logger = logger;
     }
 
@@ -344,6 +349,40 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void Delete() => _mainViewModel.DeleteService(this);
 
+    [RelayCommand]
+    private async Task BuildAsync()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        ErrorMessage = string.Empty;
+
+        var wasRunning = Status == ServiceStatus.Running;
+        try
+        {
+            if (wasRunning)
+            {
+                await StopAsync();
+                await Task.Delay(300);
+            }
+
+            var exitCode = await _buildService.LaunchBuildAsync(Config.CsprojPath, Config.DisplayName);
+
+            if (exitCode == 0 && wasRunning)
+                await StartAsync();
+            else if (exitCode != 0)
+                ErrorMessage = "Build failed — check the terminal for details.";
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Build failed for {Name}", Config.Name);
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     public void NotifyDisplayPropertiesChanged()
     {
         OnPropertyChanged(nameof(DisplayName));
@@ -353,6 +392,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasBrowserUrl));
         OnPropertyChanged(nameof(BrowserUrl));
         OnPropertyChanged(nameof(HasWorkingDirectory));
+        OnPropertyChanged(nameof(HasCsprojPath));
         OnPropertyChanged(nameof(CanInstall));
         OnPropertyChanged(nameof(CanUninstall));
     }

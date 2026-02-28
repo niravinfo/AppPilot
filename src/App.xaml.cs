@@ -1,5 +1,7 @@
 using AppPilot.Services;
+using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
+using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
 using AppPilot.ViewModels;
@@ -130,6 +132,8 @@ public partial class App : Application
             var processService = new ProcessService(_logger);
             var healthChecker = new HttpHealthChecker(_logger);
             var dialogService = new DialogService();
+            var buildService = new BuildService();
+            var gitService = new GitService();
 
             var mainViewModel = new MainViewModel(
                 configurationService,
@@ -137,7 +141,9 @@ public partial class App : Application
                 processService,
                 healthChecker,
                 _logger,
-                dialogService);
+                dialogService,
+                buildService,
+                gitService);
 
             var mainWindow = new MainWindow(mainViewModel);
             mainWindow.Show();
