@@ -140,7 +140,7 @@
                 <DataTemplate>
                     <Border Background="#3C1010" Padding="10,5" BorderThickness="0,1,0,0" BorderBrush="#6B1010">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="⚠  " Foreground="#FF6B6B" FontSize="11"/>
+                            <TextBlock Text="&#x26A0;  " Foreground="#FF6B6B" FontSize="11"/>
                             <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>

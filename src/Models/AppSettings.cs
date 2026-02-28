@@ -10,6 +10,7 @@ public class AppSettings
 
 public class AppPilotSettings
 {
+    public string BasePath { get; set; } = string.Empty;
     public string ConfigurationPath { get; set; } = string.Empty;
     public int PollingIntervalMs { get; set; } = 3000;
     public bool AutoStartServices { get; set; }

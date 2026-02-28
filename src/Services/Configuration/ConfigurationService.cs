@@ -33,6 +33,7 @@ public class ConfigurationService : IConfigurationService
         _configuration = new ConfigurationBuilder()
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
             .Build();
     }
 
@@ -42,6 +43,7 @@ public class ConfigurationService : IConfigurationService
         {
             var settings = new AppSettings();
             _configuration.Bind(settings);
+            ResolvePaths(settings);
             _logger.Information("Configuration loaded successfully with {Count} services", settings.Services.Count);
             return settings;
         }
@@ -50,6 +52,39 @@ public class ConfigurationService : IConfigurationService
             _logger.Error(ex, "Failed to load configuration");
             return new AppSettings();
         }
+    }
+
+    private void ResolvePaths(AppSettings settings)
+    {
+        var appDir = AppDomain.CurrentDomain.BaseDirectory;
+
+        // BasePath itself can use env vars or be relative to the app directory
+        var basePath = string.IsNullOrWhiteSpace(settings.AppPilot.BasePath)
+            ? appDir
+            : ResolveSinglePath(settings.AppPilot.BasePath, appDir);
+
+        settings.AppPilot.BasePath = basePath;
+
+        foreach (var service in settings.Services)
+        {
+            service.ExecutablePath = ResolveSinglePath(service.ExecutablePath, basePath);
+            service.WorkingDirectory = ResolveSinglePath(service.WorkingDirectory, basePath);
+        }
+    }
+
+    private static string ResolveSinglePath(string path, string basePath)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return path;
+
+        // Expand environment variables, e.g. %USERPROFILE% or %MY_PROJECTS%
+        path = Environment.ExpandEnvironmentVariables(path);
+
+        // Resolve relative paths against basePath
+        if (!Path.IsPathRooted(path))
+            path = Path.GetFullPath(Path.Combine(basePath, path));
+
+        return path;
     }
 
     public void Save(AppSettings settings)
