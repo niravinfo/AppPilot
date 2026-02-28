@@ -6,6 +6,7 @@ using AppPilot.Services.Configuration;
 using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
+using AppPilot.Services.Update;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
@@ -29,7 +30,20 @@ public partial class MainViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly IBuildService _buildService;
     private readonly IGitService _gitService;
+    private readonly IUpdateService _updateService;
     private readonly DispatcherTimer _pollingTimer;
+
+    [ObservableProperty]
+    private string _currentVersion = string.Empty;
+
+    [ObservableProperty]
+    private string? _availableUpdateVersion;
+
+    [ObservableProperty]
+    private bool _isUpdateAvailable;
+
+    [ObservableProperty]
+    private bool _isCheckingForUpdate;
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = new();
@@ -71,7 +85,8 @@ public partial class MainViewModel : ViewModelBase
         ILogger logger,
         IDialogService dialogService,
         IBuildService buildService,
-        IGitService gitService)
+        IGitService gitService,
+        IUpdateService updateService)
     {
         _configService = configService;
         _windowsServiceController = windowsServiceController;
@@ -81,6 +96,8 @@ public partial class MainViewModel : ViewModelBase
         _dialogService = dialogService;
         _buildService = buildService;
         _gitService = gitService;
+        _updateService = updateService;
+        _currentVersion = updateService.CurrentVersion;
 
         _pollingTimer = new DispatcherTimer
         {
@@ -94,6 +111,10 @@ public partial class MainViewModel : ViewModelBase
         LoadConfiguration();
         _pollingTimer.Start();
         _ = RefreshStatusAsync();
+
+        var settings = _configService.Load();
+        if (settings.AppPilot.CheckForUpdatesOnStartup)
+            _ = CheckForUpdateAsync();
     }
 
     private void LoadConfiguration()
@@ -355,6 +376,48 @@ public partial class MainViewModel : ViewModelBase
 
     [RelayCommand]
     private void SelectGitTab() => SelectedTab = 1;
+
+    [RelayCommand]
+    private async Task CheckForUpdateAsync()
+    {
+        if (IsCheckingForUpdate) return;
+        IsCheckingForUpdate = true;
+        try
+        {
+            if (!_updateService.IsVelopackEnvironment)
+            {
+                StatusText = $"v{_updateService.CurrentVersion} — update checks require installing via Setup.exe";
+                return;
+            }
+
+            var version = await _updateService.CheckForUpdateAsync();
+            AvailableUpdateVersion = version;
+            IsUpdateAvailable = version is not null;
+            StatusText = IsUpdateAvailable
+                ? $"Update available: v{version}"
+                : $"v{_updateService.CurrentVersion} is up to date";
+        }
+        finally
+        {
+            IsCheckingForUpdate = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ApplyUpdateAsync()
+    {
+        if (!IsUpdateAvailable) return;
+        StatusText = "Downloading update…";
+        try
+        {
+            await _updateService.ApplyUpdateAndRestartAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to apply update");
+            StatusText = "Update failed — see logs for details";
+        }
+    }
 
     [RelayCommand]
     private void ToggleTheme()

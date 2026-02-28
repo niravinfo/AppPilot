@@ -17,4 +17,17 @@ public class AppPilotSettings
     public bool AutoStartServices { get; set; }
     public bool MinimizeToTray { get; set; } = true;
     public string LogDirectory { get; set; } = "Logs";
+
+    /// <summary>GitHub repository URL used for update checks, e.g. "https://github.com/owner/repo".</summary>
+    public string GitHubRepoUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// GitHub personal access token (PAT) with <c>repo</c> read scope.
+    /// Required for private repositories. Leave empty for public repos.
+    /// Store this in appsettings.Local.json (gitignored), not in appsettings.json.
+    /// </summary>
+    public string GitHubToken { get; set; } = string.Empty;
+
+    /// <summary>When true, AppPilot silently checks for a new release on startup.</summary>
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
 }

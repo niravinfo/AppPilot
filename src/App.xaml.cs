@@ -4,9 +4,11 @@ using AppPilot.Services.Configuration;
 using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
+using AppPilot.Services.Update;
 using AppPilot.ViewModels;
 using AppPilot.Views;
 using Serilog;
+using Velopack;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -24,6 +26,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Must be called before anything else — Velopack hooks early startup for update application.
+        VelopackApp.Build().Run();
+
         if (!IsRunningAsAdministrator())
         {
             RestartAsAdministrator();
@@ -135,6 +140,12 @@ public partial class App : Application
             var buildService = new BuildService();
             var gitService = new GitService();
 
+            var settings = configurationService.Load();
+            var updateService = new UpdateService(
+                _logger,
+                settings.AppPilot.GitHubRepoUrl,
+                string.IsNullOrWhiteSpace(settings.AppPilot.GitHubToken) ? null : settings.AppPilot.GitHubToken);
+
             var mainViewModel = new MainViewModel(
                 configurationService,
                 windowsServiceController,
@@ -143,7 +154,8 @@ public partial class App : Application
                 _logger,
                 dialogService,
                 buildService,
-                gitService);
+                gitService,
+                updateService);
 
             var mainWindow = new MainWindow(mainViewModel);
             mainWindow.Show();
