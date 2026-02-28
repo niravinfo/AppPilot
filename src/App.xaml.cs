@@ -129,13 +129,15 @@ public partial class App : Application
             var windowsServiceController = new WindowsServiceController(_logger);
             var processService = new ProcessService(_logger);
             var healthChecker = new HttpHealthChecker(_logger);
+            var dialogService = new DialogService();
 
             var mainViewModel = new MainViewModel(
                 configurationService,
                 windowsServiceController,
                 processService,
                 healthChecker,
-                _logger);
+                _logger,
+                dialogService);
 
             var mainWindow = new MainWindow(mainViewModel);
             mainWindow.Show();

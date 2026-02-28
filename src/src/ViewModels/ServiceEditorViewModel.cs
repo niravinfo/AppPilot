@@ -1,0 +1,145 @@
+using AppPilot.Domain.Enums;
+using AppPilot.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+
+namespace AppPilot.ViewModels;
+
+public partial class ServiceEditorViewModel : ViewModelBase
+{
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
+    private string _displayName = string.Empty;
+
+    [ObservableProperty]
+    private string _name = string.Empty;
+
+    [ObservableProperty]
+    private string _groupName = string.Empty;
+
+    [ObservableProperty]
+    private ServiceType _serviceType = ServiceType.WebApi;
+
+    [ObservableProperty]
+    private string _executablePath = string.Empty;
+
+    [ObservableProperty]
+    private string _arguments = string.Empty;
+
+    [ObservableProperty]
+    private string _workingDirectory = string.Empty;
+
+    [ObservableProperty]
+    private string _portText = string.Empty;
+
+    [ObservableProperty]
+    private string _healthCheckUrl = string.Empty;
+
+    [ObservableProperty]
+    private bool _autoStart;
+
+    [ObservableProperty]
+    private string _startOrderText = "0";
+
+    [ObservableProperty]
+    private string _dependenciesText = string.Empty;
+
+    [ObservableProperty]
+    private EnvironmentVariableViewModel? _selectedEnvVar;
+
+    public ObservableCollection<EnvironmentVariableViewModel> EnvironmentVariables { get; } = [];
+    public IReadOnlyList<ServiceType> ServiceTypes { get; } = System.Enum.GetValues<ServiceType>();
+
+    public bool IsNew { get; }
+    public string Title => IsNew ? "Add Service" : $"Edit — {DisplayName}";
+    public string SaveButtonText => IsNew ? "Add Service" : "Save Changes";
+
+    public ServiceEditorViewModel()
+    {
+        IsNew = true;
+    }
+
+    public ServiceEditorViewModel(ManagedServiceConfig config)
+    {
+        IsNew = false;
+        _displayName = config.DisplayName;
+        _name = config.Name;
+        _groupName = config.GroupName;
+        _serviceType = config.Type;
+        _executablePath = config.ExecutablePath;
+        _arguments = config.Arguments;
+        _workingDirectory = config.WorkingDirectory;
+        _portText = config.Port?.ToString() ?? string.Empty;
+        _healthCheckUrl = config.HealthCheckUrl;
+        _autoStart = config.AutoStart;
+        _startOrderText = config.StartOrder.ToString();
+        _dependenciesText = string.Join(", ", config.Dependencies);
+        foreach (var (key, value) in config.Environment)
+            EnvironmentVariables.Add(new EnvironmentVariableViewModel(key, value));
+    }
+
+    public void ApplyTo(ManagedServiceConfig config)
+    {
+        config.Name = Name;
+        config.DisplayName = DisplayName;
+        config.GroupName = GroupName;
+        config.Type = ServiceType;
+        config.ExecutablePath = ExecutablePath;
+        config.Arguments = Arguments;
+        config.WorkingDirectory = WorkingDirectory;
+        config.Port = int.TryParse(PortText, out var port) ? port : null;
+        config.HealthCheckUrl = HealthCheckUrl;
+        config.AutoStart = AutoStart;
+        config.StartOrder = int.TryParse(StartOrderText, out var order) ? order : 0;
+        config.Dependencies = [.. DependenciesText
+            .Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)];
+        config.Environment = EnvironmentVariables.ToDictionary(e => e.Key, e => e.Value);
+    }
+
+    public ManagedServiceConfig ToConfig()
+    {
+        var config = new ManagedServiceConfig();
+        ApplyTo(config);
+        return config;
+    }
+
+    [RelayCommand]
+    private void AddEnvironmentVariable()
+    {
+        var item = new EnvironmentVariableViewModel();
+        EnvironmentVariables.Add(item);
+        SelectedEnvVar = item;
+    }
+
+    [RelayCommand]
+    private void RemoveEnvironmentVariable(EnvironmentVariableViewModel? item)
+    {
+        if (item is not null)
+            EnvironmentVariables.Remove(item);
+    }
+
+    [RelayCommand]
+    private void BrowseExecutablePath()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Select Executable",
+            Filter = "Executables (*.exe)|*.exe|All Files (*.*)|*.*",
+            CheckFileExists = false
+        };
+        if (dialog.ShowDialog() == true)
+            ExecutablePath = dialog.FileName;
+    }
+
+    [RelayCommand]
+    private void BrowseWorkingDirectory()
+    {
+        var dialog = new OpenFolderDialog { Title = "Select Working Directory" };
+        if (dialog.ShowDialog() == true)
+            WorkingDirectory = dialog.FolderName;
+    }
+}

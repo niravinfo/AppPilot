@@ -24,6 +24,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IProcessService _processService;
     private readonly IHealthChecker _healthChecker;
     private readonly ILogger _logger;
+    private readonly IDialogService _dialogService;
     private readonly DispatcherTimer _pollingTimer;
 
     [ObservableProperty]
@@ -44,6 +45,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isLoading;
 
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private ObservableCollection<ServiceGroupViewModel> _filteredGroups = new();
+
     private List<ManagedServiceConfig> _serviceConfigs = new();
 
     public MainViewModel(
@@ -51,13 +58,15 @@ public partial class MainViewModel : ViewModelBase
         IServiceController windowsServiceController,
         IProcessService processService,
         IHealthChecker healthChecker,
-        ILogger logger)
+        ILogger logger,
+        IDialogService dialogService)
     {
         _configService = configService;
         _windowsServiceController = windowsServiceController;
         _processService = processService;
         _healthChecker = healthChecker;
         _logger = logger;
+        _dialogService = dialogService;
 
         _pollingTimer = new DispatcherTimer
         {
@@ -235,6 +244,83 @@ public partial class MainViewModel : ViewModelBase
                 group.Items.Add(svc);
             Groups.Add(group);
         }
+
+        RebuildFilteredGroups();
+    }
+
+    partial void OnSearchTextChanged(string value) => RebuildFilteredGroups();
+
+    private void RebuildFilteredGroups()
+    {
+        FilteredGroups.Clear();
+
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? Services.AsEnumerable()
+            : Services.Where(s =>
+                s.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                s.GroupName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                s.TypeName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
+        var grouped = filtered
+            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupName) ? "General" : s.Config.GroupName)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].Key != "General");
+
+        foreach (var g in grouped)
+        {
+            var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
+            foreach (var svc in g)
+                group.Items.Add(svc);
+            FilteredGroups.Add(group);
+        }
+    }
+
+    [RelayCommand]
+    private void AddService()
+    {
+        var editorVm = new ServiceEditorViewModel();
+        if (_dialogService.ShowServiceEditor(editorVm) != true) return;
+
+        var config = editorVm.ToConfig();
+        _serviceConfigs.Add(config);
+        Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _logger, this));
+        RebuildGroups();
+        SaveConfiguration();
+        StatusText = $"Service '{config.DisplayName}' added";
+    }
+
+    public void EditService(ServiceItemViewModel serviceVm)
+    {
+        var editorVm = new ServiceEditorViewModel(serviceVm.Config);
+        if (_dialogService.ShowServiceEditor(editorVm) != true) return;
+
+        editorVm.ApplyTo(serviceVm.Config);
+        serviceVm.NotifyDisplayPropertiesChanged();
+        RebuildGroups();
+        SaveConfiguration();
+        StatusText = $"Service '{serviceVm.Config.DisplayName}' updated";
+    }
+
+    public void DeleteService(ServiceItemViewModel serviceVm)
+    {
+        if (!_dialogService.Confirm(
+            $"Remove '{serviceVm.DisplayName}' from AppPilot?\n\nThis will not stop or uninstall the service.",
+            "Remove Service")) return;
+
+        _serviceConfigs.Remove(serviceVm.Config);
+        Services.Remove(serviceVm);
+        RebuildGroups();
+        SaveConfiguration();
+        StatusText = $"Service '{serviceVm.DisplayName}' removed";
+    }
+
+    private void SaveConfiguration()
+    {
+        var settings = _configService.Load();
+        settings.Services = _serviceConfigs;
+        _configService.Save(settings);
     }
 
     [RelayCommand]

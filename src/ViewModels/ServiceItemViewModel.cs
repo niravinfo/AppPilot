@@ -337,4 +337,23 @@ public partial class ServiceItemViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(HasError));
     }
+
+    [RelayCommand]
+    private void Edit() => _mainViewModel.EditService(this);
+
+    [RelayCommand]
+    private void Delete() => _mainViewModel.DeleteService(this);
+
+    public void NotifyDisplayPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(GroupName));
+        OnPropertyChanged(nameof(TypeName));
+        OnPropertyChanged(nameof(Port));
+        OnPropertyChanged(nameof(HasBrowserUrl));
+        OnPropertyChanged(nameof(BrowserUrl));
+        OnPropertyChanged(nameof(HasWorkingDirectory));
+        OnPropertyChanged(nameof(CanInstall));
+        OnPropertyChanged(nameof(CanUninstall));
+    }
 }
