@@ -230,7 +230,7 @@ public class WindowsServiceController : IServiceController
     {
         try
         {
-            var serviceController = new System.ServiceProcess.ServiceController(config.Name);
+            using var serviceController = new System.ServiceProcess.ServiceController(config.Name);
 
             return serviceController.Status switch
             {

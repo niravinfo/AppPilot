@@ -111,16 +111,7 @@ public partial class MainViewModel : ViewModelBase
 
             if (config.Type == ServiceType.Worker)
             {
-                var isInstalled = _windowsServiceController.GetStatus(config) != ServiceStatus.NotInstalled;
-
-                if (!isInstalled)
-                {
-                    status = ServiceStatus.NotInstalled;
-                }
-                else
-                {
-                    status = _windowsServiceController.GetStatus(config);
-                }
+                status = _windowsServiceController.GetStatus(config);
             }
             else
             {

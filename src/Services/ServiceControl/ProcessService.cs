@@ -177,6 +177,9 @@ public class ProcessService : IProcessService
 
         if (!processId.HasValue)
         {
+            if (_runningProcesses.Remove(config.Name, out var stale))
+                stale?.Dispose();
+
             return ServiceStatus.Stopped;
         }
 
@@ -187,6 +190,9 @@ public class ProcessService : IProcessService
         }
         catch
         {
+            if (_runningProcesses.Remove(config.Name, out var stale))
+                stale?.Dispose();
+
             return ServiceStatus.Stopped;
         }
     }

@@ -7,6 +7,7 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime;
 using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,7 +69,7 @@ public partial class App : Application
         Directory.CreateDirectory(logDirectory);
 
         _logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
+            .MinimumLevel.Information()
             .WriteTo.File(
                 Path.Combine(logDirectory, "AppPilot_.log"),
                 rollingInterval: RollingInterval.Day,
@@ -136,6 +137,8 @@ public partial class App : Application
             var mainWindow = new MainWindow(mainViewModel);
             mainWindow.Show();
 
+            mainWindow.ContentRendered += (_, _) => TrimMemory();
+
             _logger.Information("Application started successfully");
         }
         catch (Exception ex)
@@ -143,6 +146,14 @@ public partial class App : Application
             _logger.Fatal(ex, "Failed to start application");
             LogAndExit(ex);
         }
+    }
+
+    private static void TrimMemory()
+    {
+        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
     }
 
     protected override void OnExit(ExitEventArgs e)

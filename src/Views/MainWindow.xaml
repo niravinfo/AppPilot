@@ -97,7 +97,9 @@
                   SelectionMode="Single"
                   IsReadOnly="True"
                   RowBackground="#1E1E1E"
-                  AlternatingRowBackground="#252526">
+                  AlternatingRowBackground="#252526"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
