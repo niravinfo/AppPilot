@@ -476,6 +476,27 @@
                                                                 ToolTip="Uninstall">
                                                             <TextBlock Text="✕" FontSize="10"/>
                                                         </Button>
+                                                        <Rectangle Width="1" Height="14"
+                                                                   Fill="{DynamicResource CardDivider}"
+                                                                   Margin="3,0" VerticalAlignment="Center"/>
+                                                        <Button Style="{StaticResource CardBtn}"
+                                                                Command="{Binding OpenInBrowserCommand}"
+                                                                Visibility="{Binding HasBrowserUrl, Converter={StaticResource BoolToVis}}"
+                                                                ToolTip="{Binding BrowserUrl}">
+                                                            <TextBlock Text="↗" FontSize="12"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource CardBtn}"
+                                                                Command="{Binding OpenDirectoryCommand}"
+                                                                Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
+                                                                ToolTip="{Binding Config.WorkingDirectory}">
+                                                            <TextBlock Text="⊡" FontSize="12"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource CardBtn}"
+                                                                Command="{Binding OpenTerminalCommand}"
+                                                                Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
+                                                                ToolTip="Open Terminal Here">
+                                                            <TextBlock Text="&gt;_" FontSize="10"/>
+                                                        </Button>
                                                     </StackPanel>
                                                 </Grid>
 

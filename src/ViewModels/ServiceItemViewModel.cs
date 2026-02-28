@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
@@ -44,6 +45,13 @@ public partial class ServiceItemViewModel : ViewModelBase
     public bool CanStart => Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled;
     public bool CanStop => Status == ServiceStatus.Running;
     public bool CanRestart => Status == ServiceStatus.Running;
+
+    public bool HasBrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue;
+    public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
+
+    public string BrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl)
+        ? Config.HealthCheckUrl
+        : Config.Port.HasValue ? $"http://localhost:{Config.Port}" : string.Empty;
 
     public ServiceItemViewModel(
         ManagedServiceConfig config,
@@ -250,6 +258,68 @@ public partial class ServiceItemViewModel : ViewModelBase
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenInBrowser()
+    {
+        if (string.IsNullOrEmpty(BrowserUrl)) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo(BrowserUrl) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open browser for {Name}", Config.Name);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenDirectory()
+    {
+        if (!HasWorkingDirectory) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{Config.WorkingDirectory}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open directory for {Name}", Config.Name);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenTerminal()
+    {
+        if (!HasWorkingDirectory) return;
+        try
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "wt.exe",
+                    Arguments = $"-d \"{Config.WorkingDirectory}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    WorkingDirectory = Config.WorkingDirectory,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Error(ex, "Failed to open terminal for {Name}", Config.Name);
         }
     }
 
