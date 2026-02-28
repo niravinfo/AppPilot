@@ -138,11 +138,15 @@
 
             <DataGrid.RowDetailsTemplate>
                 <DataTemplate>
-                    <Border Background="#3C1010" Padding="10,5" BorderThickness="0,1,0,0" BorderBrush="#6B1010">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x26A0;  " Foreground="#FF6B6B" FontSize="11"/>
-                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" TextWrapping="Wrap"/>
-                        </StackPanel>
+                    <Border Background="#3C1010" Padding="10,6" BorderThickness="0,1,0,0" BorderBrush="#6B1010">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="&#x26A0;  " Foreground="#FF6B6B" FontSize="11" VerticalAlignment="Top"/>
+                            <TextBlock Grid.Column="1" Text="{Binding ErrorMessage}" Foreground="#FF6B6B" FontSize="11" TextWrapping="Wrap"/>
+                        </Grid>
                     </Border>
                 </DataTemplate>
             </DataGrid.RowDetailsTemplate>

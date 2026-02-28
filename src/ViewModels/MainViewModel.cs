@@ -102,11 +102,12 @@ public partial class MainViewModel : ViewModelBase
         {
             var config = service.Config;
             ServiceStatus status;
+            string? healthError = null;
 
             if (config.Type == ServiceType.Worker)
             {
                 var isInstalled = _windowsServiceController.GetStatus(config) != ServiceStatus.NotInstalled;
-                
+
                 if (!isInstalled)
                 {
                     status = ServiceStatus.NotInstalled;
@@ -122,17 +123,21 @@ public partial class MainViewModel : ViewModelBase
 
                 if (status == ServiceStatus.Running && !string.IsNullOrEmpty(config.HealthCheckUrl))
                 {
-                    var isHealthy = await _healthChecker.CheckHealthAsync(config.HealthCheckUrl);
-                    if (!isHealthy)
-                    {
+                    healthError = await _healthChecker.CheckHealthAsync(config.HealthCheckUrl);
+                    if (healthError != null)
                         status = ServiceStatus.Error;
-                        service.ErrorMessage = "Health check failed";
-                    }
                 }
             }
 
             service.Status = status;
             service.LastChecked = DateTime.Now;
+
+            // Set the real error when health check fails, clear it when healthy,
+            // and leave it untouched when Stopped so the last user-action error stays visible.
+            if (healthError != null)
+                service.ErrorMessage = healthError;
+            else if (status == ServiceStatus.Running)
+                service.ErrorMessage = string.Empty;
         }
         catch (Exception ex)
         {

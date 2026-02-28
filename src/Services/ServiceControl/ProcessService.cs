@@ -132,9 +132,20 @@ public class ProcessService : IProcessService
             var processName = System.IO.Path.GetFileNameWithoutExtension(config.ExecutablePath);
             var processes = Process.GetProcessesByName(processName);
 
-            if (processes.Length > 0)
+            foreach (var process in processes)
             {
-                return processes[0].Id;
+                try
+                {
+                    // Match on full executable path to avoid false positives from any other
+                    // process that happens to share the same executable name.
+                    var mainModulePath = process.MainModule?.FileName;
+                    if (string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                        return process.Id;
+                }
+                catch
+                {
+                    // MainModule access can fail (access denied, process already exited).
+                }
             }
         }
         catch (Exception ex)
