@@ -55,11 +55,12 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public bool CanInstall => Config.Type == ServiceType.Worker && Status == ServiceStatus.NotInstalled;
     public bool CanUninstall => Config.Type == ServiceType.Worker && Status != ServiceStatus.NotInstalled;
+    public bool IsWorkerService => Config.Type == ServiceType.Worker;
     public bool CanStart => Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled;
     public bool CanStop => Status == ServiceStatus.Running;
     public bool CanRestart => Status == ServiceStatus.Running;
 
-    public bool HasBrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue;
+    public bool HasBrowserUrl => Config.Type != ServiceType.Worker && (!string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue);
     public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
     public bool HasCsprojPath => !string.IsNullOrWhiteSpace(Config.CsprojPath);
 
