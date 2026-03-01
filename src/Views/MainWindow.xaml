@@ -14,6 +14,10 @@
         WindowStartupLocation="CenterScreen"
         Icon="/Assets/app.ico">
 
+    <Window.InputBindings>
+        <KeyBinding Key="P" Modifiers="Control" Command="{Binding FocusSearchCommand}"/>
+    </Window.InputBindings>
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -152,19 +156,33 @@
         <Style x:Key="TabBtn" TargetType="Button">
             <Setter Property="Background"      Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding"         Value="4,10"/>
+            <Setter Property="Padding"         Value="10,14"/>
             <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FontSize"        Value="15"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="TabBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="8">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsKeyboardFocused}" Value="True">
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
+                                <Setter TargetName="TabBorder" Property="BorderThickness" Value="2"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Geometry x:Key="IconServices">
+M2,3H22V17H2V3ZM8,21H16M12,17V21
+</Geometry>
+        <Geometry x:Key="IconGit">
+M12,18A3,3 0 1,0 12,12A3,3 0 0,0 12,18ZM6,6A3,3 0 1,0 6,0A3,3 0 0,0 6,6ZM18,6A3,3 0 1,0 18,0A3,3 0 0,0 18,6ZM18,9V11C18,11.6 17.6,12 17,12H7C6.4,12 6,11.6 6,11V9M12,15V9
+</Geometry>
     </Window.Resources>
 
     <Grid>
@@ -192,11 +210,12 @@
                             </LinearGradientBrush>
                         </Border.Background>
                         <Grid>
-                            <TextBlock Text="⚡" FontSize="20"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="White"
-                                       FontWeight="Bold"/>
+                            <Path Data="{StaticResource IconLightning}" 
+                                  Fill="White"
+                                  Width="20" Height="20"
+                                  Stretch="Uniform"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
@@ -209,28 +228,93 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Global action buttons -->
+                <!-- Search bar + Global action buttons -->
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
+                            VerticalAlignment="Center"
+                            Margin="0,0,0,0">
+                    <!-- Search Bar -->
+                    <Border Background="{DynamicResource InputBg}"
+                            BorderBrush="{DynamicResource InputBorder}"
+                            BorderThickness="1" CornerRadius="8"
+                            Height="32" Margin="0,0,18,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="10,0,2,0" IsHitTestVisible="False">
+                                <Path Data="{StaticResource IconSearch}" Fill="{DynamicResource TextMuted}" Width="13" Height="13" Stretch="Uniform"/>
+                            </TextBlock>
+                            <TextBox x:Name="SearchTextBox"
+                                     Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource TextPrimary}"
+                                     CaretBrush="{DynamicResource TextPrimary}"
+                                     Padding="4,8,10,8" FontSize="13"
+                                     VerticalAlignment="Center"
+                                     Width="220">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Tag" Value="Search services..."/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                                <Setter Property="Tag" Value="Search repositories..."/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Grid>
+                                            <ScrollViewer x:Name="PART_ContentHost"/>
+                                            <TextBlock IsHitTestVisible="False"
+                                                       Text="{TemplateBinding Tag}"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       FontSize="13"
+                                                       Margin="6,0,0,0"
+                                                       VerticalAlignment="Center"
+                                                       Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"/>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                            </TextBox>
+                        </Grid>
+                    </Border>
                     <Button Style="{StaticResource ToolbarBtn}"
                             Command="{Binding RefreshCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x21BB;" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <Path Data="{StaticResource IconRefresh}"
+                                  Fill="Gray"
+                                  Width="14" Height="14"
+                                  Margin="0,0,6,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
                             <TextBlock Text="Refresh" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource AccentBtn}"
                             Command="{Binding StartAllCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x25B6;" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <Path Data="{StaticResource IconPlay}"
+                                  Fill="{DynamicResource AccentFg}"
+                                  Width="10" Height="10"
+                                  Margin="0,0,6,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
                             <TextBlock Text="Start All" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource DangerBtn}"
                             Command="{Binding StopAllCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x25A0;" FontSize="10" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <Path Data="{StaticResource IconStop}"
+                                  Fill="{DynamicResource DangerFg}"
+                                  Width="10" Height="10"
+                                  Margin="0,0,6,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
                             <TextBlock Text="Stop All" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -244,7 +328,12 @@
                             Command="{Binding AddServiceCommand}"
                             Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="+" FontSize="16" Margin="0,0,5,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <Path Data="{StaticResource IconPlus}"
+                                  Fill="{DynamicResource AccentFg}"
+                                  Width="14" Height="14"
+                                  Margin="0,0,5,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
                             <TextBlock Text="Add Service" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -256,18 +345,21 @@
                     <!-- Theme toggle -->
                     <Button Style="{StaticResource ToolbarBtn}" Margin="0"
                             Command="{Binding ToggleThemeCommand}">
-                        <TextBlock VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="☽  Dark"/>
+                        <Path Width="20" Height="20"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Fill="Gray">
+                            <Path.Style>
+                                <Style TargetType="Path">
+                                    <Setter Property="Data" Value="{StaticResource IconDark}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsLightTheme}" Value="False">
-                                            <Setter Property="Text" Value="☼  Light"/>
+                                            <Setter Property="Data" Value="{StaticResource IconLight}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                            </Path.Style>
+                        </Path>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -294,8 +386,23 @@
                     </Border.Style>
                     <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x26A1;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" FontWeight="Bold"/>
-                            <TextBlock FontSize="12" VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconServices}"
+                                  Fill="{DynamicResource TabInactiveFg}"
+                                  Width="16" Height="16"
+                                  Margin="0,0,10,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                                <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                            <TextBlock FontSize="15" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text"       Value="Services"/>
@@ -304,7 +411,7 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedTab}" Value="0">
                                                 <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -333,8 +440,23 @@
                     </Border.Style>
                     <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="&#x1F4BB;" FontSize="12" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                            <TextBlock FontSize="12" VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconGit}"
+                                  Fill="{DynamicResource TabInactiveFg}"
+                                  Width="16" Height="16"
+                                  Margin="0,0,10,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center">
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                                <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                            <TextBlock FontSize="15" VerticalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text"       Value="Git Repos"/>
@@ -343,7 +465,7 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedTab}" Value="1">
                                                 <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="FontWeight" Value="Bold"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -403,7 +525,7 @@
                         <Style TargetType="Border">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding GitRepositories.Count}" Value="0">
+                                <DataTrigger Binding="{Binding FilteredGitRepositories.Count}" Value="0">
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -427,7 +549,7 @@
                 </Border>
 
                 <!-- Repo cards -->
-                <ItemsControl ItemsSource="{Binding GitRepositories}">
+                <ItemsControl ItemsSource="{Binding FilteredGitRepositories}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Margin="0,0,0,10"
@@ -611,7 +733,10 @@
                                                                     Command="{Binding BuildCommand}"
                                                                     Visibility="{Binding HasCsprojPath, Converter={StaticResource BoolToVis}}"
                                                                     ToolTip="Build this project">
-                                                                <TextBlock Text="🔨" FontSize="14"/>
+                                                                <Path Data="{StaticResource IconBuild}" 
+                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                      Width="14" Height="14"
+                                                                      Stretch="Uniform"/>
                                                             </Button>
                                                         </Grid>
                                                     </DataTemplate>
@@ -635,7 +760,10 @@
                                                         Width="24" Height="24"
                                                         Command="{Binding ToggleOutputCommand}"
                                                         ToolTip="Close output">
-                                                    <TextBlock Text="✕" FontSize="10"/>
+                                                    <Path Data="{StaticResource IconClose}" 
+                                                          Fill="{DynamicResource CardBtnFg}"
+                                                          Width="10" Height="10"
+                                                          Stretch="Uniform"/>
                                                 </Button>
                                             </Grid>
                                             <Border Background="{DynamicResource OutputConsoleBg}"
@@ -659,7 +787,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- Content: search bar + grouped service list (Services tab) -->
+        <!-- Content: grouped service list (Services tab) -->
         <DockPanel Grid.Row="2" LastChildFill="True">
             <DockPanel.Style>
                 <Style TargetType="DockPanel">
@@ -671,60 +799,6 @@
                     </Style.Triggers>
                 </Style>
             </DockPanel.Style>
-
-            <!-- Search / Filter bar -->
-            <Border DockPanel.Dock="Top"
-                    Background="{DynamicResource WindowBg}"
-                    BorderBrush="{DynamicResource HeaderBorder}"
-                    BorderThickness="0,0,0,1"
-                    Padding="16,10,16,10">
-                <Grid>
-                    <!-- Search box -->
-                    <Border MaxWidth="380" HorizontalAlignment="Left"
-                            Background="{DynamicResource InputBg}"
-                            BorderBrush="{DynamicResource InputBorder}"
-                            BorderThickness="1" CornerRadius="8">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12"
-                                       Foreground="{DynamicResource TextMuted}"
-                                       VerticalAlignment="Center" Margin="10,0,2,0"
-                                       IsHitTestVisible="False"/>
-                            <Grid Grid.Column="1">
-                                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="Transparent" BorderThickness="0"
-                                         FocusVisualStyle="{x:Null}"
-                                         Foreground="{DynamicResource TextPrimary}"
-                                         CaretBrush="{DynamicResource TextPrimary}"
-                                         Padding="4,8,10,8" FontSize="12"/>
-                                <TextBlock Text="Search services..."
-                                           IsHitTestVisible="False"
-                                           VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           FontSize="12" Margin="5,0,0,0">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SearchText}" Value="">
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Grid>
-                        </Grid>
-                    </Border>
-                    <!-- Service count -->
-                    <TextBlock Text="{Binding Services.Count, StringFormat='{}{0} services'}"
-                               HorizontalAlignment="Right" VerticalAlignment="Center"
-                               Foreground="{DynamicResource TextMuted}" FontSize="11"/>
-                </Grid>
-            </Border>
 
             <!-- Grouped service list -->
             <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -767,7 +841,12 @@
                                                 Padding="8,4" Margin="0,0,6,0"
                                                 Command="{Binding StartGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#x25B6;" FontSize="9" Margin="0,0,4,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                <Path Data="{StaticResource IconPlay}" 
+                                                      Fill="{DynamicResource AccentBtnFg}"
+                                                      Width="9" Height="9"
+                                                      Margin="0,0,4,0"
+                                                      Stretch="Uniform"
+                                                      VerticalAlignment="Center"/>
                                                 <TextBlock Text="Start" FontSize="11" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
@@ -775,7 +854,12 @@
                                                 Padding="8,4" Margin="0"
                                                 Command="{Binding StopGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#x25A0;" FontSize="9" Margin="0,0,4,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                <Path Data="{StaticResource IconStop}" 
+                                                      Fill="{DynamicResource DangerBtnFg}"
+                                                      Width="9" Height="9"
+                                                      Margin="0,0,4,0"
+                                                      Stretch="Uniform"
+                                                      VerticalAlignment="Center"/>
                                                 <TextBlock Text="Stop" FontSize="11" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
@@ -948,19 +1032,28 @@
                                                                 Command="{Binding StartCommand}"
                                                                 IsEnabled="{Binding CanStart}"
                                                                 ToolTip="Start">
-                                                            <TextBlock Text="&#x25B6;" FontSize="13" FontWeight="Bold"/>
+                                                            <Path Data="{StaticResource IconPlay}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="13" Height="13"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding StopCommand}"
                                                                 IsEnabled="{Binding CanStop}"
                                                                 ToolTip="Stop">
-                                                            <TextBlock Text="&#x25A0;" FontSize="13" FontWeight="Bold"/>
+                                                            <Path Data="{StaticResource IconStop}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="13" Height="13"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding RestartCommand}"
                                                                 IsEnabled="{Binding CanRestart}"
                                                                 ToolTip="Restart">
-                                                            <TextBlock Text="&#x21BB;" FontSize="15" FontWeight="Bold"/>
+                                                            <Path Data="{StaticResource IconRefresh}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="15" Height="15"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
@@ -975,7 +1068,10 @@
                                                                 Command="{Binding UninstallCommand}"
                                                                 IsEnabled="{Binding CanUninstall}"
                                                                 ToolTip="Uninstall Windows Service">
-                                                            <TextBlock Text="✕" FontSize="13"/>
+                                                            <Path Data="{StaticResource IconClose}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="13" Height="13"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
@@ -984,7 +1080,10 @@
                                                                 Command="{Binding BuildCommand}"
                                                                 Visibility="{Binding HasCsprojPath, Converter={StaticResource BoolToVis}}"
                                                                 ToolTip="Build (dotnet build)">
-                                                            <TextBlock Text="🔨" FontSize="15"/>
+                                                            <Path Data="{StaticResource IconBuild}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="15" Height="15"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
@@ -994,19 +1093,28 @@
                                                                 Command="{Binding OpenInBrowserCommand}"
                                                                 Visibility="{Binding HasBrowserUrl, Converter={StaticResource BoolToVis}}"
                                                                 ToolTip="{Binding BrowserUrl}">
-                                                            <TextBlock Text="↗" FontSize="15"/>
+                                                            <Path Data="{StaticResource IconExternalLink}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="15" Height="15"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding OpenDirectoryCommand}"
                                                                 Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
                                                                 ToolTip="{Binding Config.WorkingDirectory}">
-                                                            <TextBlock Text="⊡" FontSize="15"/>
+                                                            <Path Data="{StaticResource IconFolder}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="15" Height="15"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding OpenTerminalCommand}"
                                                                 Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
                                                                 ToolTip="Open Terminal Here">
-                                                            <TextBlock Text="&gt;_" FontSize="13"/>
+                                                            <Path Data="{StaticResource IconTerminal}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="13" Height="13"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
@@ -1014,12 +1122,18 @@
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding EditCommand}"
                                                                 ToolTip="Edit Configuration">
-                                                            <TextBlock Text="✏" FontSize="14"/>
+                                                            <Path Data="{StaticResource IconPencil}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="14" Height="14"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                         <Button Style="{StaticResource CardBtn}"
                                                                 Command="{Binding DeleteCommand}"
                                                                 ToolTip="Remove Service">
-                                                            <TextBlock Text="⊗" FontSize="14"/>
+                                                            <Path Data="{StaticResource IconDelete}" 
+                                                                  Fill="{DynamicResource CardBtnFg}"
+                                                                  Width="14" Height="14"
+                                                                  Stretch="Uniform"/>
                                                         </Button>
                                                     </StackPanel>
                                                 </Grid>

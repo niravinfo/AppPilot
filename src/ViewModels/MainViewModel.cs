@@ -53,8 +53,12 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private string _searchText = string.Empty;
 
+
     [ObservableProperty]
     private ObservableCollection<ServiceGroupViewModel> _filteredGroups = new();
+
+    [ObservableProperty]
+    private ObservableCollection<GitRepositoryViewModel> _filteredGitRepositories = new();
 
     [ObservableProperty]
     private int _selectedTab;
@@ -129,6 +133,7 @@ public partial class MainViewModel : ViewModelBase
         _ = Task.WhenAll(GitRepositories.Select(r => r.InitializeAsync()));
 
         RebuildGroups();
+        RebuildFilteredGitRepositories();
         StatusText = $"Loaded {_serviceConfigs.Count} services";
     }
 
@@ -252,6 +257,14 @@ public partial class MainViewModel : ViewModelBase
         await service.StartAsync();
     }
 
+    public event Action? FocusSearchRequested;
+
+    [RelayCommand]
+    public void FocusSearch()
+    {
+        FocusSearchRequested?.Invoke();
+    }
+
     public async Task StopServiceAsync(ServiceItemViewModel service)
     {
         await service.StopAsync();
@@ -278,7 +291,16 @@ public partial class MainViewModel : ViewModelBase
         RebuildFilteredGroups();
     }
 
-    partial void OnSearchTextChanged(string value) => RebuildFilteredGroups();
+    partial void OnSearchTextChanged(string value)
+    {
+        RebuildFilteredGroups();
+        RebuildFilteredGitRepositories();
+    }
+
+    partial void OnSelectedTabChanged(int value)
+    {
+        RebuildFilteredGitRepositories();
+    }
 
     private void RebuildFilteredGroups()
     {
@@ -305,6 +327,22 @@ public partial class MainViewModel : ViewModelBase
                 group.Items.Add(svc);
             FilteredGroups.Add(group);
         }
+
+        RebuildFilteredGitRepositories();
+
+    }
+
+    private void RebuildFilteredGitRepositories()
+    {
+        FilteredGitRepositories.Clear();
+        if (SelectedTab != 1)
+            return;
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? GitRepositories.AsEnumerable()
+            : GitRepositories.Where(r =>
+                r.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var repo in filtered)
+            FilteredGitRepositories.Add(repo);
     }
 
     [RelayCommand]

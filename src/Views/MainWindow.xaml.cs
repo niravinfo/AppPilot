@@ -11,5 +11,9 @@ public partial class MainWindow : Window
         DataContext = viewModel;
         Loaded += (s, e) => viewModel.Initialize();
         Closing += (s, e) => viewModel.Shutdown();
+        viewModel.FocusSearchRequested += () =>
+        {
+            SearchTextBox.Focus();
+        };
     }
 }

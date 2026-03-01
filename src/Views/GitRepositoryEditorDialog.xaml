@@ -242,7 +242,10 @@
                         <Button Grid.Column="2" Style="{StaticResource FormBtn}"
                                 Command="{Binding BrowseLocalPathCommand}"
                                 Padding="10,8" ToolTip="Browse for folder">
-                            <TextBlock Text="📂" FontSize="13"/>
+                            <Path Data="{StaticResource IconFolder}" 
+                                  Fill="{DynamicResource BtnFg}"
+                                  Width="13" Height="13"
+                                  Stretch="Uniform"/>
                         </Button>
                     </Grid>
                 </StackPanel>
@@ -262,7 +265,10 @@
                         <Button Grid.Column="2" Style="{StaticResource FormBtn}"
                                 Command="{Binding BrowseSolutionPathCommand}"
                                 Padding="10,8" ToolTip="Browse for solution file">
-                            <TextBlock Text="📂" FontSize="13"/>
+                            <Path Data="{StaticResource IconFolder}" 
+                                  Fill="{DynamicResource BtnFg}"
+                                  Width="13" Height="13"
+                                  Stretch="Uniform"/>
                         </Button>
                     </Grid>
                     <TextBlock Text="Path to .sln or .slnx file for building the solution"
@@ -310,7 +316,12 @@
                 <Button Style="{StaticResource SaveBtn}"
                         Click="OnSave">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="✓" FontSize="12" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                        <Path Data="{StaticResource IconCheck}" 
+                              Fill="{DynamicResource BtnFg}"
+                              Width="12" Height="12"
+                              Margin="0,0,7,0"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding SaveButtonText}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>
