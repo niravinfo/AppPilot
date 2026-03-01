@@ -479,4 +479,11 @@ public partial class MainViewModel : ViewModelBase
     {
         _pollingTimer.Stop();
     }
+
+    [RelayCommand]
+    private void CloseApp()
+    {
+        Shutdown();
+        System.Windows.Application.Current.Shutdown();
+    }
 }

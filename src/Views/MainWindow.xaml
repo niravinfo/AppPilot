@@ -16,6 +16,7 @@
 
     <Window.InputBindings>
         <KeyBinding Key="P" Modifiers="Control" Command="{Binding FocusSearchCommand}"/>
+        <KeyBinding Key="W" Modifiers="Control" Command="{Binding CloseAppCommand}"/>
     </Window.InputBindings>
 
     <Window.Resources>
