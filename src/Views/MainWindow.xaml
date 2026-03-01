@@ -234,55 +234,6 @@ M12,18A3,3 0 1,0 12,12A3,3 0 0,0 12,18ZM6,6A3,3 0 1,0 6,0A3,3 0 0,0 6,6ZM18,6A3,
                             HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Margin="0,0,0,0">
-                    <!-- Search Bar -->
-                    <Border Background="{DynamicResource InputBg}"
-                            BorderBrush="{DynamicResource InputBorder}"
-                            BorderThickness="1" CornerRadius="8"
-                            Height="32" Margin="0,0,18,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="10,0,2,0" IsHitTestVisible="False">
-                                <Path Data="{StaticResource IconSearch}" Fill="{DynamicResource TextMuted}" Width="13" Height="13" Stretch="Uniform"/>
-                            </TextBlock>
-                            <TextBox x:Name="SearchTextBox"
-                                     Grid.Column="1"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="Transparent" BorderThickness="0"
-                                     Foreground="{DynamicResource TextPrimary}"
-                                     CaretBrush="{DynamicResource TextPrimary}"
-                                     Padding="4,8,10,8" FontSize="13"
-                                     VerticalAlignment="Center"
-                                     Width="220">
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Tag" Value="Search services..."/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
-                                                <Setter Property="Tag" Value="Search repositories..."/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBox.Style>
-                                <TextBox.Template>
-                                    <ControlTemplate TargetType="TextBox">
-                                        <Grid>
-                                            <ScrollViewer x:Name="PART_ContentHost"/>
-                                            <TextBlock IsHitTestVisible="False"
-                                                       Text="{TemplateBinding Tag}"
-                                                       Foreground="{DynamicResource TextMuted}"
-                                                       FontSize="13"
-                                                       Margin="6,0,0,0"
-                                                       VerticalAlignment="Center"
-                                                       Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource BoolToVis}, ConverterParameter=Inverse}"/>
-                                        </Grid>
-                                    </ControlTemplate>
-                                </TextBox.Template>
-                            </TextBox>
-                        </Grid>
-                    </Border>
                     <Button Style="{StaticResource ToolbarBtn}"
                             Command="{Binding RefreshCommand}">
                         <StackPanel Orientation="Horizontal">
@@ -371,116 +322,180 @@ M12,18A3,3 0 1,0 12,12A3,3 0 0,0 12,18ZM6,6A3,3 0 1,0 6,0A3,3 0 0,0 6,6ZM18,6A3,
                 Background="{DynamicResource TabNavBg}"
                 BorderBrush="{DynamicResource HeaderBorder}"
                 BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" Margin="14,0">
-
-                <!-- Services tab -->
-                <Border BorderThickness="0,0,0,3" Padding="2,0">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="BorderBrush" Value="Transparent"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedTab}" Value="0">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource IconServices}"
-                                  Fill="{DynamicResource TabInactiveFg}"
-                                  Width="16" Height="16"
-                                  Margin="0,0,10,0"
-                                  Stretch="Uniform"
-                                  VerticalAlignment="Center">
-                                <Path.Style>
-                                    <Style TargetType="Path">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedTab}" Value="0">
-                                                <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Path.Style>
-                            </Path>
-                            <TextBlock FontSize="15" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text"       Value="Services"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource TabInactiveFg}"/>
-                                        <Setter Property="FontWeight" Value="Normal"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedTab}" Value="0">
-                                                <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
-                                    Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Services.Count}"
-                                           FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
-                            </Border>
-                        </StackPanel>
-                    </Button>
+            <Grid Margin="14,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <!-- Services tab -->
+                    <Border BorderThickness="0,0,0,3" Padding="2,0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconServices}"
+                                      Fill="{DynamicResource TabInactiveFg}"
+                                      Width="16" Height="16"
+                                      Margin="0,0,10,0"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                                    <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                                <TextBlock FontSize="15" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="Services"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource TabInactiveFg}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
+                                        Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Services.Count}"
+                                               FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                    <!-- Git Repos tab -->
+                    <Border BorderThickness="0,0,0,3" Padding="2,0" Margin="6,0,0,0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <Path Data="{StaticResource IconGit}"
+                                      Fill="{DynamicResource TabInactiveFg}"
+                                      Width="16" Height="16"
+                                      Margin="0,0,10,0"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                                    <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                                <TextBlock FontSize="15" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text"       Value="Git Repos"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource TabInactiveFg}"/>
+                                            <Setter Property="FontWeight" Value="Normal"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
+                                        Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding GitRepositories.Count}"
+                                               FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </StackPanel>
+                <!-- Search Bar at right end -->
+                <Border Grid.Column="1" Background="{DynamicResource InputBg}"
+                        BorderBrush="{DynamicResource InputBorder}"
+                        BorderThickness="1" CornerRadius="8"
+                        Height="32" Margin="0,0,18,0"
+                        VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center" Margin="10,0,2,0" IsHitTestVisible="False">
+                            <Path Data="{StaticResource IconSearch}" Fill="{DynamicResource TextMuted}" Width="13" Height="13" Stretch="Uniform"/>
+                        </TextBlock>
+                        <TextBox x:Name="SearchTextBox"
+                                 Grid.Column="1"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Background="Transparent" BorderThickness="0"
+                                 Foreground="{DynamicResource TextPrimary}"
+                                 CaretBrush="{DynamicResource TextPrimary}"
+                                 Padding="4,8,10,8" FontSize="13"
+                                 VerticalAlignment="Center"
+                                 Width="220">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Tag" Value="Search Services"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                            <Setter Property="Tag" Value="Search Git Repos"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                            <TextBox.Template>
+                                <ControlTemplate TargetType="TextBox">
+                                    <Grid>
+                                        <ScrollViewer x:Name="PART_ContentHost"/>
+                                        <TextBlock IsHitTestVisible="False"
+                                                   Text="{TemplateBinding Tag}"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   FontSize="13"
+                                                   Margin="6,0,0,0"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </ControlTemplate>
+                            </TextBox.Template>
+                        </TextBox>
+                    </Grid>
                 </Border>
-
-                <!-- Git Repos tab -->
-                <Border BorderThickness="0,0,0,3" Padding="2,0" Margin="6,0,0,0">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="BorderBrush" Value="Transparent"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedTab}" Value="1">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource IconGit}"
-                                  Fill="{DynamicResource TabInactiveFg}"
-                                  Width="16" Height="16"
-                                  Margin="0,0,10,0"
-                                  Stretch="Uniform"
-                                  VerticalAlignment="Center">
-                                <Path.Style>
-                                    <Style TargetType="Path">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
-                                                <Setter Property="Fill" Value="{DynamicResource TabActiveFg}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Path.Style>
-                            </Path>
-                            <TextBlock FontSize="15" VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text"       Value="Git Repos"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource TabInactiveFg}"/>
-                                        <Setter Property="FontWeight" Value="Normal"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedTab}" Value="1">
-                                                <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                <Setter Property="FontWeight" Value="Bold"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <Border Margin="7,0,0,0" Padding="6,2" CornerRadius="10"
-                                    Background="{DynamicResource TypeBadgeBg}" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding GitRepositories.Count}"
-                                           FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TypeBadgeFg}"/>
-                            </Border>
-                        </StackPanel>
-                    </Button>
-                </Border>
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- ══════════ Git Repos tab (Row 2) ══════════ -->
