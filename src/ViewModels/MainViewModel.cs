@@ -63,6 +63,7 @@ public partial class MainViewModel : ViewModelBase
     private ObservableCollection<GitRepositoryViewModel> _gitRepositories = new();
 
     private List<ManagedServiceConfig> _serviceConfigs = new();
+    private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
 
     public MainViewModel(
         IConfigurationService configService,
@@ -101,6 +102,7 @@ public partial class MainViewModel : ViewModelBase
     {
         var settings = _configService.Load();
         _serviceConfigs = settings.Services;
+        _gitRepositoryConfigs = settings.GitRepositories;
 
         if (settings.AppPilot.PollingIntervalMs > 0)
             _pollingTimer.Interval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
@@ -111,9 +113,9 @@ public partial class MainViewModel : ViewModelBase
 
         // Load Git repositories and link services
         GitRepositories.Clear();
-        foreach (var repoConfig in settings.GitRepositories)
+        foreach (var repoConfig in _gitRepositoryConfigs)
         {
-            var repoVm = new GitRepositoryViewModel(repoConfig, _buildService, _gitService, _logger);
+            var repoVm = new GitRepositoryViewModel(repoConfig, _buildService, _gitService, _logger, this);
             foreach (var name in repoConfig.LinkedServiceNames)
             {
                 var svc = Services.FirstOrDefault(s => s.Config.Name == name);
@@ -348,7 +350,62 @@ public partial class MainViewModel : ViewModelBase
     {
         var settings = _configService.Load();
         settings.Services = _serviceConfigs;
+        settings.GitRepositories = _gitRepositoryConfigs;
         _configService.Save(settings);
+    }
+
+    [RelayCommand]
+    private void AddGitRepository()
+    {
+        var editorVm = new GitRepositoryEditorViewModel();
+        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true) return;
+
+        var config = editorVm.ToConfig();
+        _gitRepositoryConfigs.Add(config);
+        var repoVm = new GitRepositoryViewModel(config, _buildService, _gitService, _logger, this);
+        
+        foreach (var name in config.LinkedServiceNames)
+        {
+            var svc = Services.FirstOrDefault(s => s.Config.Name == name);
+            if (svc is not null)
+                repoVm.LinkedServices.Add(svc);
+        }
+        
+        GitRepositories.Add(repoVm);
+        _ = repoVm.InitializeAsync();
+        SaveConfiguration();
+        StatusText = $"Repository '{config.DisplayName}' added";
+    }
+
+    public void EditGitRepository(GitRepositoryViewModel repoVm)
+    {
+        var editorVm = new GitRepositoryEditorViewModel(repoVm.Config);
+        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true) return;
+
+        editorVm.ApplyTo(repoVm.Config);
+        
+        repoVm.LinkedServices.Clear();
+        foreach (var name in repoVm.Config.LinkedServiceNames)
+        {
+            var svc = Services.FirstOrDefault(s => s.Config.Name == name);
+            if (svc is not null)
+                repoVm.LinkedServices.Add(svc);
+        }
+        
+        SaveConfiguration();
+        StatusText = $"Repository '{repoVm.Config.DisplayName}' updated";
+    }
+
+    public void DeleteGitRepository(GitRepositoryViewModel repoVm)
+    {
+        if (!_dialogService.Confirm(
+            $"Remove '{repoVm.Name}' from AppPilot?\n\nThis will not delete the local repository.",
+            "Remove Repository")) return;
+
+        _gitRepositoryConfigs.Remove(repoVm.Config);
+        GitRepositories.Remove(repoVm);
+        SaveConfiguration();
+        StatusText = $"Repository '{repoVm.Name}' removed";
     }
 
     [RelayCommand]

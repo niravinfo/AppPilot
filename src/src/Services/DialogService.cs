@@ -15,6 +15,15 @@ public class DialogService : IDialogService
         return dialog.ShowDialog();
     }
 
+    public bool? ShowGitRepositoryEditor(GitRepositoryEditorViewModel vm)
+    {
+        var dialog = new GitRepositoryEditorDialog(vm)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        return dialog.ShowDialog();
+    }
+
     public bool Confirm(string message, string title = "Confirm") =>
         MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
 }

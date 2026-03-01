@@ -376,6 +376,27 @@
                 </Style>
             </ScrollViewer.Style>
             <StackPanel>
+                <!-- Header with Add button -->
+                <Grid Margin="0,0,0,12">
+                    <TextBlock Text="Git Repositories"
+                               FontSize="16" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center"/>
+                    <Button HorizontalAlignment="Right"
+                            Style="{StaticResource AccentBtn}"
+                            Command="{Binding AddGitRepositoryCommand}"
+                            Padding="12,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconPlus}"
+                                  Fill="{DynamicResource AccentFg}"
+                                  Width="14" Height="14"
+                                  Stretch="Uniform"
+                                  Margin="0,0,6,0"/>
+                            <TextBlock Text="Add Repository" FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
                 <!-- Empty state -->
                 <Border Padding="40,60">
                     <Border.Style>
@@ -389,13 +410,17 @@
                         </Style>
                     </Border.Style>
                     <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="⎇" FontSize="36" HorizontalAlignment="Center"
-                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,12"/>
+                        <Path Data="{StaticResource IconGit}"
+                              Fill="{DynamicResource TextMuted}"
+                              Width="48" Height="48"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              Margin="0,0,0,12"/>
                         <TextBlock Text="No Git repositories configured"
                                    FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="Add a GitRepositories entry to appsettings.Local.json"
+                        <TextBlock Text="Click the button above to add a repository"
                                    FontSize="12" Foreground="{DynamicResource TextMuted}"
                                    HorizontalAlignment="Center" Margin="0,6,0,0"/>
                     </StackPanel>
@@ -478,11 +503,34 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
+                                            <Button Style="{StaticResource CardBtn}"
+                                                    Width="32" Height="32"
+                                                    Command="{Binding EditCommand}"
+                                                    ToolTip="Edit repository">
+                                                <Path Data="{StaticResource IconPencil}"
+                                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      Width="14" Height="14"
+                                                      Stretch="Uniform"/>
+                                            </Button>
+                                            <Button Style="{StaticResource CardBtn}"
+                                                    Width="32" Height="32"
+                                                    Command="{Binding DeleteCommand}"
+                                                    ToolTip="Delete repository"
+                                                    Margin="4,0,8,0">
+                                                <Path Data="{StaticResource IconDelete}"
+                                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      Width="14" Height="14"
+                                                      Stretch="Uniform"/>
+                                            </Button>
                                             <Button Style="{StaticResource ToolbarBtn}"
                                                     Padding="10,6" Margin="0,0,8,0"
                                                     Command="{Binding PullCommand}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="↓" FontSize="14" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                    <Path Data="{StaticResource IconDownload}"
+                                                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                          Width="12" Height="12"
+                                                          Stretch="Uniform"
+                                                          Margin="0,0,5,0"/>
                                                     <TextBlock Text="Pull" FontSize="12" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Button>
@@ -491,15 +539,22 @@
                                                     Command="{Binding BuildSolutionCommand}"
                                                     Visibility="{Binding HasSolution, Converter={StaticResource BoolToVis}}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="🔨" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Build Solution" FontSize="12" VerticalAlignment="Center"/>
+                                                    <Path Data="{StaticResource IconBuild}"
+                                                          Fill="{DynamicResource AccentFg}"
+                                                          Width="12" Height="12"
+                                                          Stretch="Uniform"
+                                                          Margin="0,0,5,0"/>
+                                                    <TextBlock Text="Build" FontSize="12" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Button>
                                             <Button Style="{StaticResource CardBtn}"
                                                     Command="{Binding ToggleOutputCommand}"
                                                     Visibility="{Binding IsOutputVisible, Converter={StaticResource BoolToVis}}"
                                                     ToolTip="Hide output">
-                                                <TextBlock Text="▼" FontSize="10"/>
+                                                <Path Data="{StaticResource IconClose}"
+                                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                                      Width="10" Height="10"
+                                                      Stretch="Uniform"/>
                                             </Button>
                                         </StackPanel>
                                     </Grid>

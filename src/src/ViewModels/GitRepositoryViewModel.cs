@@ -19,6 +19,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
     private readonly IBuildService _buildService;
     private readonly IGitService _gitService;
     private readonly ILogger _logger;
+    private readonly MainViewModel _mainViewModel;
 
     public GitRepositoryConfig Config { get; }
 
@@ -56,12 +57,14 @@ public partial class GitRepositoryViewModel : ViewModelBase
         GitRepositoryConfig config,
         IBuildService buildService,
         IGitService gitService,
-        ILogger logger)
+        ILogger logger,
+        MainViewModel mainViewModel)
     {
         Config = config;
         _buildService = buildService;
         _gitService = gitService;
         _logger = logger;
+        _mainViewModel = mainViewModel;
 
         LinkedServices.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasLinkedServices));
     }
@@ -175,6 +178,16 @@ public partial class GitRepositoryViewModel : ViewModelBase
 
     [RelayCommand]
     private void ToggleOutput() => IsOutputVisible = !IsOutputVisible;
+
+    // ── Edit ─────────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void Edit() => _mainViewModel.EditGitRepository(this);
+
+    // ── Delete ───────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void Delete() => _mainViewModel.DeleteGitRepository(this);
 
     // ── CanExecute helpers ────────────────────────────────────────────────────
 

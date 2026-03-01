@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppPilot</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  darkMode: ['attribute', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"IBM Plex Mono"', 'monospace'],
+      }
+    }
+  }
+}
+</script>
+<style>
+/* ─── CSS Variables ─────────────────────────────── */
+[data-theme="dark"] {
+  --bg:        #0b0d12;
+  --panel:     #111318;
+  --card:      #15171e;
+  --border:    #1f2230;
+  --border-hi: #2d3045;
+  --txt-1:     #e6e8f0;
+  --txt-2:     #8890a8;
+  --txt-3:     #454d66;
+  --hover:     #1c1f2b;
+}
+[data-theme="light"] {
+  --bg:        #f2f4f8;
+  --panel:     #ffffff;
+  --card:      #ffffff;
+  --border:    #e4e7f0;
+  --border-hi: #d0d4e4;
+  --txt-1:     #111420;
+  --txt-2:     #555e7a;
+  --txt-3:     #9aa0b8;
+  --hover:     #f7f8fc;
+}
+
+/* ─── Base ──────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:"Plus Jakarta Sans",sans-serif;
+  background:var(--bg);
+  color:var(--txt-1);
+  font-size:13px;
+  line-height:1.5;
+  transition:background .25s,color .25s;
+}
+
+/* ─── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:99px}
+
+/* ─── Typography ────────────────────────────────── */
+.label{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--txt-3)}
+
+/* ─── Layout shells ─────────────────────────────── */
+.titlebar{
+  display:flex;align-items:center;justify-content:space-between;
+  height:44px;padding:0 16px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  -webkit-app-region:drag;
+  user-select:none;
+  flex-shrink:0;
+}
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  height:50px;padding:0 20px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.main{flex:1;overflow-y:auto;background:var(--bg);padding:20px}
+
+/* ─── Buttons ───────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:0 13px;height:32px;border-radius:8px;
+  font-family:inherit;font-size:12.5px;font-weight:600;
+  border:1px solid var(--border-hi);
+  background:var(--card);
+  color:var(--txt-2);
+  cursor:pointer;
+  transition:all .15s;
+  -webkit-app-region:no-drag;
+}
+.btn:hover{background:var(--hover);color:var(--txt-1);border-color:var(--border-hi)}
+.btn svg{flex-shrink:0}
+
+.btn-green{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#10b981}
+.btn-green:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.4);color:#10b981}
+.btn-red{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.22);color:#ef4444}
+.btn-red:hover{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.35);color:#ef4444}
+.btn-primary{
+  background:linear-gradient(135deg,#5865f2,#7c3aed);
+  border-color:transparent;color:#fff;
+  box-shadow:0 2px 10px rgba(88,101,242,.3);
+}
+.btn-primary:hover{box-shadow:0 4px 18px rgba(88,101,242,.45);transform:translateY(-1px)}
+
+/* ─── Icon buttons ──────────────────────────────── */
+.icon-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:7px;
+  background:transparent;border:1px solid transparent;
+  color:var(--txt-3);cursor:pointer;
+  transition:all .15s;position:relative;
+}
+.icon-btn:hover{background:var(--hover);border-color:var(--border-hi);color:var(--txt-2)}
+.icon-btn.start:hover{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#10b981}
+.icon-btn.stop:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#ef4444}
+.icon-btn.restart:hover{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.3);color:#facc15}
+.icon-btn.danger:hover{background:rgba(239,68,68,.09);border-color:rgba(239,68,68,.2);color:#ef4444}
+
+/* Tooltip */
+.icon-btn[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1e2130;border:1px solid var(--border-hi);
+  color:var(--txt-1);font-size:11px;font-family:inherit;
+  padding:3px 8px;border-radius:6px;white-space:nowrap;
+  pointer-events:none;opacity:0;transition:opacity .12s;z-index:100;
+}
+.icon-btn[data-tip]:hover::after{opacity:1}
+
+/* ─── Tabs ──────────────────────────────────────── */
+.tab{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:0 12px;height:32px;border-radius:8px;
+  font-size:12.5px;font-weight:600;
+  color:var(--txt-3);cursor:pointer;
+  transition:all .15s;border:1px solid transparent;
+}
+.tab:hover{color:var(--txt-2);background:var(--hover)}
+.tab.active{color:var(--txt-1);background:var(--card);border-color:var(--border-hi)}
+
+/* ─── Nav item ──────────────────────────────────── */
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 12px;border-radius:9px;
+  font-size:12.5px;font-weight:500;
+  color:var(--txt-2);cursor:pointer;
+  transition:all .15s;
+}
+.nav-item:hover{background:var(--hover);color:var(--txt-1)}
+.nav-item.active{background:var(--hover);color:var(--txt-1)}
+
+/* ─── Status dot ────────────────────────────────── */
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2)}
+.dot-gray{background:var(--txt-3)}
+.dot-red{background:#ef4444}
+@keyframes pulse-ring{
+  0%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}
+  70%{box-shadow:0 0 0 5px rgba(16,185,129,0)}
+  100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}
+}
+.dot-pulse{animation:pulse-ring 2s ease infinite}
+
+/* ─── Badge ─────────────────────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:99px;
+  font-size:11px;font-weight:600;
+}
+.badge-running{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.2)}
+.badge-stopped{background:var(--hover);color:var(--txt-3);border:1px solid var(--border)}
+
+/* ─── Type badges ───────────────────────────────── */
+.type-tag{
+  display:inline-block;padding:1.5px 7px;border-radius:5px;
+  font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;
+}
+.tag-grpc    {background:rgba(99,102,241,.12);color:#818cf8;border:1px solid rgba(99,102,241,.2)}
+.tag-webapi  {background:rgba(6,182,212,.1);  color:#22d3ee;border:1px solid rgba(6,182,212,.18)}
+.tag-worker  {background:rgba(245,158,11,.1); color:#f59e0b;border:1px solid rgba(245,158,11,.18)}
+.tag-unknown {background:var(--hover);        color:var(--txt-3);border:1px solid var(--border)}
+
+/* ─── Service Card ──────────────────────────────── */
+.scard{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+  position:relative;overflow:hidden;
+}
+.scard:hover{
+  border-color:var(--border-hi);
+  box-shadow:0 4px 24px rgba(0,0,0,.15);
+  transform:translateY(-1px);
+}
+.scard::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  border-radius:0;
+  transition:opacity .2s;
+}
+.scard.running::before{background:linear-gradient(to bottom,#10b981,#059669)}
+.scard.stopped::before{background:var(--border);opacity:.5}
+
+/* card left accent color by service type */
+.scard.type-grpc::before   {background:linear-gradient(to bottom,#818cf8,#6366f1)}
+.scard.type-webapi::before {background:linear-gradient(to bottom,#22d3ee,#0ea5e9)}
+.scard.type-worker::before {background:linear-gradient(to bottom,#f59e0b,#f97316)}
+
+/* running state tint */
+.scard.running{border-color:rgba(16,185,129,.2)}
+[data-theme="light"] .scard.running{border-color:rgba(16,185,129,.3)}
+
+/* ─── Group header ──────────────────────────────── */
+.group-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 4px 10px;
+  margin-bottom:4px;
+}
+.group-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+
+/* ─── Stat card ─────────────────────────────────── */
+.stat-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;
+}
+
+/* ─── Search ─────────────────────────────────────── */
+.search-box{
+  display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:0 12px;height:32px;
+  transition:border-color .15s;
+}
+.search-box:focus-within{border-color:var(--border-hi)}
+.search-box input{
+  background:none;border:none;outline:none;
+  color:var(--txt-1);font-family:inherit;font-size:12.5px;
+  width:180px;
+}
+.search-box input::placeholder{color:var(--txt-3)}
+
+/* ─── Theme toggle ──────────────────────────────── */
+.theme-pill{
+  display:flex;align-items:center;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:3px;gap:2px;
+}
+.theme-opt{
+  width:26px;height:26px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .15s;
+  border:none;background:transparent;color:var(--txt-3);
+}
+.theme-opt.on{background:var(--hover);color:var(--txt-1)}
+
+/* ─── Input (modal) ─────────────────────────────── */
+.inp{
+  width:100%;background:var(--hover);
+  border:1px solid var(--border);border-radius:8px;
+  padding:7px 11px;font-family:inherit;font-size:12.5px;
+  color:var(--txt-1);outline:none;transition:border-color .15s;
+}
+.inp:focus{border-color:#5865f2}
+.inp::placeholder{color:var(--txt-3)}
+select.inp{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23454d66' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+}
+
+/* ─── Modal ─────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:200;
+}
+.modal-overlay.open{display:flex}
+.modal-box{
+  background:var(--panel);border:1px solid var(--border-hi);
+  border-radius:16px;width:480px;max-height:88vh;
+  display:flex;flex-direction:column;
+  box-shadow:0 32px 80px rgba(0,0,0,.55);
+  animation:modalIn .2s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.97) translateY(8px)}to{opacity:1;transform:none}}
+
+/* ─── Type selector cards (modal) ───────────────── */
+.type-card{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;padding:12px 8px;border-radius:10px;
+  border:1px solid var(--border);background:var(--card);
+  cursor:pointer;transition:all .15s;font-size:12px;font-weight:600;color:var(--txt-3);
+}
+.type-card:hover{border-color:var(--border-hi);color:var(--txt-2)}
+.type-card.sel-webapi{background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.3);color:#22d3ee}
+.type-card.sel-grpc  {background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.3);color:#818cf8}
+.type-card.sel-worker{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);color:#f59e0b}
+
+/* ─── Divider ────────────────────────────────────── */
+.vdiv{width:1px;height:16px;background:var(--border);flex-shrink:0}
+
+/* ─── Git repo card ─────────────────────────────── */
+.repo-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+}
+.terminal{
+  background:var(--bg);border-top:1px solid var(--border);
+  padding:14px 16px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;
+}
+
+/* ─── Log view ──────────────────────────────────── */
+.log-line{padding:3px 0;display:flex;gap:12px;align-items:baseline}
+.log-time{color:var(--txt-3);font-family:"IBM Plex Mono",monospace;font-size:11px;flex-shrink:0}
+.log-lvl{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;flex-shrink:0;width:36px}
+.log-msg{font-size:12px;color:var(--txt-2)}
+.log-info .log-lvl{color:#22d3ee}
+.log-warn .log-lvl{color:#f59e0b}
+.log-error .log-lvl{color:#ef4444}
+.log-debug .log-lvl{color:var(--txt-3)}
+
+/* ─── Animations ─────────────────────────────────── */
+@keyframes fadeSlide{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
+}
+.anim-1{animation:fadeSlide .28s ease both}
+.anim-2{animation:fadeSlide .28s .06s ease both}
+.anim-3{animation:fadeSlide .28s .12s ease both}
+.anim-4{animation:fadeSlide .28s .18s ease both}
+
+/* ─── Win buttons ────────────────────────────────── */
+.winbtn{
+  width:12px;height:12px;border-radius:50%;
+  border:none;cursor:pointer;transition:opacity .15s;
+}
+.winbtn:hover{opacity:.8}
+</style>
+</head>
+<body class="flex flex-col h-screen">
+
+<!-- ══════════════════════════════════════════
+     TITLE BAR
+══════════════════════════════════════════ -->
+<div class="titlebar">
+  <!-- Logo -->
+  <div class="flex items-center gap-3" style="-webkit-app-region:no-drag">
+    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style="background:linear-gradient(135deg,#5865f2,#7c3aed)">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </div>
+    <div class="flex flex-col leading-none">
+      <span style="font-size:13px;font-weight:700;color:var(--txt-1);letter-spacing:-.2px">AppPilot</span>
+      <span style="font-size:10px;color:var(--txt-3);font-family:'IBM Plex Mono'">Local Service Manager</span>
+    </div>
+  </div>
+
+  <!-- Draggable center -->
+  <div class="flex-1" style="-webkit-app-region:drag"></div>
+
+  <!-- Window controls -->
+  <div class="flex items-center gap-1.5" style="-webkit-app-region:no-drag">
+    <button class="winbtn" style="background:#f59e0b" title="Minimize"></button>
+    <button class="winbtn" style="background:#10b981" title="Maximize"></button>
+    <button class="winbtn" style="background:#ef4444" title="Close"></button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TOOLBAR
+══════════════════════════════════════════ -->
+<div class="toolbar">
+  <!-- Tabs -->
+  <div class="flex items-center gap-1">
+    <button class="tab active" id="tab-services" onclick="switchView('services')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Services
+      <span style="font-size:10.5px;padding:0 5px;border-radius:4px;background:var(--hover);color:var(--txt-3);font-family:'IBM Plex Mono'" id="svc-count">3</span>
+    </button>
+    <button class="tab" id="tab-repos" onclick="switchView('repos')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v2c0 .6-.4 1-1 1H7c-.6 0-1-.4-1-1V9"/><line x1="12" y1="15" x2="12" y2="9"/></svg>
+      Git Repos
+      <span style="font-size:10.5px;padding:0 5px;border-radius:4px;background:var(--hover);color:var(--txt-3);font-family:'IBM Plex Mono'">1</span>
+    </button>
+    <button class="tab" id="tab-logs" onclick="switchView('logs')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      Logs
+    </button>
+  </div>
+
+  <!-- Right controls -->
+  <div class="flex items-center gap-2">
+    <!-- Search -->
+    <div class="search-box">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--txt-3);flex-shrink:0">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="text" placeholder="Search services…" id="searchInput" oninput="doSearch()">
+    </div>
+
+    <!-- Theme toggle -->
+    <div class="theme-pill">
+      <button class="theme-opt on" id="t-dark" onclick="setTheme('dark')" title="Dark mode">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="theme-opt" id="t-light" onclick="setTheme('light')" title="Light mode">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+
+    <div class="vdiv"></div>
+
+    <!-- Refresh -->
+    <button class="btn" onclick="doRefresh()" title="Refresh">
+      <svg id="rfIcon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+      Refresh
+    </button>
+
+    <button class="btn btn-green" onclick="startAll()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      Start All
+    </button>
+    <button class="btn btn-red" onclick="stopAll()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      Stop All
+    </button>
+    <button class="btn btn-primary" onclick="openModal()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      Add Service
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     BODY LAYOUT
+══════════════════════════════════════════ -->
+<div class="flex flex-1 overflow-hidden">
+
+  <!-- ──────────── SIDEBAR ──────────── -->
+  <aside class="sidebar">
+    <!-- Stats strip -->
+    <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+      <p class="label" style="margin-bottom:4px">Overview</p>
+
+      <!-- Running/Stopped/Total -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="stat-card" style="border-color:rgba(16,185,129,.2)">
+          <div style="font-size:22px;font-weight:700;color:#10b981;line-height:1" id="st-run">1</div>
+          <div style="font-size:11px;color:var(--txt-3);margin-top:3px">Running</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:22px;font-weight:700;color:var(--txt-1);line-height:1" id="st-stop">2</div>
+          <div style="font-size:11px;color:var(--txt-3);margin-top:3px">Stopped</div>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <!-- Groups -->
+    <div style="padding:14px 12px;border-bottom:1px solid var(--border)">
+      <p class="label" style="margin-bottom:10px;padding:0 4px">Groups</p>
+      <button class="nav-item w-full active" id="g-all" onclick="filterGroup('all')">
+        <div style="width:8px;height:8px;border-radius:2px;background:var(--txt-3)"></div>
+        <span>All Services</span>
+        <span style="margin-left:auto;font-size:10.5px;font-family:'IBM Plex Mono';color:var(--txt-3)">3</span>
+      </button>
+      <button class="nav-item w-full" id="g-api" onclick="filterGroup('api')" style="margin-top:2px">
+        <div style="width:8px;height:8px;border-radius:2px;background:#818cf8"></div>
+        <span>API</span>
+        <span style="margin-left:auto;font-size:10.5px;font-family:'IBM Plex Mono';color:var(--txt-3)">2</span>
+      </button>
+      <button class="nav-item w-full" id="g-worker" onclick="filterGroup('worker')" style="margin-top:2px">
+        <div style="width:8px;height:8px;border-radius:2px;background:#f59e0b"></div>
+        <span>Worker</span>
+        <span style="margin-left:auto;font-size:10.5px;font-family:'IBM Plex Mono';color:var(--txt-3)">1</span>
+      </button>
+    </div>
+
+    <!-- Type legend -->
+    <div style="padding:14px 12px">
+      <p class="label" style="margin-bottom:10px;padding:0 4px">Service Types</p>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:0 4px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="type-tag tag-grpc">gRPC</span>
+          <span style="font-size:11.5px;color:var(--txt-3)">Remote procedure call</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="type-tag tag-webapi">WebApi</span>
+          <span style="font-size:11.5px;color:var(--txt-3)">HTTP REST API</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="type-tag tag-worker">Worker</span>
+          <span style="font-size:11.5px;color:var(--txt-3)">Background service</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <!-- Clock -->
+    <div style="padding:12px 16px;border-top:1px solid var(--border)">
+      <p style="font-size:11px;font-family:'IBM Plex Mono';color:var(--txt-3)" id="clock">—</p>
+      <p style="font-size:10.5px;color:var(--txt-3);margin-top:1px">AppPilot v2.1.0</p>
+    </div>
+  </aside>
+
+  <!-- ──────────── MAIN ──────────── -->
+  <main class="main" id="main-content">
+
+    <!-- ════════ SERVICES VIEW ════════ -->
+    <div id="view-services">
+
+      <!-- ── GROUP: API ── -->
+      <div id="grp-api" class="anim-1">
+        <div class="group-hdr">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:2px;background:#818cf8"></div>
+            <span style="font-weight:700;font-size:13px;color:var(--txt-1)">API</span>
+            <span style="font-size:11px;font-family:'IBM Plex Mono';color:var(--txt-3)">2 services</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="btn" style="height:28px;font-size:11.5px" onclick="groupAct('api','start')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+              Start
+            </button>
+            <button class="btn" style="height:28px;font-size:11.5px" onclick="groupAct('api','stop')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+              Stop
+            </button>
+          </div>
+        </div>
+
+        <!-- Cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px" id="cards-api">
+
+          <!-- gRPC Card -->
+          <div class="scard type-grpc stopped anim-2" data-group="api" data-name="grpc api" data-status="stopped" data-type="grpc">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <!-- Icon -->
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(99,102,241,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">🔌</div>
+              <!-- Info -->
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                  <span style="font-size:13.5px;font-weight:700;color:var(--txt-1)">gRPC API</span>
+                  <span class="type-tag tag-grpc">gRPC</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                  <span style="font-family:'IBM Plex Mono';font-size:11px;color:#818cf8">:7002</span>
+                  <span style="font-size:11px;color:var(--txt-3)" class="pid-txt">No process</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span class="badge badge-stopped status-badge">
+                    <div class="dot dot-gray"></div>
+                    <span class="status-txt">Stopped</span>
+                  </span>
+                </div>
+              </div>
+              <!-- Actions -->
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn start" data-tip="Start" onclick="toggleSvc(this)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                  </button>
+                  <button class="icon-btn restart" data-tip="Restart">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn" data-tip="View Logs">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Open Folder">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Terminal">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Edit Config">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" data-tip="Remove">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Web API Card -->
+          <div class="scard type-webapi stopped anim-3" data-group="api" data-name="web api" data-status="stopped" data-type="webapi">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(6,182,212,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">🌐</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                  <span style="font-size:13.5px;font-weight:700;color:var(--txt-1)">Web API</span>
+                  <span class="type-tag tag-webapi">WebApi</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                  <span style="font-family:'IBM Plex Mono';font-size:11px;color:#22d3ee">:5001</span>
+                  <span style="font-size:11px;color:var(--txt-3)" class="pid-txt">No process</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <span class="badge badge-stopped status-badge">
+                    <div class="dot dot-gray"></div>
+                    <span class="status-txt">Stopped</span>
+                  </span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn start" data-tip="Start" onclick="toggleSvc(this)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                  </button>
+                  <button class="icon-btn restart" data-tip="Restart">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn" data-tip="Open in Browser">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="View Logs">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Open Folder">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Terminal">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Edit Config">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" data-tip="Remove">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── GROUP: Worker ── -->
+      <div id="grp-worker" class="anim-2">
+        <div class="group-hdr" style="margin-top:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:8px;height:8px;border-radius:2px;background:#f59e0b"></div>
+            <span style="font-weight:700;font-size:13px;color:var(--txt-1)">Worker</span>
+            <span style="font-size:11px;font-family:'IBM Plex Mono';color:var(--txt-3)">1 service</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="btn" style="height:28px;font-size:11.5px" onclick="groupAct('worker','start')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>Start
+            </button>
+            <button class="btn" style="height:28px;font-size:11.5px" onclick="groupAct('worker','stop')">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>Stop
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="cards-worker">
+
+          <!-- Worker Service — Running -->
+          <div class="scard type-worker running anim-3" data-group="worker" data-name="worker service" data-status="running" data-type="worker">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">⚙️</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                  <span style="font-size:13.5px;font-weight:700;color:var(--txt-1)">Worker Service</span>
+                  <span class="type-tag tag-worker">Worker</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="badge badge-running status-badge">
+                    <div class="dot dot-green dot-pulse"></div>
+                    <span class="status-txt">Running</span>
+                  </span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn stop" data-tip="Stop" onclick="toggleSvc(this)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                  </button>
+                  <button class="icon-btn restart" data-tip="Restart">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                  </button>
+                </div>
+                <div style="display:flex;gap:3px">
+                  <button class="icon-btn" data-tip="View Logs">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Open Folder">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Terminal">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                  </button>
+                  <!-- Install Windows Service — special action -->
+                  <button class="icon-btn" data-tip="Install Windows Service" style="color:#f59e0b">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </button>
+                  <button class="icon-btn" data-tip="Edit Config">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="icon-btn danger" data-tip="Remove">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /view-services -->
+
+    <!-- ════════ GIT REPOS VIEW ════════ -->
+    <div id="view-repos" style="display:none">
+      <div class="repo-card anim-1">
+        <div style="padding:20px 22px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+            <div>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
+                <span style="font-size:15px;font-weight:700;color:var(--txt-1)">AppPilot Examples</span>
+                <span class="type-tag tag-grpc" style="font-family:'IBM Plex Mono'">main</span>
+              </div>
+              <p style="font-size:11.5px;font-family:'IBM Plex Mono';color:var(--txt-3)">D:\dev\projects\working\AppPilot\examples</p>
+              <p style="font-size:11.5px;color:var(--txt-3);margin-top:4px">3b403c7 · set the EnableWindowsTargeting property to true</p>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Pull
+              </button>
+              <button class="btn btn-primary">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                Build Solution
+              </button>
+            </div>
+          </div>
+
+          <p class="label" style="margin-bottom:10px">Linked Services</p>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:9px;background:rgba(16,185,129,.05);border:1px solid rgba(16,185,129,.15)">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div class="dot dot-green dot-pulse"></div>
+                <span style="font-weight:600;font-size:13px">Worker Service</span>
+              </div>
+              <span style="font-size:11.5px;color:#10b981;font-weight:600">Running · PID 14382</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:9px;background:var(--hover);border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div class="dot dot-gray"></div>
+                <span style="font-weight:600;font-size:13px">gRPC API</span>
+              </div>
+              <span style="font-size:11.5px;color:var(--txt-3)">Stopped</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:9px;background:var(--hover);border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div class="dot dot-gray"></div>
+                <span style="font-weight:600;font-size:13px">Web API</span>
+              </div>
+              <span style="font-size:11.5px;color:var(--txt-3)">Stopped</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="terminal">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <p class="label">Output</p>
+            <div style="display:flex;gap:5px">
+              <div style="width:10px;height:10px;border-radius:50%;background:#ef4444;opacity:.6"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#f59e0b;opacity:.6"></div>
+              <div style="width:10px;height:10px;border-radius:50%;background:#10b981;opacity:.6"></div>
+            </div>
+          </div>
+          <p style="color:#10b981;font-size:12px">$ git pull origin main</p>
+          <p style="color:var(--txt-2);font-size:12px;margin-top:4px">Already up to date.</p>
+          <p style="color:var(--txt-3);font-size:11px;margin-top:2px">─ Completed in 0.3s</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ LOGS VIEW ════════ -->
+    <div id="view-logs" style="display:none">
+      <div class="repo-card anim-1">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:13px;font-weight:700;color:var(--txt-1)">Worker Service</span>
+            <span class="badge badge-running"><div class="dot dot-green dot-pulse"></div>Live</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" style="height:28px;font-size:11.5px">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Clear
+            </button>
+          </div>
+        </div>
+        <div style="padding:14px 18px;font-family:'IBM Plex Mono',monospace;max-height:420px;overflow-y:auto">
+          <div class="log-line log-info"><span class="log-time">20:40:01</span><span class="log-lvl">INFO</span><span class="log-msg">Worker Service started successfully on host machine</span></div>
+          <div class="log-line log-debug"><span class="log-time">20:40:02</span><span class="log-lvl">DBG</span><span class="log-msg">Connecting to message queue at amqp://localhost:5672</span></div>
+          <div class="log-line log-info"><span class="log-time">20:40:02</span><span class="log-lvl">INFO</span><span class="log-msg">Queue connection established successfully</span></div>
+          <div class="log-line log-debug"><span class="log-time">20:40:15</span><span class="log-lvl">DBG</span><span class="log-msg">Processing job #4821 from queue</span></div>
+          <div class="log-line log-info"><span class="log-time">20:40:16</span><span class="log-lvl">INFO</span><span class="log-msg">Job #4821 completed successfully in 312ms</span></div>
+          <div class="log-line log-warn"><span class="log-time">20:40:45</span><span class="log-lvl">WARN</span><span class="log-msg">Memory usage approaching threshold: 68% / 80%</span></div>
+          <div class="log-line log-debug"><span class="log-time">20:41:02</span><span class="log-lvl">DBG</span><span class="log-msg">Processing job #4822 from queue</span></div>
+          <div class="log-line log-info"><span class="log-time">20:41:05</span><span class="log-lvl">INFO</span><span class="log-msg">Job #4822 completed successfully in 2.1s</span></div>
+          <div class="log-line log-info"><span class="log-time">20:41:18</span><span class="log-lvl">INFO</span><span class="log-msg">Health check endpoint responding: /health → 200 OK</span></div>
+          <div class="log-line log-error"><span class="log-time">20:41:34</span><span class="log-lvl">ERR</span><span class="log-msg">Failed to connect to downstream service: timeout after 5000ms</span></div>
+          <div class="log-line log-warn"><span class="log-time">20:41:34</span><span class="log-lvl">WARN</span><span class="log-msg">Retrying connection in 3s (attempt 1 of 3)</span></div>
+          <div class="log-line log-info"><span class="log-time">20:41:37</span><span class="log-lvl">INFO</span><span class="log-msg">Downstream service reconnected successfully</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════
+     STATUS BAR
+══════════════════════════════════════════ -->
+<div style="height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--panel);border-top:1px solid var(--border);flex-shrink:0">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="font-size:11px;color:var(--txt-3)">Loaded 3 services</span>
+    <div style="display:flex;align-items:center;gap:5px">
+      <div class="dot dot-green dot-pulse"></div>
+      <span style="font-size:11px;color:var(--txt-3)">1 running</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:5px">
+      <div class="dot dot-gray"></div>
+      <span style="font-size:11px;color:var(--txt-3)">2 stopped</span>
+    </div>
+  </div>
+  <span style="font-size:11px;font-family:'IBM Plex Mono';color:var(--txt-3)" id="statusbar-clock">—</span>
+</div>
+
+<!-- ══════════════════════════════════════════
+     ADD SERVICE MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,rgba(88,101,242,.2),rgba(124,58,237,.15));display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </div>
+        <div>
+          <p style="font-size:14px;font-weight:700;color:var(--txt-1)">Add Service</p>
+          <p style="font-size:11.5px;color:var(--txt-3);margin-top:1px">Configure a new service to manage</p>
+        </div>
+      </div>
+      <button class="icon-btn" onclick="closeModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:20px 22px;overflow-y:auto;max-height:calc(88vh - 130px);display:flex;flex-direction:column;gap:18px">
+
+      <!-- Service Type -->
+      <div>
+        <p class="label" style="margin-bottom:10px">Service Type</p>
+        <div style="display:flex;gap:8px">
+          <button class="type-card sel-webapi" onclick="selType(this,'webapi')" id="tc-webapi">
+            <span style="font-size:20px">🌐</span>
+            <span>WebApi</span>
+          </button>
+          <button class="type-card" onclick="selType(this,'grpc')" id="tc-grpc">
+            <span style="font-size:20px">🔌</span>
+            <span>gRPC</span>
+          </button>
+          <button class="type-card" onclick="selType(this,'worker')" id="tc-worker">
+            <span style="font-size:20px">⚙️</span>
+            <span>Worker</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Identity -->
+      <div>
+        <p class="label" style="margin-bottom:10px">Identity</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Display Name</label>
+            <input class="inp" type="text" placeholder="My Web API">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Internal Name</label>
+            <input class="inp" type="text" placeholder="my-web-api">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Group</label>
+            <input class="inp" type="text" placeholder="API">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Start Order</label>
+            <input class="inp" type="number" value="0" min="0">
+          </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer">
+          <input type="checkbox" style="width:14px;height:14px;accent-color:#5865f2;cursor:pointer">
+          <span style="font-size:12.5px;color:var(--txt-2)">Auto-start on launch</span>
+        </label>
+      </div>
+
+      <!-- Process -->
+      <div>
+        <p class="label" style="margin-bottom:10px">Process</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Executable Path</label>
+            <div style="position:relative">
+              <input class="inp" style="padding-right:38px" type="text" placeholder="C:\path\to\service.exe">
+              <button style="position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:6px;background:var(--border);border:none;color:var(--txt-3);display:flex;align-items:center;justify-content:center;cursor:pointer">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Arguments</label>
+            <input class="inp" type="text" placeholder="--env Development --port 5000">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Working Directory</label>
+            <div style="position:relative">
+              <input class="inp" style="padding-right:38px" type="text" placeholder="C:\working\directory">
+              <button style="position:absolute;right:5px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:6px;background:var(--border);border:none;color:var(--txt-3);display:flex;align-items:center;justify-content:center;cursor:pointer">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Health Check -->
+      <div>
+        <p class="label" style="margin-bottom:10px">Health Check</p>
+        <div style="display:grid;grid-template-columns:140px 1fr;gap:10px">
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Port</label>
+            <input class="inp" type="number" placeholder="5000">
+          </div>
+          <div>
+            <label style="display:block;font-size:11.5px;font-weight:600;color:var(--txt-2);margin-bottom:5px">Health Check URL</label>
+            <input class="inp" type="text" placeholder="/health">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:14px 22px 20px;border-top:1px solid var(--border)">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Add Service
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+// ── Clock ──────────────────────────────────
+function tick() {
+  const n = new Date()
+  const s = [n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':')
+  document.getElementById('clock').textContent = s
+  document.getElementById('statusbar-clock').textContent = 'Updated: '+s
+}
+setInterval(tick,1000); tick()
+
+// ── Theme ──────────────────────────────────
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t)
+  document.getElementById('t-dark').classList.toggle('on', t==='dark')
+  document.getElementById('t-light').classList.toggle('on', t==='light')
+}
+
+// ── View switching ─────────────────────────
+function switchView(v) {
+  ['services','repos','logs'].forEach(x => {
+    document.getElementById('view-'+x).style.display = x===v ? '' : 'none'
+    document.getElementById('tab-'+x).classList.toggle('active', x===v)
+  })
+}
+
+// ── Modal ──────────────────────────────────
+function openModal()  { document.getElementById('addModal').classList.add('open') }
+function closeModal() { document.getElementById('addModal').classList.remove('open') }
+
+// ── Type selector ──────────────────────────
+function selType(el, t) {
+  ['webapi','grpc','worker'].forEach(x => {
+    document.getElementById('tc-'+x).className = 'type-card' + (x===t ? ' sel-'+x : '')
+  })
+}
+
+// ── Toggle individual service ──────────────
+function toggleSvc(btn) {
+  const card = btn.closest('.scard')
+  const running = card.dataset.status === 'running'
+
+  if (running) {
+    // → Stop
+    card.dataset.status = 'stopped'
+    card.classList.remove('running')
+    card.classList.add('stopped')
+    card.style.borderColor = ''
+    // badge
+    card.querySelector('.status-badge').className = 'badge badge-stopped status-badge'
+    card.querySelector('.status-badge').innerHTML = '<div class="dot dot-gray"></div><span class="status-txt">Stopped</span>'
+    // pid
+    card.querySelector('.pid-txt').textContent = 'No process'
+    card.querySelector('.pid-txt').style.color = 'var(--txt-3)'
+    // btn → start
+    btn.classList.remove('stop'); btn.classList.add('start')
+    btn.setAttribute('data-tip','Start')
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>'
+    // hide cpu bar if present
+    const cpuRow = card.querySelector('[style*="width:40px"]')
+    if(cpuRow) cpuRow.closest('.log-line, [style*="display:flex;align-items:center;gap:10px"]')
+    // simpler: just hide uptime span
+    const spans = card.querySelectorAll('[style*="color:var(--txt-3)"]')
+    spans.forEach(s=>{ if(s.textContent.includes('↑')) s.textContent = '' })
+  } else {
+    // → Start
+    card.dataset.status = 'running'
+    card.classList.remove('stopped')
+    card.classList.add('running')
+    // badge
+    card.querySelector('.status-badge').className = 'badge badge-running status-badge'
+    card.querySelector('.status-badge').innerHTML = '<div class="dot dot-green dot-pulse"></div><span class="status-txt">Running</span>'
+    // pid
+    const pid = Math.floor(Math.random()*60000)+1000
+    card.querySelector('.pid-txt').textContent = 'PID '+pid
+    card.querySelector('.pid-txt').style.color = '#10b981'
+    // btn → stop
+    btn.classList.remove('start'); btn.classList.add('stop')
+    btn.setAttribute('data-tip','Stop')
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>'
+  }
+  updateStats()
+}
+
+// ── Group action ───────────────────────────
+function groupAct(grp, action) {
+  document.querySelectorAll('.scard[data-group="'+grp+'"]').forEach(card => {
+    const isRunning = card.dataset.status === 'running'
+    const startBtn = card.querySelector('.icon-btn.start')
+    const stopBtn  = card.querySelector('.icon-btn.stop')
+    if(action==='start' && !isRunning && startBtn) toggleSvc(startBtn)
+    if(action==='stop'  && isRunning  && stopBtn)  toggleSvc(stopBtn)
+  })
+}
+
+// ── Start / Stop All ───────────────────────
+function startAll() {
+  document.querySelectorAll('.scard[data-status="stopped"]').forEach(card => {
+    const b = card.querySelector('.icon-btn.start')
+    if(b) toggleSvc(b)
+  })
+}
+function stopAll() {
+  document.querySelectorAll('.scard[data-status="running"]').forEach(card => {
+    const b = card.querySelector('.icon-btn.stop')
+    if(b) toggleSvc(b)
+  })
+}
+
+// ── Update stats ───────────────────────────
+function updateStats() {
+  const total   = document.querySelectorAll('.scard').length
+  const running = document.querySelectorAll('.scard[data-status="running"]').length
+  const stopped = total - running
+  document.getElementById('st-run').textContent  = running
+  document.getElementById('st-stop').textContent = stopped
+  const pct = Math.round(running/total*100)
+  document.getElementById('st-pct').textContent = pct+'%'
+  document.getElementById('health-bar').style.width = pct+'%'
+}
+
+// ── Group filter ───────────────────────────
+function filterGroup(g) {
+  const grps = {all:['grp-api','grp-worker'], api:['grp-api'], worker:['grp-worker']}
+  ;['grp-api','grp-worker'].forEach(id => {
+    document.getElementById(id).style.display = grps[g].includes(id) ? '' : 'none'
+  })
+  ;['all','api','worker'].forEach(x => {
+    const el = document.getElementById('g-'+x)
+    el.classList.toggle('active', x===g)
+  })
+}
+
+// ── Search ─────────────────────────────────
+function doSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase()
+  document.querySelectorAll('.scard').forEach(card => {
+    card.style.display = card.dataset.name.includes(q) ? '' : 'none'
+  })
+}
+
+// ── Refresh ────────────────────────────────
+function doRefresh() {
+  const el = document.getElementById('rfIcon')
+  el.style.transition = 'transform .6s linear'
+  el.style.transform = 'rotate(360deg)'
+  setTimeout(()=>{ el.style.transition=''; el.style.transform='' }, 650)
+}
+</script>
+</body>
+</html>
