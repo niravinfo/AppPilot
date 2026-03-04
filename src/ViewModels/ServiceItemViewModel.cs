@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
@@ -9,7 +10,6 @@ using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
-using System.Windows.Media;
 
 namespace AppPilot.ViewModels;
 
@@ -86,10 +86,32 @@ public partial class ServiceItemViewModel : ViewModelBase
         InitializeColors();
     }
 
+    public Brush StatusTypeBarBrush
+    {
+        get
+        {
+            // gRPC: #818cf8 (running), #6366f1 (all other states)
+            // API: #22d3ee (running), #0ea5e9 (all other states)
+            // Worker: #f59e0b (running), #f97316 (all other states)
+            bool isRunning = Status == ServiceStatus.Running;
+            switch (Config.Type)
+            {
+                case ServiceType.Grpc:
+                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FF818cf8" : "#FF6366f1"));
+                case ServiceType.WebApi:
+                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FF22d3ee" : "#FF0ea5e9"));
+                case ServiceType.Worker:
+                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FFf59e0b" : "#FFf97316"));
+                default:
+                    return Brushes.Gray;
+            }
+        }
+    }
+
     private void InitializeColors()
     {
         var isDark = !ThemeManager.IsLight;
-        
+
         var typeColor = ColorProvider.GetServiceTypeColor(Config.Type, isDark);
         TypeBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 50 : 40), typeColor.R, typeColor.G, typeColor.B));
         TypeBadgeFgBrush = new SolidColorBrush(typeColor);
@@ -163,10 +185,11 @@ public partial class ServiceItemViewModel : ViewModelBase
                 else
                 {
                     ProcessId = process.Id;
+                    OnPropertyChanged(nameof(StatusTypeBarBrush));
                 }
-            }
 
-            _mainViewModel.RefreshCommand.Execute(null);
+                _mainViewModel.RefreshCommand.Execute(null);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -373,6 +396,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanStart));
         OnPropertyChanged(nameof(CanStop));
         OnPropertyChanged(nameof(CanRestart));
+        OnPropertyChanged(nameof(StatusTypeBarBrush));
     }
 
     partial void OnErrorMessageChanged(string value)

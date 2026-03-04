@@ -112,28 +112,8 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Status accent bar -->
-                                                    <Border Grid.Column="0">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="{DynamicResource StatusStoppedColor}"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusRunningColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Starting">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusTransientColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Stopping">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusTransientColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusErrorColor}"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                    </Border>
+                                                    <!-- Status/type accent bar -->
+                                                    <Border Grid.Column="0" Background="{Binding StatusTypeBarBrush}"/>
 
                                                     <!-- Service name + type chip -->
                                                     <StackPanel Grid.Column="1" Margin="14,12,10,12" VerticalAlignment="Center">
