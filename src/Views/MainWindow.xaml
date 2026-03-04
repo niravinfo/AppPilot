@@ -174,7 +174,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Grid.Column="0">
                     <!-- Services tab -->
-                    <Border BorderThickness="0,0,0,3" Padding="2,0">
+                    <Border BorderThickness="0,0,0,1" Padding="0">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="BorderBrush" Value="Transparent"/>
@@ -185,8 +185,8 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}">
-                            <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}" Padding="10,0">
+                            <StackPanel Orientation="Horizontal" Background="Transparent">
                                 <Path Data="{StaticResource IconServices}"
                                       Fill="{DynamicResource TabInactiveFg}"
                                       Width="16" Height="16"
@@ -212,7 +212,7 @@
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedTab}" Value="0">
                                                     <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -227,7 +227,7 @@
                         </Button>
                     </Border>
                     <!-- Git Repos tab -->
-                    <Border BorderThickness="0,0,0,3" Padding="2,0" Margin="6,0,0,0">
+                    <Border BorderThickness="0,0,0,1" Padding="0" Margin="6,0,0,0">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="BorderBrush" Value="Transparent"/>
@@ -238,8 +238,8 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}">
-                            <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}" Padding="10,0">
+                            <StackPanel Orientation="Horizontal" Background="Transparent">
                                 <Path Data="{StaticResource IconGit}"
                                       Fill="{DynamicResource TabInactiveFg}"
                                       Width="16" Height="16"
@@ -265,7 +265,7 @@
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedTab}" Value="1">
                                                     <Setter Property="Foreground" Value="{DynamicResource TabActiveFg}"/>
-                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
