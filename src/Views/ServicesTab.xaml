@@ -50,12 +50,12 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center">
-                                        <Button Style="{StaticResource AccentBtn}"
+                                        <Button Style="{StaticResource StartBtn}"
                                                 Padding="8,4" Margin="0,0,6,0"
                                                 Command="{Binding StartGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource IconPlay}"
-                                                      Fill="{DynamicResource AccentFg}"
+                                                      Fill="{DynamicResource StartFg}"
                                                       Width="12" Height="12"
                                                       Margin="0,0,4,0"
                                                       Stretch="Uniform"
@@ -84,7 +84,7 @@
                             <ItemsControl ItemsSource="{Binding Items}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Margin="0,0,0,6"
+                                        <Border Margin="6,0,0,6"
                                                 CornerRadius="10"
                                                 BorderThickness="1"
                                                 ClipToBounds="True">

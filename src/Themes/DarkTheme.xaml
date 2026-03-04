@@ -37,6 +37,14 @@
     <SolidColorBrush x:Key="AccentBorder"    Color="#4338CA"/>
     <SolidColorBrush x:Key="AccentFg"        Color="#A5B4FC"/>
 
+    <!--<SolidColorBrush x:Key="StartBg"        Color="#007af5"/>
+    <SolidColorBrush x:Key="StartBorder"    Color="#0080ff"/>
+    <SolidColorBrush x:Key="StartFg"        Color="#FFFFFF"/>-->
+
+    <SolidColorBrush x:Key="StartBg"        Color="#4CAF50"/>
+    <SolidColorBrush x:Key="StartBorder"    Color="#388E3C"/>
+    <SolidColorBrush x:Key="StartFg"        Color="#FFFFFF"/>
+
     <!-- Danger (Stop All) - Red Light -->
     <SolidColorBrush x:Key="DangerBg"        Color="#450A0A"/>
     <SolidColorBrush x:Key="DangerBorder"    Color="#7F1D1D"/>
