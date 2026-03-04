@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AppPilot.ViewModels"
+             xmlns:controls="clr-namespace:AppPilot.Controls"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
@@ -27,12 +28,12 @@
                                     BorderBrush="{DynamicResource GroupHeaderBorder}"
                                     BorderThickness="0,0,0,1"
                                     CornerRadius="8,8,0,0"
-                                    Padding="14,8,10,8"
+                                    Padding="8,8,10,8"
                                     Margin="0,0,0,4">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Colored accent bar -->
-                                        <Border Width="4" Height="16" CornerRadius="2" 
+                                        <Border Width="10" Height="10" CornerRadius="2" 
                                                 Background="{Binding GroupAccentBrush}"
                                                 Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding GroupName}"
@@ -49,12 +50,12 @@
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center">
-                                        <Button Style="{StaticResource AccentBtn}"
+                                        <Button Style="{StaticResource StartBtn}"
                                                 Padding="8,4" Margin="0,0,6,0"
                                                 Command="{Binding StartGroupCommand}">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource IconPlay}"
-                                                      Fill="{DynamicResource AccentFg}"
+                                                      Fill="{DynamicResource StartFg}"
                                                       Width="12" Height="12"
                                                       Margin="0,0,4,0"
                                                       Stretch="Uniform"
@@ -83,7 +84,7 @@
                             <ItemsControl ItemsSource="{Binding Items}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Margin="0,0,0,6"
+                                        <Border Margin="6,0,0,6"
                                                 CornerRadius="10"
                                                 BorderThickness="1"
                                                 ClipToBounds="True">
@@ -112,49 +113,37 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Status accent bar -->
-                                                    <Border Grid.Column="0">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="{DynamicResource StatusStoppedColor}"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Running">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusRunningColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Starting">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusTransientColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Stopping">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusTransientColor}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                                        <Setter Property="Background" Value="{DynamicResource StatusErrorColor}"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                    </Border>
+                                                    <!-- Status/type accent bar -->
+                                                    <Border Grid.Column="0" Background="{Binding StatusTypeBarBrush}"/>
 
                                                     <!-- Service name + type chip -->
                                                     <StackPanel Grid.Column="1" Margin="14,12,10,12" VerticalAlignment="Center">
                                                         <StackPanel Orientation="Horizontal">
+                                                            <controls:SvgIcon
+                                                                IconFill="{Binding TypeBadgeFgBrush}"
+                                                                IconSize="18"
+                                                                VerticalAlignment="Center"
+                                                                Margin="0,0,8,0">
+                                                                <controls:SvgIcon.Style>
+                                                                    <Style TargetType="controls:SvgIcon">
+                                                                        <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="Grpc">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="WebApi">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconWebApi}"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="Worker">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconWorker}"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </controls:SvgIcon.Style>
+                                                            </controls:SvgIcon>
                                                             <TextBlock Text="{Binding DisplayName}"
                                                                        FontSize="13" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"/>
-                                                            <!-- Type badge with dynamic color -->
-                                                            <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
-                                                                    Background="{Binding TypeBadgeBrush}"
-                                                                    BorderBrush="{Binding TypeBadgeFgBrush}"
-                                                                    BorderThickness="1"
-                                                                    VerticalAlignment="Center">
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Ellipse Width="6" Height="6" Margin="0,0,4,0" 
-                                                                             Fill="{Binding TypeBadgeFgBrush}"/>
-                                                                    <TextBlock Text="{Binding TypeName}"
-                                                                               FontSize="10" FontWeight="SemiBold"
-                                                                               Foreground="{Binding TypeBadgeFgBrush}"/>
-                                                                </StackPanel>
-                                                            </Border>
                                                         </StackPanel>
                                                     </StackPanel>
 
@@ -269,36 +258,6 @@
                                                         </Button>
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
-                                                                   Margin="3,0" VerticalAlignment="Center"/>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding InstallCommand}"
-                                                                IsEnabled="{Binding CanInstall}"
-                                                                ToolTip="Install Windows Service">
-                                                            <TextBlock Text="⬇" FontSize="14"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding UninstallCommand}"
-                                                                IsEnabled="{Binding CanUninstall}"
-                                                                ToolTip="Uninstall Windows Service">
-                                                            <Path Data="{StaticResource IconClose}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="13" Height="13"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Rectangle Width="1" Height="16"
-                                                                   Fill="{DynamicResource CardDivider}"
-                                                                   Margin="3,0" VerticalAlignment="Center"/>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding BuildCommand}"
-                                                                Visibility="{Binding HasCsprojPath, Converter={StaticResource BoolToVis}}"
-                                                                ToolTip="Build (dotnet build)">
-                                                            <Path Data="{StaticResource IconBuild}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="15" Height="15"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Rectangle Width="1" Height="16"
-                                                                   Fill="{DynamicResource CardDivider}"
                                                                    Margin="3,0" VerticalAlignment="Center"
                                                                    Visibility="{Binding HasBrowserUrl, Converter={StaticResource BoolToVis}}"/>
                                                         <Button Style="{StaticResource CardBtn}"
@@ -310,42 +269,122 @@
                                                                   Width="15" Height="15"
                                                                   Stretch="Uniform"/>
                                                         </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding OpenDirectoryCommand}"
-                                                                Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
-                                                                ToolTip="{Binding Config.WorkingDirectory}">
-                                                            <Path Data="{StaticResource IconFolder}" 
+                                                        <!-- 3 dots menu -->
+                                                        <Button x:Name="MenuButton" 
+                                                                Style="{StaticResource CardBtn}"
+                                                                ToolTip="More Options"
+                                                                Click="MenuButton_Click">
+                                                            <Path Data="M144,192a16,16,0,1,1-16-16A16.01833,16.01833,0,0,1,144,192ZM128,80a16,16,0,1,0-16-16A16.01833,16.01833,0,0,0,128,80Zm0,32a16,16,0,1,0,16,16A16.01833,16.01833,0,0,0,128,112Z"
                                                                   Fill="{DynamicResource CardBtnFg}"
                                                                   Width="15" Height="15"
                                                                   Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding OpenTerminalCommand}"
-                                                                Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
-                                                                ToolTip="Open Terminal Here">
-                                                            <Path Data="{StaticResource IconTerminal}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="13" Height="13"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Rectangle Width="1" Height="16"
-                                                                   Fill="{DynamicResource CardDivider}"
-                                                                   Margin="3,0" VerticalAlignment="Center"/>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding EditCommand}"
-                                                                ToolTip="Edit Configuration">
-                                                            <Path Data="{StaticResource IconPencil}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="14" Height="14"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding DeleteCommand}"
-                                                                ToolTip="Remove Service">
-                                                            <Path Data="{StaticResource IconDelete}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="14" Height="14"
-                                                                  Stretch="Uniform"/>
+                                                            <Button.ContextMenu>
+                                                                <ContextMenu>
+                                                                    <MenuItem Command="{Binding InstallCommand}"
+                                                                              Visibility="{Binding IsWorkerService, Converter={StaticResource BoolToVis}}"
+                                                                              IsEnabled="{Binding CanInstall}"
+                                                                              ToolTip="Install Windows Service">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <TextBlock Text="⬇" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Install" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <MenuItem Command="{Binding UninstallCommand}"
+                                                                              Visibility="{Binding IsWorkerService, Converter={StaticResource BoolToVis}}"
+                                                                              IsEnabled="{Binding CanUninstall}"
+                                                                              ToolTip="Uninstall Windows Service">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconClose}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="12" Height="12"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Uninstall" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <Separator/>
+                                                                    <MenuItem Command="{Binding OpenDirectoryCommand}"
+                                                                              Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
+                                                                              ToolTip="{Binding Config.WorkingDirectory}">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconFolder}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Open Folder" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <MenuItem Command="{Binding OpenTerminalCommand}"
+                                                                              Visibility="{Binding HasWorkingDirectory, Converter={StaticResource BoolToVis}}"
+                                                                              ToolTip="Open Terminal Here">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconTerminal}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Open Terminal" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <Separator Visibility="{Binding HasCsprojPath, Converter={StaticResource BoolToVis}}"/>
+                                                                    <MenuItem Command="{Binding BuildCommand}"
+                                                                              Visibility="{Binding HasCsprojPath, Converter={StaticResource BoolToVis}}"
+                                                                              ToolTip="Build (dotnet build)">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconBuild}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Build" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <Separator/>
+                                                                    <MenuItem Command="{Binding EditCommand}"
+                                                                              ToolTip="Edit Configuration">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconPencil}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Edit" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <MenuItem Command="{Binding DeleteCommand}"
+                                                                              ToolTip="Remove Service">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconDelete}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Delete" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                </ContextMenu>
+                                                            </Button.ContextMenu>
                                                         </Button>
                                                     </StackPanel>
                                                 </Grid>

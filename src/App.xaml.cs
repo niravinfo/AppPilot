@@ -1,3 +1,10 @@
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime;
+using System.Security.Principal;
+using System.Threading.Tasks;
+using System.Windows;
 using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
@@ -7,14 +14,6 @@ using AppPilot.Services.ServiceControl;
 using AppPilot.ViewModels;
 using AppPilot.Views;
 using Serilog;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime;
-using System.Security.Principal;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace AppPilot;
 
