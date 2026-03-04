@@ -96,7 +96,7 @@ M12,18A3,3 0 1,0 12,12A3,3 0 0,0 12,18ZM6,6A3,3 0 1,0 6,0A3,3 0 0,0 6,6ZM18,6A3,
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconPlay}"
                                   Fill="{DynamicResource AccentFg}"
-                                  Width="10" Height="10"
+                                  Width="12" Height="12"
                                   Margin="0,0,6,0"
                                   Stretch="Uniform"
                                   VerticalAlignment="Center"/>
@@ -108,7 +108,7 @@ M12,18A3,3 0 1,0 12,12A3,3 0 0,0 12,18ZM6,6A3,3 0 1,0 6,0A3,3 0 0,0 6,6ZM18,6A3,
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource IconStop}"
                                   Fill="{DynamicResource DangerFg}"
-                                  Width="10" Height="10"
+                                  Width="12" Height="12"
                                   Margin="0,0,6,0"
                                   Stretch="Uniform"
                                   VerticalAlignment="Center"/>

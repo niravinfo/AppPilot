@@ -27,12 +27,12 @@
                                     BorderBrush="{DynamicResource GroupHeaderBorder}"
                                     BorderThickness="0,0,0,1"
                                     CornerRadius="8,8,0,0"
-                                    Padding="14,8,10,8"
+                                    Padding="8,8,10,8"
                                     Margin="0,0,0,4">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <!-- Colored accent bar -->
-                                        <Border Width="4" Height="16" CornerRadius="2" 
+                                        <Border Width="10" Height="10" CornerRadius="2" 
                                                 Background="{Binding GroupAccentBrush}"
                                                 Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding GroupName}"
