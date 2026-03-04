@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AppPilot.ViewModels"
+             xmlns:controls="clr-namespace:AppPilot.Controls"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
@@ -118,23 +119,31 @@
                                                     <!-- Service name + type chip -->
                                                     <StackPanel Grid.Column="1" Margin="14,12,10,12" VerticalAlignment="Center">
                                                         <StackPanel Orientation="Horizontal">
+                                                            <controls:SvgIcon
+                                                                IconFill="{Binding TypeBadgeFgBrush}"
+                                                                IconSize="18"
+                                                                VerticalAlignment="Center"
+                                                                Margin="0,0,8,0">
+                                                                <controls:SvgIcon.Style>
+                                                                    <Style TargetType="controls:SvgIcon">
+                                                                        <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="Grpc">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="WebApi">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconWebApi}"/>
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="Worker">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconWorker}"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </controls:SvgIcon.Style>
+                                                            </controls:SvgIcon>
                                                             <TextBlock Text="{Binding DisplayName}"
                                                                        FontSize="13" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"/>
-                                                            <!-- Type badge with dynamic color -->
-                                                            <Border Margin="8,0,0,0" Padding="6,2" CornerRadius="4"
-                                                                    Background="{Binding TypeBadgeBrush}"
-                                                                    BorderBrush="{Binding TypeBadgeFgBrush}"
-                                                                    BorderThickness="1"
-                                                                    VerticalAlignment="Center">
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Ellipse Width="6" Height="6" Margin="0,0,4,0" 
-                                                                             Fill="{Binding TypeBadgeFgBrush}"/>
-                                                                    <TextBlock Text="{Binding TypeName}"
-                                                                               FontSize="10" FontWeight="SemiBold"
-                                                                               Foreground="{Binding TypeBadgeFgBrush}"/>
-                                                                </StackPanel>
-                                                            </Border>
                                                         </StackPanel>
                                                     </StackPanel>
 
