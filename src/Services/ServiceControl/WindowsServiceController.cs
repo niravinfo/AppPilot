@@ -1,6 +1,6 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.ServiceProcess;
@@ -20,11 +20,11 @@ public interface IServiceController
 
 public class WindowsServiceController : IServiceController
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<WindowsServiceController> _logger;
 
     private const int ServiceTimeoutSeconds = 30;
 
-    public WindowsServiceController(ILogger logger)
+    public WindowsServiceController(ILogger<WindowsServiceController> logger)
     {
         _logger = logger;
     }
@@ -53,19 +53,19 @@ public class WindowsServiceController : IServiceController
                 var msg = string.IsNullOrWhiteSpace(output)
                     ? $"sc.exe exited with code {process.ExitCode}."
                     : output.Trim();
-                _logger.Error("Failed to install service {Name}: {Message}", config.Name, msg);
+                _logger.LogError("Failed to install service {Name}: {Message}", config.Name, msg);
                 throw new InvalidOperationException(msg);
             }
 
             await SetDescriptionAsync(config, cancellationToken);
-            _logger.Information("Service {Name} installed successfully", config.Name);
+            _logger.LogInformation("Service {Name} installed successfully", config.Name);
             return true;
         }
         catch (OperationCanceledException) { throw; }
         catch (InvalidOperationException) { throw; }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Exception while installing service {Name}", config.Name);
+            _logger.LogError(ex, "Exception while installing service {Name}", config.Name);
             throw new InvalidOperationException($"Failed to install '{config.DisplayName}': {ex.Message}", ex);
         }
     }
@@ -87,7 +87,7 @@ public class WindowsServiceController : IServiceController
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Failed to set service description for {Name}", config.Name);
+            _logger.LogWarning(ex, "Failed to set service description for {Name}", config.Name);
         }
     }
 
@@ -119,18 +119,18 @@ public class WindowsServiceController : IServiceController
                 var msg = string.IsNullOrWhiteSpace(output)
                     ? $"sc.exe exited with code {process.ExitCode}."
                     : output.Trim();
-                _logger.Error("Failed to uninstall service {Name}: {Message}", config.Name, msg);
+                _logger.LogError("Failed to uninstall service {Name}: {Message}", config.Name, msg);
                 throw new InvalidOperationException(msg);
             }
 
-            _logger.Information("Service {Name} uninstalled successfully", config.Name);
+            _logger.LogInformation("Service {Name} uninstalled successfully", config.Name);
             return true;
         }
         catch (OperationCanceledException) { throw; }
         catch (InvalidOperationException) { throw; }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Exception while uninstalling service {Name}", config.Name);
+            _logger.LogError(ex, "Exception while uninstalling service {Name}", config.Name);
             throw new InvalidOperationException($"Failed to uninstall '{config.DisplayName}': {ex.Message}", ex);
         }
     }
@@ -144,7 +144,7 @@ public class WindowsServiceController : IServiceController
 
             if (sc.Status == ServiceControllerStatus.Running)
             {
-                _logger.Information("Service {Name} is already running", config.Name);
+                _logger.LogInformation("Service {Name} is already running", config.Name);
                 return true;
             }
 
@@ -159,7 +159,7 @@ public class WindowsServiceController : IServiceController
 
                 if (sc.Status == ServiceControllerStatus.Running)
                 {
-                    _logger.Information("Service {Name} started successfully", config.Name);
+                    _logger.LogInformation("Service {Name} started successfully", config.Name);
                     return true;
                 }
 
@@ -180,7 +180,7 @@ public class WindowsServiceController : IServiceController
         catch (System.TimeoutException) { throw; }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to start service {Name}", config.Name);
+            _logger.LogError(ex, "Failed to start service {Name}", config.Name);
             throw new InvalidOperationException($"Failed to start '{config.DisplayName}': {ex.Message}", ex);
         }
     }
@@ -194,7 +194,7 @@ public class WindowsServiceController : IServiceController
 
             if (sc.Status == ServiceControllerStatus.Stopped)
             {
-                _logger.Information("Service {Name} is already stopped", config.Name);
+                _logger.LogInformation("Service {Name} is already stopped", config.Name);
                 return true;
             }
 
@@ -209,7 +209,7 @@ public class WindowsServiceController : IServiceController
 
                 if (sc.Status == ServiceControllerStatus.Stopped)
                 {
-                    _logger.Information("Service {Name} stopped successfully", config.Name);
+                    _logger.LogInformation("Service {Name} stopped successfully", config.Name);
                     return true;
                 }
             }
@@ -217,11 +217,17 @@ public class WindowsServiceController : IServiceController
             throw new System.TimeoutException(
                 $"'{config.DisplayName}' did not stop within {ServiceTimeoutSeconds} seconds.");
         }
-        catch (OperationCanceledException) { throw; }
-        catch (System.TimeoutException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (System.TimeoutException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to stop service {Name}", config.Name);
+            _logger.LogError(ex, "Failed to stop service {Name}", config.Name);
             throw new InvalidOperationException($"Failed to stop '{config.DisplayName}': {ex.Message}", ex);
         }
     }
@@ -247,7 +253,7 @@ public class WindowsServiceController : IServiceController
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Failed to get status for service {Name}", config.Name);
+            _logger.LogWarning(ex, "Failed to get status for service {Name}", config.Name);
             return ServiceStatus.Error;
         }
     }

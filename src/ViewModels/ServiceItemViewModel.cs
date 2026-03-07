@@ -5,7 +5,7 @@ using AppPilot.Services.Build;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -195,7 +195,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error starting service {Name}", Config.Name);
+            _logger.LogError(ex, "Error starting service {Name}", Config.Name);
             ErrorMessage = ex.Message;
             Status = ServiceStatus.Error;
         }
@@ -240,7 +240,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error stopping service {Name}", Config.Name);
+            _logger.LogError(ex, "Error stopping service {Name}", Config.Name);
             ErrorMessage = ex.Message;
         }
         finally
@@ -288,7 +288,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error installing service {Name}", Config.Name);
+            _logger.LogError(ex, "Error installing service {Name}", Config.Name);
             ErrorMessage = ex.Message;
             Status = ServiceStatus.Error;
         }
@@ -316,7 +316,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error uninstalling service {Name}", Config.Name);
+            _logger.LogError(ex, "Error uninstalling service {Name}", Config.Name);
             ErrorMessage = ex.Message;
         }
         finally
@@ -335,7 +335,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to open browser for {Name}", Config.Name);
+            _logger.LogError(ex, "Failed to open browser for {Name}", Config.Name);
         }
     }
 
@@ -352,7 +352,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to open directory for {Name}", Config.Name);
+            _logger.LogError(ex, "Failed to open directory for {Name}", Config.Name);
         }
     }
 
@@ -383,7 +383,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to open terminal for {Name}", Config.Name);
+            _logger.LogError(ex, "Failed to open terminal for {Name}", Config.Name);
         }
     }
 
@@ -434,7 +434,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Build failed for {Name}", Config.Name);
+            _logger.LogError(ex, "Build failed for {Name}", Config.Name);
             ErrorMessage = ex.Message;
         }
         finally

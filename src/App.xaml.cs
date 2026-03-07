@@ -1,10 +1,3 @@
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime;
-using System.Security.Principal;
-using System.Threading.Tasks;
-using System.Windows;
 using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
@@ -13,13 +6,25 @@ using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
 using AppPilot.ViewModels;
 using AppPilot.Views;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime;
+using System.Security.Principal;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace AppPilot;
 
 public partial class App : Application
 {
-    private ILogger _logger = null!;
+    private IHost? _host;
+    private ILogger<App>? _logger;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -31,9 +36,75 @@ public partial class App : Application
 
         base.OnStartup(e);
 
-        SetupLogging();
+        var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
+        Directory.CreateDirectory(logDirectory);
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(
+                Path.Combine(logDirectory, "AppPilot_.log"),
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+
+        var basePath = AppDomain.CurrentDomain.BaseDirectory;
+        string configFilePath = Path.Combine(basePath, "appsettings.json");
+
+        if (!File.Exists(configFilePath))
+        {
+            Log.Warning("Configuration file not found at {Path}, using default configuration", configFilePath);
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .Build();
+
+        _host = Host.CreateDefaultBuilder()
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddSerilog();
+            })
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddConfiguration(configuration);
+            })
+            .ConfigureServices((context, services) =>
+            {
+                // Register services and viewmodels with logging abstraction
+                services.AddSingleton<IConfigurationService, ConfigurationService>();
+                services.AddSingleton<IServiceController, WindowsServiceController>();
+                services.AddSingleton<IProcessService, ProcessService>();
+                services.AddSingleton<IHealthChecker, HttpHealthChecker>();
+                services.AddSingleton<IDialogService, DialogService>();
+                services.AddSingleton<IBuildService, BuildService>();
+                services.AddSingleton<IGitService, GitService>();
+                services.AddSingleton<MainViewModel>();
+                services.AddSingleton<MainWindow>();
+            })
+            .Build();
+
+        _logger = _host.Services.GetRequiredService<ILogger<App>>();
+        _logger.LogInformation("AppPilot starting up");
+
         SetupExceptionHandling();
-        SetupDependencyInjection();
+
+        try
+        {
+            ThemeManager.Initialize();
+            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+            mainWindow.Show();
+            mainWindow.ContentRendered += (_, _) => TrimMemory();
+            _logger.LogInformation("Application started successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Failed to start application");
+            LogAndExit(ex);
+        }
     }
 
     private static bool IsRunningAsAdministrator()
@@ -65,35 +136,20 @@ public partial class App : Application
         Environment.Exit(0);
     }
 
-    private void SetupLogging()
-    {
-        var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
-        Directory.CreateDirectory(logDirectory);
-
-        _logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
-            .WriteTo.File(
-                Path.Combine(logDirectory, "AppPilot_.log"),
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 7,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
-            .CreateLogger();
-
-        _logger.Information("AppPilot starting up");
-    }
+    // Logging is now configured via HostBuilder and Serilog
 
     private void SetupExceptionHandling()
     {
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
         {
             var exception = args.ExceptionObject as Exception;
-            _logger.Fatal(exception, "Unhandled domain exception");
+            _logger?.LogCritical(exception, "Unhandled domain exception");
             LogAndExit(exception);
         };
 
         DispatcherUnhandledException += (sender, args) =>
         {
-            _logger.Error(args.Exception, "Unhandled dispatcher exception");
+            _logger?.LogError(args.Exception, "Unhandled dispatcher exception");
             args.Handled = true;
             MessageBox.Show(
                 $"An error occurred: {args.Exception.Message}",
@@ -104,7 +160,7 @@ public partial class App : Application
 
         TaskScheduler.UnobservedTaskException += (sender, args) =>
         {
-            _logger.Error(args.Exception, "Unobserved task exception");
+            _logger?.LogError(args.Exception, "Unobserved task exception");
             args.SetObserved();
         };
     }
@@ -120,43 +176,7 @@ public partial class App : Application
         Environment.Exit(1);
     }
 
-    private void SetupDependencyInjection()
-    {
-        try
-        {
-            ThemeManager.Initialize();
-
-            var configurationService = new ConfigurationService(_logger);
-            var windowsServiceController = new WindowsServiceController(_logger);
-            var processService = new ProcessService(_logger);
-            var healthChecker = new HttpHealthChecker(_logger);
-            var dialogService = new DialogService();
-            var buildService = new BuildService();
-            var gitService = new GitService();
-
-            var mainViewModel = new MainViewModel(
-                configurationService,
-                windowsServiceController,
-                processService,
-                healthChecker,
-                _logger,
-                dialogService,
-                buildService,
-                gitService);
-
-            var mainWindow = new MainWindow(mainViewModel);
-            mainWindow.Show();
-
-            mainWindow.ContentRendered += (_, _) => TrimMemory();
-
-            _logger.Information("Application started successfully");
-        }
-        catch (Exception ex)
-        {
-            _logger.Fatal(ex, "Failed to start application");
-            LogAndExit(ex);
-        }
-    }
+    // Dependency injection is now handled by HostBuilder
 
     private static void TrimMemory()
     {
@@ -168,8 +188,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _logger.Information("AppPilot shutting down");
+        _logger?.LogInformation("AppPilot shutting down");
         Log.CloseAndFlush();
+        _host?.Dispose();
         base.OnExit(e);
     }
 }

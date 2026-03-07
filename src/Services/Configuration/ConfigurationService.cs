@@ -1,6 +1,6 @@
 using AppPilot.Models;
 using Microsoft.Extensions.Configuration;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 
@@ -17,24 +17,16 @@ public class ConfigurationService : IConfigurationService
 {
     private readonly string _configFilePath;
     private readonly IConfiguration _configuration;
-    private readonly ILogger _logger;
+    private readonly ILogger<ConfigurationService> _logger;
 
-    public ConfigurationService(ILogger logger)
+    public ConfigurationService(
+        ILogger<ConfigurationService> logger,
+        IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
         var basePath = AppDomain.CurrentDomain.BaseDirectory;
         _configFilePath = Path.Combine(basePath, "appsettings.json");
-
-        if (!File.Exists(_configFilePath))
-        {
-            _logger.Warning("Configuration file not found at {Path}, using default configuration", _configFilePath);
-        }
-
-        _configuration = new ConfigurationBuilder()
-            .SetBasePath(basePath)
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
-            .Build();
     }
 
     public AppSettings Load()
@@ -44,12 +36,12 @@ public class ConfigurationService : IConfigurationService
             var settings = new AppSettings();
             _configuration.Bind(settings);
             ResolvePaths(settings);
-            _logger.Information("Configuration loaded successfully with {Count} services", settings.Services.Count);
+            _logger.LogInformation("Configuration loaded successfully with {Count} services", settings.Services.Count);
             return settings;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to load configuration");
+            _logger.LogError(ex, "Failed to load configuration");
             return new AppSettings();
         }
     }
@@ -104,12 +96,13 @@ public class ConfigurationService : IConfigurationService
             {
                 WriteIndented = true
             });
+
             File.WriteAllText(_configFilePath, json);
-            _logger.Information("Configuration saved successfully");
+            _logger.LogInformation("Configuration saved successfully");
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to save configuration");
+            _logger.LogError(ex, "Failed to save configuration");
         }
     }
 

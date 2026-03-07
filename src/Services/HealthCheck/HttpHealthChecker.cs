@@ -1,4 +1,4 @@
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -14,10 +14,10 @@ public interface IHealthChecker
 
 public class HttpHealthChecker : IHealthChecker
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<HttpHealthChecker> _logger;
     private readonly HttpClient _httpClient;
 
-    public HttpHealthChecker(ILogger logger)
+    public HttpHealthChecker(ILogger<HttpHealthChecker> logger)
     {
         _logger = logger;
 
@@ -55,17 +55,17 @@ public class HttpHealthChecker : IHealthChecker
         }
         catch (HttpRequestException ex)
         {
-            _logger.Debug(ex, "Health check connection failed for {Url}", url);
+            _logger.LogDebug(ex, "Health check connection failed for {Url}", url);
             return $"Connection failed: {ex.Message}";
         }
         catch (TaskCanceledException)
         {
-            _logger.Debug("Health check timed out for {Url}", url);
+            _logger.LogDebug("Health check timed out for {Url}", url);
             return "Health check timed out after 5 seconds";
         }
         catch (Exception ex)
         {
-            _logger.Debug(ex, "Health check error for {Url}", url);
+            _logger.LogDebug(ex, "Health check error for {Url}", url);
             return ex.Message;
         }
     }

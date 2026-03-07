@@ -8,7 +8,7 @@ using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -25,7 +25,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IServiceController _windowsServiceController;
     private readonly IProcessService _processService;
     private readonly IHealthChecker _healthChecker;
-    private readonly ILogger _logger;
+    private readonly ILogger<MainViewModel> _logger;
     private readonly IDialogService _dialogService;
     private readonly IBuildService _buildService;
     private readonly IGitService _gitService;
@@ -73,7 +73,7 @@ public partial class MainViewModel : ViewModelBase
         IServiceController windowsServiceController,
         IProcessService processService,
         IHealthChecker healthChecker,
-        ILogger logger,
+        ILogger<MainViewModel> logger,
         IDialogService dialogService,
         IBuildService buildService,
         IGitService gitService)
@@ -108,11 +108,16 @@ public partial class MainViewModel : ViewModelBase
         _gitRepositoryConfigs = settings.GitRepositories;
 
         if (settings.AppPilot.PollingIntervalMs > 0)
+        {
             _pollingTimer.Interval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
+        }
 
         Services.Clear();
+
         foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
+        {
             Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _buildService, _logger, this));
+        }
 
         // Load Git repositories and link services
         GitRepositories.Clear();
@@ -123,8 +128,11 @@ public partial class MainViewModel : ViewModelBase
             {
                 var svc = Services.FirstOrDefault(s => s.Config.Name == name);
                 if (svc is not null)
+                {
                     repoVm.LinkedServices.Add(svc);
+                }
             }
+
             GitRepositories.Add(repoVm);
         }
 
@@ -201,7 +209,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error updating status for {Name}", service.Config.Name);
+            _logger.LogError(ex, "Error updating status for {Name}", service.Config.Name);
             service.Status = ServiceStatus.Error;
             service.ErrorMessage = ex.Message;
         }

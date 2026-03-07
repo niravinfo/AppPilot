@@ -1,6 +1,6 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,10 +23,10 @@ public interface IProcessService
 
 public class ProcessService : IProcessService
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<ProcessService> _logger;
     private readonly Dictionary<string, Process> _runningProcesses = new();
 
-    public ProcessService(ILogger logger)
+    public ProcessService(ILogger<ProcessService> logger)
     {
         _logger = logger;
     }
@@ -37,7 +37,7 @@ public class ProcessService : IProcessService
         {
             if (!System.IO.File.Exists(config.ExecutablePath))
             {
-                _logger.Error("Executable not found: {Path}", config.ExecutablePath);
+                _logger.LogError("Executable not found: {Path}", config.ExecutablePath);
                 return null;
             }
 
@@ -65,14 +65,14 @@ public class ProcessService : IProcessService
             if (process != null)
             {
                 _runningProcesses[config.Name] = process;
-                _logger.Information("Process {Name} started with PID {ProcessId}", config.Name, process.Id);
+                _logger.LogInformation("Process {Name} started with PID {ProcessId}", config.Name, process.Id);
             }
 
             return process;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to start process {Name}", config.Name);
+            _logger.LogError(ex, "Failed to start process {Name}", config.Name);
             return null;
         }
     }
@@ -87,7 +87,7 @@ public class ProcessService : IProcessService
             {
                 process.Kill(entireProcessTree: true);
                 await process.WaitForExitAsync(cancellationToken);
-                _logger.Information("Process {Name} (PID: {ProcessId}) stopped", config.Name, processId);
+                _logger.LogInformation("Process {Name} (PID: {ProcessId}) stopped", config.Name, processId);
             }
 
             if (_runningProcesses.Remove(config.Name, out var storedProcess))
@@ -99,7 +99,7 @@ public class ProcessService : IProcessService
         }
         catch (ArgumentException)
         {
-            _logger.Warning("Process with PID {ProcessId} not found", processId);
+            _logger.LogWarning("Process with PID {ProcessId} not found", processId);
             if (_runningProcesses.Remove(config.Name, out var storedProcess))
             {
                 storedProcess?.Dispose();
@@ -113,7 +113,7 @@ public class ProcessService : IProcessService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Failed to stop process {Name}", config.Name);
+            _logger.LogError(ex, "Failed to stop process {Name}", config.Name);
             throw new InvalidOperationException($"Failed to stop '{config.DisplayName}': {ex.Message}", ex);
         }
     }
@@ -181,7 +181,7 @@ public class ProcessService : IProcessService
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Failed to get process ID for {Name}", config.Name);
+            _logger.LogWarning(ex, "Failed to get process ID for {Name}", config.Name);
         }
 
         return null;
@@ -247,7 +247,7 @@ public class ProcessService : IProcessService
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Failed to check port {Port}", port);
+            _logger.LogWarning(ex, "Failed to check port {Port}", port);
             return null; // Don't block the start attempt if the check itself fails
         }
     }
@@ -313,7 +313,7 @@ public class ProcessService : IProcessService
         }
         catch (Exception ex)
         {
-            _logger.Debug(ex, "Failed to identify process using port {Port}", port);
+            _logger.LogDebug(ex, "Failed to identify process using port {Port}", port);
         }
 
         return $"Port {port} is already in use by another process.";

@@ -4,10 +4,9 @@ using AppPilot.Services.Build;
 using AppPilot.Services.Git;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,7 +45,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _lastOperationFailed;
 
-    public string Name      => Config.DisplayName;
+    public string Name => Config.DisplayName;
     public string LocalPath => Config.LocalPath;
     public bool HasSolution => !string.IsNullOrWhiteSpace(Config.SolutionPath);
     public bool HasLinkedServices => LinkedServices.Count > 0;
@@ -74,11 +73,11 @@ public partial class GitRepositoryViewModel : ViewModelBase
         try
         {
             CurrentBranch = await _gitService.GetCurrentBranchAsync(Config.LocalPath);
-            LastCommit    = await _gitService.GetLastCommitAsync(Config.LocalPath);
+            LastCommit = await _gitService.GetLastCommitAsync(Config.LocalPath);
         }
         catch (Exception ex)
         {
-            _logger.Warning(ex, "Could not load git info for {Repo}", Config.Name);
+            _logger.LogWarning(ex, "Could not load git info for {Repo}", Config.Name);
             CurrentBranch = "—";
         }
     }
@@ -103,7 +102,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
             {
                 StatusText = "Pull succeeded";
                 CurrentBranch = await _gitService.GetCurrentBranchAsync(Config.LocalPath);
-                LastCommit    = await _gitService.GetLastCommitAsync(Config.LocalPath);
+                LastCommit = await _gitService.GetLastCommitAsync(Config.LocalPath);
             }
             else
             {
@@ -113,7 +112,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Git pull failed for {Repo}", Config.Name);
+            _logger.LogError(ex, "Git pull failed for {Repo}", Config.Name);
             Output = ex.Message;
             StatusText = "Pull error";
             LastOperationFailed = true;
@@ -161,6 +160,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
                     await Task.Delay(400);
                 }
             }
+
             StatusText = "Build succeeded";
         }
         else
@@ -168,6 +168,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
             StatusText = stoppedServices.Count > 0
                 ? $"Build failed — {stoppedServices.Count} service(s) remain stopped"
                 : "Build failed";
+
             LastOperationFailed = true;
         }
 
@@ -191,6 +192,6 @@ public partial class GitRepositoryViewModel : ViewModelBase
 
     // ── CanExecute helpers ────────────────────────────────────────────────────
 
-    private bool IsNotBusy()       => !IsBusy;
+    private bool IsNotBusy() => !IsBusy;
     private bool CanBuildSolution() => !IsBusy && HasSolution;
 }
