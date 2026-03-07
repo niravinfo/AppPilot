@@ -15,7 +15,10 @@ public class ManagedServiceConfig
     public int? Port { get; set; }
     public string HealthCheckUrl { get; set; } = string.Empty;
     public bool AutoStart { get; set; }
-    public int StartOrder { get; set; }
+    /// <summary>
+    /// Controls display order in UI. If not set, defaults to 999.
+    /// </summary>
+    public int? DisplayOrder { get; set; }
     public List<string> Dependencies { get; set; } = new();
     public Dictionary<string, string> Environment { get; set; } = new();
 

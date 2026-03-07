@@ -48,7 +48,7 @@
       "WorkingDirectory": "MyWorker\\bin\\Debug\\net10.0",
 
       "AutoStart": false,
-      "StartOrder": 1,
+      "DisplayOrder": 1,
       "Dependencies": [],
       "Environment": {
         "ASPNETCORE_ENVIRONMENT": "Development"
@@ -72,7 +72,7 @@
       "Port": 7002,
       "HealthCheckUrl": "https://localhost:7002",
       "AutoStart": false,
-      "StartOrder": 2,
+      "DisplayOrder": 2,
       "Dependencies": [],
       "Environment": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -93,7 +93,7 @@
       "Port": 7001,
       "HealthCheckUrl": "http://localhost:7001/health",
       "AutoStart": false,
-      "StartOrder": 3,
+      "DisplayOrder": 3,
       "Dependencies": [],
       "Environment": {
         "ASPNETCORE_ENVIRONMENT": "Development"

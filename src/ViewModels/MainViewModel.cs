@@ -119,7 +119,9 @@ public partial class MainViewModel : ViewModelBase
         // Optimize: Calculate group info once, reuse for all services in same group
         var groupInfoCache = new Dictionary<string, GroupInfo>();
 
-        foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
+        foreach (var config in _serviceConfigs
+            .OrderBy(s => s.DisplayOrder ?? 999)
+            .ThenBy(s => s.Name))
         {
             GroupInfo groupInfo;
             var groupKey = config.GroupId ?? string.Empty;
@@ -280,7 +282,10 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
 
-            orderedServices.Sort((a, b) => a.Config.StartOrder.CompareTo(b.Config.StartOrder));
+            orderedServices.Sort((a, b) =>
+                (a.Config.DisplayOrder ?? 999).CompareTo(b.Config.DisplayOrder ?? 999) != 0
+                    ? (a.Config.DisplayOrder ?? 999).CompareTo(b.Config.DisplayOrder ?? 999)
+                    : string.Compare(a.Config.Name, b.Config.Name, StringComparison.OrdinalIgnoreCase));
 
             foreach (var service in orderedServices)
             {
@@ -314,7 +319,10 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
 
-            orderedServices.Sort((a, b) => b.Config.StartOrder.CompareTo(a.Config.StartOrder));
+            orderedServices.Sort((a, b) =>
+                (b.Config.DisplayOrder ?? 999).CompareTo(a.Config.DisplayOrder ?? 999) != 0
+                    ? (b.Config.DisplayOrder ?? 999).CompareTo(a.Config.DisplayOrder ?? 999)
+                    : string.Compare(b.Config.Name, a.Config.Name, StringComparison.OrdinalIgnoreCase));
 
             foreach (var service in orderedServices)
             {

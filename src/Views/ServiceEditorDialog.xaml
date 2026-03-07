@@ -388,8 +388,8 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Start Order" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding StartOrderText, UpdateSourceTrigger=PropertyChanged}"
+                        <TextBlock Text="Display Order" Style="{StaticResource FormLabel}"/>
+                        <TextBox Text="{Binding DisplayOrder, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormInput}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,7">

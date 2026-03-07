@@ -2,6 +2,7 @@ using AppPilot.Models;
 using AppPilot.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -52,7 +53,10 @@ public partial class ServiceGroupViewModel : ViewModelBase
             }
         }
 
-        services.Sort((a, b) => a.Config.StartOrder.CompareTo(b.Config.StartOrder));
+        services.Sort((a, b) =>
+            (a.Config.DisplayOrder ?? 999).CompareTo(b.Config.DisplayOrder ?? 999) != 0
+                ? (a.Config.DisplayOrder ?? 999).CompareTo(b.Config.DisplayOrder ?? 999)
+                : string.Compare(a.Config.Name, b.Config.Name, StringComparison.OrdinalIgnoreCase));
 
         foreach (var service in services)
         {
@@ -74,7 +78,10 @@ public partial class ServiceGroupViewModel : ViewModelBase
             }
         }
 
-        services.Sort((a, b) => b.Config.StartOrder.CompareTo(a.Config.StartOrder));
+        services.Sort((a, b) =>
+            (b.Config.DisplayOrder ?? 999).CompareTo(a.Config.DisplayOrder ?? 999) != 0
+                ? (b.Config.DisplayOrder ?? 999).CompareTo(a.Config.DisplayOrder ?? 999)
+                : string.Compare(b.Config.Name, a.Config.Name, StringComparison.OrdinalIgnoreCase));
 
         foreach (var service in services)
         {

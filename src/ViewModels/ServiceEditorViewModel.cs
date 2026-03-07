@@ -45,7 +45,7 @@ public partial class ServiceEditorViewModel : ViewModelBase
     private bool _autoStart;
 
     [ObservableProperty]
-    private string _startOrderText = "0";
+    private int _displayOrder = 999;
 
     [ObservableProperty]
     private string _dependenciesText = string.Empty;
@@ -79,7 +79,7 @@ public partial class ServiceEditorViewModel : ViewModelBase
         _portText = config.Port?.ToString() ?? string.Empty;
         _healthCheckUrl = config.HealthCheckUrl;
         _autoStart = config.AutoStart;
-        _startOrderText = config.StartOrder.ToString();
+        _displayOrder = config.DisplayOrder ?? 999;
         _dependenciesText = string.Join(", ", config.Dependencies);
         foreach (var (key, value) in config.Environment)
         {
@@ -101,7 +101,7 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.Port = int.TryParse(PortText, out var port) ? port : null;
         config.HealthCheckUrl = HealthCheckUrl;
         config.AutoStart = AutoStart;
-        config.StartOrder = int.TryParse(StartOrderText, out var order) ? order : 0;
+        config.DisplayOrder = DisplayOrder;
         config.Dependencies = [.. DependenciesText
             .Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)];
         config.Environment = EnvironmentVariables.ToDictionary(e => e.Key, e => e.Value);
