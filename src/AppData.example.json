@@ -46,7 +46,7 @@
       "ExecutablePath": "MyWorker\\bin\\Debug\\net10.0\\MyWorker.exe",
       "Arguments": "",
       "WorkingDirectory": "MyWorker\\bin\\Debug\\net10.0",
-
+      "CsprojPath": "MyWorker/MyWorker.csproj",
       "DisplayOrder": 1,
       "Dependencies": [],
       "Environment": {
@@ -70,7 +70,7 @@
       "WorkingDirectory": "MyGrpcApi\\bin\\Debug\\net10.0",
       "Port": 7002,
       "HealthCheckUrl": "https://localhost:7002",
-      "AutoStart": false,
+      "CsprojPath": "MyGrpcApi/MyGrpcApi.csproj",
       "DisplayOrder": 2,
       "Dependencies": [],
       "Environment": {
@@ -91,7 +91,7 @@
       "WorkingDirectory": "C:\\OtherLocation\\MyWebApi\\bin\\Debug\\net10.0",
       "Port": 7001,
       "HealthCheckUrl": "http://localhost:7001/health",
-      "AutoStart": false,
+      "CsprojPath": "C:/OtherLocation/MyWebApi/MyWebApi.csproj",
       "DisplayOrder": 3,
       "Dependencies": [],
       "Environment": {
