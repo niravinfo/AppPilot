@@ -6,4 +6,9 @@ public class GroupConfig
     public string Name { get; set; } = string.Empty;
     public int DisplayOrder { get; set; } = 0;
     public string ColorCode { get; set; }
+
+    public override string ToString()
+    {
+        return Name;
+    }
 }
