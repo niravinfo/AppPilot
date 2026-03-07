@@ -13,6 +13,9 @@ public class ServiceInfo
     public string Path { get; set; }
     public string Type { get; set; }
     public List<string> Ports { get; set; }
+    public string ExecutablePath { get; set; }
+    public string WorkingDirectory { get; set; }
+    public Dictionary<string, string> SuggestedEnvironment { get; set; }
 }
 
 class Program
@@ -40,21 +43,41 @@ class Program
                 continue; // Only include projects with launchSettings.json
             }
 
+            var projectName = System.IO.Path.GetFileNameWithoutExtension(csproj);
+            var binDebugDir = Path.Combine(Path.GetDirectoryName(csproj), "bin", "Debug");
+            string exePath = null;
+            string workingDir = null;
+            // Try to find the latest target framework directory
+            if (Directory.Exists(binDebugDir))
+            {
+                var tfmDir = Directory.GetDirectories(binDebugDir).OrderByDescending(d => d).FirstOrDefault();
+                if (tfmDir != null)
+                {
+                    exePath = Path.Combine(tfmDir, projectName + ".exe");
+                    workingDir = tfmDir;
+                }
+            }
             var info = new ServiceInfo
             {
-                Name = System.IO.Path.GetFileNameWithoutExtension(csproj),
+                Name = projectName,
                 Path = csproj,
                 Type = "API",
-                Ports = new List<string>()
+                Ports = new List<string>(),
+                ExecutablePath = exePath ?? string.Empty,
+                WorkingDirectory = workingDir ?? string.Empty,
+                SuggestedEnvironment = new Dictionary<string, string>()
             };
 
             // Detect Worker
             var csprojText = File.ReadAllText(csproj);
             if (csprojText.Contains("Microsoft.NET.Sdk.Worker", StringComparison.OrdinalIgnoreCase)
-                || (csprojText.Contains("Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase) && !csprojText.Contains("Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase))
-                || (csprojText.Contains("<OutputType>Exe</OutputType>", StringComparison.OrdinalIgnoreCase) && !csprojText.Contains("Microsoft.AspNetCore.App", StringComparison.OrdinalIgnoreCase)))
+                || (csprojText.Contains("Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase)
+                    && !csprojText.Contains("Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase))
+                || (csprojText.Contains("<OutputType>Exe</OutputType>", StringComparison.OrdinalIgnoreCase)
+                    && !csprojText.Contains("Microsoft.AspNetCore.App", StringComparison.OrdinalIgnoreCase)))
             {
                 info.Type = "Worker";
+                info.SuggestedEnvironment["DOTNET_ENVIRONMENT"] = "Development";
             }
             else
             {
@@ -67,7 +90,17 @@ class Program
                     if (programText.Contains("MapGrpcService") || programText.Contains("AddGrpc"))
                     {
                         info.Type = "gRPC";
+                        info.SuggestedEnvironment["ASPNETCORE_ENVIRONMENT"] = "Development";
+                        info.SuggestedEnvironment["ASPNETCORE_Kestrel__Protocols"] = "Http2";
                     }
+                    else
+                    {
+                        info.SuggestedEnvironment["ASPNETCORE_ENVIRONMENT"] = "Development";
+                    }
+                }
+                else
+                {
+                    info.SuggestedEnvironment["ASPNETCORE_ENVIRONMENT"] = "Development";
                 }
             }
 
@@ -82,7 +115,10 @@ class Program
                     {
                         var profileName = profile.Name;
                         if (profileName.Contains("IIS", StringComparison.OrdinalIgnoreCase))
+                        {
                             continue;
+                        }
+
                         if (profile.Value.TryGetProperty("applicationUrl", out var appUrlProp))
                         {
                             var urls = appUrlProp.GetString()?.Split(';') ?? Array.Empty<string>();
@@ -105,6 +141,7 @@ class Program
 
             services.Add(info);
         }
+
         return services;
     }
 }
