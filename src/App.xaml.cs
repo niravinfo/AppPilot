@@ -80,7 +80,6 @@ public partial class App : Application
             })
             .ConfigureServices((context, services) =>
             {
-                // Register services and viewmodels with logging abstraction
                 services.AddSingleton<IConfigurationService, ConfigurationService>();
                 services.AddSingleton<IServiceController, WindowsServiceController>();
                 services.AddSingleton<IProcessService, ProcessService>();
@@ -144,8 +143,6 @@ public partial class App : Application
         Environment.Exit(0);
     }
 
-    // Logging is now configured via HostBuilder and Serilog
-
     private void SetupExceptionHandling()
     {
         AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
@@ -183,8 +180,6 @@ public partial class App : Application
             MessageBoxImage.Error);
         Environment.Exit(1);
     }
-
-    // Dependency injection is now handled by HostBuilder
 
     private static void TrimMemory()
     {

@@ -2,6 +2,7 @@ using AppPilot.Models;
 using AppPilot.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,25 +34,27 @@ public partial class ServiceGroupViewModel : ViewModelBase
 
     private void InitializeColors()
     {
-        var isDark = !ThemeManager.IsLight;
-        if (!string.IsNullOrWhiteSpace(Group.ColorCode))
-        {
-            var color = (Color)ColorConverter.ConvertFromString(Group.ColorCode);
-            GroupAccentBrush = new SolidColorBrush(color);
-            GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 40 : 35), color.R, color.G, color.B));
-        }
-        else
-        {
-            var color = ColorProvider.GetGroupColor(Group.Name, isDark);
-            GroupAccentBrush = new SolidColorBrush(color);
-            GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 40 : 35), color.R, color.G, color.B));
-        }
+        // Optimize: Use ThemeManager cached brushes instead of creating new ones
+        GroupAccentBrush = ThemeManager.GetGroupBrush(Group.Id, Group.Name, Group.ColorCode);
+        GroupBadgeBrush = ThemeManager.GetGroupBadgeBrush(Group.Id, Group.Name, Group.ColorCode);
     }
 
     [RelayCommand]
     private async Task StartGroupAsync()
     {
-        foreach (var service in Items.Where(s => s.CanStart).OrderBy(s => s.Config.StartOrder))
+        // Optimize: Avoid LINQ allocations - use List and manual sort
+        var services = new List<ServiceItemViewModel>();
+        foreach (var service in Items)
+        {
+            if (service.CanStart)
+            {
+                services.Add(service);
+            }
+        }
+
+        services.Sort((a, b) => a.Config.StartOrder.CompareTo(b.Config.StartOrder));
+
+        foreach (var service in services)
         {
             await service.StartAsync();
             await Task.Delay(200);
@@ -61,7 +64,19 @@ public partial class ServiceGroupViewModel : ViewModelBase
     [RelayCommand]
     private async Task StopGroupAsync()
     {
-        foreach (var service in Items.Where(s => s.CanStop).OrderByDescending(s => s.Config.StartOrder))
+        // Optimize: Avoid LINQ allocations - use List and manual sort
+        var services = new List<ServiceItemViewModel>();
+        foreach (var service in Items)
+        {
+            if (service.CanStop)
+            {
+                services.Add(service);
+            }
+        }
+
+        services.Sort((a, b) => b.Config.StartOrder.CompareTo(a.Config.StartOrder));
+
+        foreach (var service in services)
         {
             await service.StopAsync();
             await Task.Delay(200);

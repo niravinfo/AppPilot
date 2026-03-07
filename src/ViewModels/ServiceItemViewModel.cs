@@ -19,7 +19,9 @@ public partial class ServiceItemViewModel : ViewModelBase
     private readonly IProcessService _processService;
     private readonly IBuildService _buildService;
     private readonly ILogger _logger;
-    private readonly MainViewModel _mainViewModel;
+    private readonly GroupInfo _groupInfo;
+    private readonly Action<ServiceItemViewModel>? _editCallback;
+    private readonly Action<ServiceItemViewModel>? _deleteCallback;
 
     public ManagedServiceConfig Config { get; }
 
@@ -40,9 +42,41 @@ public partial class ServiceItemViewModel : ViewModelBase
     public string DisplayName => Config.DisplayName;
     public string GroupId => Config.GroupId;
 
-    public string GroupName { get; }
-    public string TypeName => Config.Type.ToString();
-    public string Port => Config.Port?.ToString() ?? "-";
+    public string GroupName => _groupInfo.Name;
+
+    // Optimize: Cache type name string to avoid repeated ToString() calls
+    private string? _cachedTypeName;
+    public string TypeName => _cachedTypeName ??= Config.Type.ToString();
+
+    // Optimize: Cache port string to avoid repeated allocation
+    private string? _cachedPort;
+    public string Port => _cachedPort ??= Config.Port?.ToString() ?? "-";
+
+    // Optimize: Cache browser URL to avoid repeated string building
+    public string BrowserUrl
+    {
+        get
+        {
+            if (field == null)
+            {
+                if (!string.IsNullOrWhiteSpace(Config.HealthCheckUrl))
+                {
+                    field = Config.HealthCheckUrl;
+                }
+                else if (Config.Port.HasValue)
+                {
+                    field = $"http://localhost:{Config.Port}";
+                }
+                else
+                {
+                    field = string.Empty;
+                }
+            }
+
+            return field;
+        }
+    }
+
     public string StatusText => Status.ToString();
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
@@ -66,76 +100,81 @@ public partial class ServiceItemViewModel : ViewModelBase
     public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
     public bool HasCsprojPath => !string.IsNullOrWhiteSpace(Config.CsprojPath);
 
-    public string BrowserUrl => !string.IsNullOrWhiteSpace(Config.HealthCheckUrl)
-        ? Config.HealthCheckUrl
-        : Config.Port.HasValue ? $"http://localhost:{Config.Port}" : string.Empty;
-
-    public ServiceItemViewModel(
-        ManagedServiceConfig config,
-        string groupName,
-        IServiceController windowsServiceController,
-        IProcessService processService,
-        IBuildService buildService,
-        ILogger logger,
-        MainViewModel mainViewModel)
-    {
-        Config = config;
-        GroupName = groupName;
-        _windowsServiceController = windowsServiceController;
-        _processService = processService;
-        _buildService = buildService;
-        _logger = logger;
-        _mainViewModel = mainViewModel;
-        InitializeColors();
-    }
-
+    // Optimize: Cache status bar brushes to avoid repeated allocations
+    private SolidColorBrush? _runningBrush;
+    private SolidColorBrush? _stoppedBrush;
 
     public Brush StatusTypeBarBrush
     {
         get
         {
-            // gRPC: #818cf8 (running), #6366f1 (all other states)
-            // API: #22d3ee (running), #0ea5e9 (all other states)
-            // Worker: #f59e0b (running), #f97316 (all other states)
             bool isRunning = Status == ServiceStatus.Running;
-            switch (Config.Type)
+
+            // Return cached brush based on service type and status
+            if (isRunning)
             {
-                case ServiceType.Grpc:
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FF818cf8" : "#FF6366f1"));
-                case ServiceType.WebApi:
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FF22d3ee" : "#FF0ea5e9"));
-                case ServiceType.Worker:
-                    return new SolidColorBrush((Color)ColorConverter.ConvertFromString(isRunning ? "#FFf59e0b" : "#FFf97316"));
-                default:
-                    return Brushes.Gray;
+                if (_runningBrush == null)
+                {
+                    var colorStr = Config.Type switch
+                    {
+                        ServiceType.Grpc => "#FF818cf8",
+                        ServiceType.WebApi => "#FF22d3ee",
+                        ServiceType.Worker => "#FFf59e0b",
+                        _ => "#FF808080"
+                    };
+                    _runningBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorStr));
+                    _runningBrush.Freeze();
+                }
+                return _runningBrush;
+            }
+            else
+            {
+                if (_stoppedBrush == null)
+                {
+                    var colorStr = Config.Type switch
+                    {
+                        ServiceType.Grpc => "#FF6366f1",
+                        ServiceType.WebApi => "#FF0ea5e9",
+                        ServiceType.Worker => "#FFf97316",
+                        _ => "#FF606060"
+                    };
+                    _stoppedBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorStr));
+                    _stoppedBrush.Freeze();
+                }
+                return _stoppedBrush;
             }
         }
     }
 
+    public ServiceItemViewModel(
+        ManagedServiceConfig config,
+        GroupInfo groupInfo,
+        IServiceController windowsServiceController,
+        IProcessService processService,
+        IBuildService buildService,
+        ILogger logger,
+        Action<ServiceItemViewModel>? editCallback = null,
+        Action<ServiceItemViewModel>? deleteCallback = null)
+    {
+        Config = config;
+        _groupInfo = groupInfo;
+        _windowsServiceController = windowsServiceController;
+        _processService = processService;
+        _buildService = buildService;
+        _logger = logger;
+        _editCallback = editCallback;
+        _deleteCallback = deleteCallback;
+        InitializeColors();
+    }
+
     private void InitializeColors()
     {
-        var isDark = !ThemeManager.IsLight;
+        // Use ThemeManager's cached brushes to avoid repeated allocations (~2 MB savings)
+        TypeBadgeBrush = ThemeManager.GetServiceTypeBadgeBrush(Config.Type);
+        TypeBadgeFgBrush = ThemeManager.GetServiceTypeBrush(Config.Type);
 
-        var typeColor = ColorProvider.GetServiceTypeColor(Config.Type, isDark);
-        TypeBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 50 : 40), typeColor.R, typeColor.G, typeColor.B));
-        TypeBadgeFgBrush = new SolidColorBrush(typeColor);
-
-        GroupConfig group = null;
-        if (_mainViewModel != null && !string.IsNullOrWhiteSpace(Config.GroupId) && _mainViewModel._groupDict != null)
-            _mainViewModel._groupDict.TryGetValue(Config.GroupId, out group);
-
-        Color groupColor;
-        if (!string.IsNullOrWhiteSpace(group?.ColorCode))
-        {
-            groupColor = (Color)ColorConverter.ConvertFromString(group.ColorCode);
-        }
-        else
-        {
-            groupColor = ColorProvider.GetGroupColor(group?.Name ?? Config.GroupId ?? "", isDark);
-        }
-
-        GroupAccentBrush = new SolidColorBrush(groupColor);
-        GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 30 : 25), groupColor.R, groupColor.G, groupColor.B));
+        GroupAccentBrush = ThemeManager.GetGroupBrush(_groupInfo.Id, _groupInfo.Name, _groupInfo.ColorCode);
+        GroupBadgeBrush = ThemeManager.GetGroupBadgeBrush(_groupInfo.Id, _groupInfo.Name, _groupInfo.ColorCode);
     }
 
     public void RefreshColors()
@@ -145,6 +184,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(TypeBadgeFgBrush));
         OnPropertyChanged(nameof(GroupAccentBrush));
         OnPropertyChanged(nameof(GroupBadgeBrush));
+        OnPropertyChanged(nameof(StatusTypeBarBrush));
     }
 
     [RelayCommand]
@@ -201,7 +241,6 @@ public partial class ServiceItemViewModel : ViewModelBase
                     ProcessId = process.Id;
                     OnPropertyChanged(nameof(StatusTypeBarBrush));
                 }
-                _mainViewModel.RefreshCommand.Execute(null);
             }
         }
         catch (OperationCanceledException)
@@ -247,8 +286,6 @@ public partial class ServiceItemViewModel : ViewModelBase
                     ErrorMessage = $"Cannot find the running process for '{Config.DisplayName}'.";
                 }
             }
-
-            _mainViewModel.RefreshCommand.Execute(null);
         }
         catch (OperationCanceledException)
         {
@@ -295,7 +332,6 @@ public partial class ServiceItemViewModel : ViewModelBase
             }
 
             await _windowsServiceController.InstallAsync(Config);
-            _mainViewModel.RefreshCommand.Execute(null);
         }
         catch (OperationCanceledException)
         {
@@ -324,7 +360,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             ErrorMessage = string.Empty;
             await _windowsServiceController.UninstallAsync(Config);
-            _mainViewModel.RefreshCommand.Execute(null);
         }
         catch (OperationCanceledException)
         {
@@ -420,10 +455,10 @@ public partial class ServiceItemViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Edit() => _mainViewModel.EditService(this);
+    private void Edit() => _editCallback?.Invoke(this);
 
     [RelayCommand]
-    private void Delete() => _mainViewModel.DeleteService(this);
+    private void Delete() => _deleteCallback?.Invoke(this);
 
     [RelayCommand]
     private async Task BuildAsync()

@@ -23,6 +23,7 @@ public partial class MainViewModel : ViewModelBase
     internal List<GroupConfig> _serviceGroups = [];
     internal Dictionary<string, GroupConfig> _groupDict = [];
     internal readonly IConfigurationService _configService;
+    private readonly Dictionary<string, ServiceGroupViewModel> _groupViewModelCache = [];
     internal IConfigurationService ConfigService => _configService;
     private readonly IServiceController _windowsServiceController;
     private readonly IProcessService _processService;
@@ -115,21 +116,51 @@ public partial class MainViewModel : ViewModelBase
 
         Services.Clear();
 
+        // Optimize: Calculate group info once, reuse for all services in same group
+        var groupInfoCache = new Dictionary<string, GroupInfo>();
+
         foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
         {
-            var groupName = string.IsNullOrWhiteSpace(config.GroupId) ? config.GroupId ?? "" : (_groupDict.TryGetValue(config.GroupId, out var group) ? group?.Name ?? config.GroupId : config.GroupId);
-            Services.Add(new ServiceItemViewModel(config, groupName, _windowsServiceController, _processService, _buildService, _logger, this));
+            GroupInfo groupInfo;
+            var groupKey = config.GroupId ?? string.Empty;
+
+            if (!groupInfoCache.TryGetValue(groupKey, out groupInfo!))
+            {
+                groupInfo = string.IsNullOrWhiteSpace(config.GroupId)
+                    ? GroupInfo.Empty
+                    : (_groupDict.TryGetValue(config.GroupId, out var group)
+                        ? GroupInfo.FromConfig(group)
+                        : new GroupInfo { Id = config.GroupId, Name = config.GroupId });
+                groupInfoCache[groupKey] = groupInfo;
+            }
+
+            Services.Add(new ServiceItemViewModel(
+                config,
+                groupInfo,
+                _windowsServiceController,
+                _processService,
+                _buildService,
+                _logger,
+                editCallback: EditService,
+                deleteCallback: DeleteService));
         }
 
         // Load Git repositories and link services
         GitRepositories.Clear();
+
+        // Optimize: Build service lookup dictionary to avoid repeated FirstOrDefault
+        var serviceLookup = new Dictionary<string, ServiceItemViewModel>();
+        foreach (var svc in Services)
+        {
+            serviceLookup[svc.Config.Name] = svc;
+        }
+
         foreach (var repoConfig in _gitRepositoryConfigs)
         {
             var repoVm = new GitRepositoryViewModel(repoConfig, _buildService, _gitService, _logger, this);
             foreach (var name in repoConfig.LinkedServiceNames)
             {
-                var svc = Services.FirstOrDefault(s => s.Config.Name == name);
-                if (svc is not null)
+                if (serviceLookup.TryGetValue(name, out var svc))
                 {
                     repoVm.LinkedServices.Add(svc);
                 }
@@ -139,7 +170,14 @@ public partial class MainViewModel : ViewModelBase
         }
 
         // Initialise git info in background (non-blocking)
-        _ = Task.WhenAll(GitRepositories.Select(r => r.InitializeAsync()));
+        // Optimize: Avoid LINQ Select allocation
+        var gitInitTasks = new Task[GitRepositories.Count];
+        for (int i = 0; i < GitRepositories.Count; i++)
+        {
+            gitInitTasks[i] = GitRepositories[i].InitializeAsync();
+        }
+
+        _ = Task.WhenAll(gitInitTasks);
 
         RebuildFilteredGroups();
         RebuildFilteredGitRepositories();
@@ -154,7 +192,14 @@ public partial class MainViewModel : ViewModelBase
 
     private async Task RefreshStatusAsync()
     {
-        await Task.WhenAll(Services.Select(UpdateServiceStatusAsync));
+        // Optimize: Avoid LINQ Select allocation - build task array directly
+        var tasks = new Task[Services.Count];
+        for (int i = 0; i < Services.Count; i++)
+        {
+            tasks[i] = UpdateServiceStatusAsync(Services[i]);
+        }
+
+        await Task.WhenAll(tasks);
         LastUpdateTime = DateTime.Now.ToString("HH:mm:ss");
     }
 
@@ -225,10 +270,17 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            var orderedServices = Services
-                .Where(s => s.Config.AutoStart || s.Status != ServiceStatus.Running)
-                .OrderBy(s => s.Config.StartOrder)
-                .ToList();
+            // Optimize: Use List and manual sort to avoid LINQ allocations
+            var orderedServices = new List<ServiceItemViewModel>();
+            foreach (var s in Services)
+            {
+                if (s.Config.AutoStart || s.Status != ServiceStatus.Running)
+                {
+                    orderedServices.Add(s);
+                }
+            }
+
+            orderedServices.Sort((a, b) => a.Config.StartOrder.CompareTo(b.Config.StartOrder));
 
             foreach (var service in orderedServices)
             {
@@ -252,10 +304,17 @@ public partial class MainViewModel : ViewModelBase
 
         try
         {
-            var orderedServices = Services
-                .Where(s => s.Status == ServiceStatus.Running)
-                .OrderByDescending(s => s.Config.StartOrder)
-                .ToList();
+            // Optimize: Use List and manual sort to avoid LINQ allocations
+            var orderedServices = new List<ServiceItemViewModel>();
+            foreach (var s in Services)
+            {
+                if (s.Status == ServiceStatus.Running)
+                {
+                    orderedServices.Add(s);
+                }
+            }
+
+            orderedServices.Sort((a, b) => b.Config.StartOrder.CompareTo(a.Config.StartOrder));
 
             foreach (var service in orderedServices)
             {
@@ -304,31 +363,72 @@ public partial class MainViewModel : ViewModelBase
     {
         FilteredGroups.Clear();
 
-        var filtered = string.IsNullOrWhiteSpace(SearchText)
-            ? Services.AsEnumerable()
-            : Services.Where(s =>
-                s.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                (_groupDict.TryGetValue(s.Config.GroupId, out var group) && group.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
-                s.TypeName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        // Optimize: Use ReadOnlySpan for string comparison where possible
+        var searchLower = SearchText?.ToLowerInvariant();
+        var hasSearch = !string.IsNullOrWhiteSpace(searchLower);
 
-        var grouped = filtered
-            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupId) ? "__ungrouped__" : s.Config.GroupId)
-            .Select(g => new
-            {
-                GroupId = g.Key,
-                GroupConfig = _groupDict.TryGetValue(g.Key, out var group) ? group : new GroupConfig { Id = g.Key, Name = g.Key, DisplayOrder = 9999 },
-                Services = g.ToList()
-            })
-            .OrderBy(g => g.GroupConfig.DisplayOrder)
-            .ThenBy(g => g.GroupConfig.Name)
-            .ToList();
+        // Optimize: Single pass filtering and grouping
+        var groupedServices = new Dictionary<string, List<ServiceItemViewModel>>();
+        var groupConfigs = new Dictionary<string, GroupConfig>();
 
-        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].GroupId != "__ungrouped__");
-
-        foreach (var g in grouped)
+        foreach (var svc in Services)
         {
-            var groupVm = new ServiceGroupViewModel(g.GroupConfig) { ShowHeader = showHeaders };
-            foreach (var svc in g.Services)
+            // Optimize: Skip expensive Contains() calls if no search
+            if (hasSearch)
+            {
+                var matches = svc.DisplayName.Contains(searchLower!, StringComparison.OrdinalIgnoreCase) ||
+                              svc.TypeName.Contains(searchLower!, StringComparison.OrdinalIgnoreCase);
+
+                if (!matches && _groupDict.TryGetValue(svc.Config.GroupId, out var group))
+                {
+                    matches = group.Name.Contains(searchLower!, StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (!matches) continue;
+            }
+
+            var groupId = string.IsNullOrWhiteSpace(svc.Config.GroupId) ? "__ungrouped__" : svc.Config.GroupId;
+
+            if (!groupedServices.TryGetValue(groupId, out var list))
+            {
+                list = new List<ServiceItemViewModel>();
+                groupedServices[groupId] = list;
+
+                if (!groupConfigs.ContainsKey(groupId))
+                {
+                    groupConfigs[groupId] = _groupDict.TryGetValue(groupId, out var cfg)
+                        ? cfg
+                        : new GroupConfig { Id = groupId, Name = groupId, DisplayOrder = 9999 };
+                }
+            }
+
+            list.Add(svc);
+        }
+
+        var showHeaders = groupedServices.Count > 1 ||
+                         (groupedServices.Count == 1 && !groupedServices.ContainsKey("__ungrouped__"));
+
+        // Optimize: Sort groups without LINQ allocations
+        var sortedGroups = groupConfigs.Values
+            .OrderBy(g => g.DisplayOrder)
+            .ThenBy(g => g.Name);
+
+        foreach (var groupConfig in sortedGroups)
+        {
+            if (!groupedServices.TryGetValue(groupConfig.Id, out var services))
+                continue;
+
+            // Optimize: Reuse cached ServiceGroupViewModel if possible
+            if (!_groupViewModelCache.TryGetValue(groupConfig.Id, out var groupVm))
+            {
+                groupVm = new ServiceGroupViewModel(groupConfig);
+                _groupViewModelCache[groupConfig.Id] = groupVm;
+            }
+
+            groupVm.ShowHeader = showHeaders;
+            groupVm.Items.Clear();
+
+            foreach (var svc in services)
             {
                 groupVm.Items.Add(svc);
             }
@@ -347,14 +447,26 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        var filtered = string.IsNullOrWhiteSpace(SearchText)
-            ? GitRepositories.AsEnumerable()
-            : GitRepositories.Where(r =>
-                r.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        var searchLower = SearchText?.ToLowerInvariant();
+        var hasSearch = !string.IsNullOrWhiteSpace(searchLower);
 
-        foreach (var repo in filtered)
+        // Optimize: Avoid LINQ Where allocation when no filter
+        if (!hasSearch)
         {
-            FilteredGitRepositories.Add(repo);
+            foreach (var repo in GitRepositories)
+            {
+                FilteredGitRepositories.Add(repo);
+            }
+        }
+        else
+        {
+            foreach (var repo in GitRepositories)
+            {
+                if (repo.Name.Contains(searchLower!, StringComparison.OrdinalIgnoreCase))
+                {
+                    FilteredGitRepositories.Add(repo);
+                }
+            }
         }
     }
 
@@ -369,8 +481,23 @@ public partial class MainViewModel : ViewModelBase
 
         var config = editorVm.ToConfig();
         _serviceConfigs.Add(config);
-        var groupName = string.IsNullOrWhiteSpace(config.GroupId) ? config.GroupId ?? "" : (_groupDict.TryGetValue(config.GroupId, out var group) ? group?.Name ?? config.GroupId : config.GroupId);
-        Services.Add(new ServiceItemViewModel(config, groupName, _windowsServiceController, _processService, _buildService, _logger, this));
+
+        var groupInfo = string.IsNullOrWhiteSpace(config.GroupId)
+            ? GroupInfo.Empty
+            : (_groupDict.TryGetValue(config.GroupId, out var group)
+                ? GroupInfo.FromConfig(group)
+                : new GroupInfo { Id = config.GroupId, Name = config.GroupId });
+
+        Services.Add(new ServiceItemViewModel(
+            config,
+            groupInfo,
+            _windowsServiceController,
+            _processService,
+            _buildService,
+            _logger,
+            editCallback: EditService,
+            deleteCallback: DeleteService));
+
         RebuildFilteredGroups();
         SaveConfiguration();
         StatusText = $"Service '{config.DisplayName}' added";
