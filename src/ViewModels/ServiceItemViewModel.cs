@@ -1,7 +1,3 @@
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Windows.Media;
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
@@ -10,6 +6,10 @@ using AppPilot.Services.ServiceControl;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace AppPilot.ViewModels;
 
@@ -55,7 +55,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public bool CanInstall => Config.Type == ServiceType.Worker && Status == ServiceStatus.NotInstalled;
     public bool CanUninstall => Config.Type == ServiceType.Worker && Status != ServiceStatus.NotInstalled;
-    public bool IsWorkerService => Config.Type == ServiceType.Worker;
+    public bool UseWindowsService => Config.Type == ServiceType.Worker && Config.UseWindowsService;
     public bool CanStart => Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled;
     public bool CanStop => Status == ServiceStatus.Running;
     public bool CanRestart => Status == ServiceStatus.Running;
@@ -152,7 +152,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                 }
             }
 
-            if (Config.Type == ServiceType.Worker)
+            if (Config.Type == ServiceType.Worker && Config.UseWindowsService)
             {
                 if (Status == ServiceStatus.NotInstalled)
                 {
@@ -162,10 +162,8 @@ public partial class ServiceItemViewModel : ViewModelBase
                         Status = ServiceStatus.Error;
                         return;
                     }
-
                     await _windowsServiceController.InstallAsync(Config);
                 }
-
                 await _windowsServiceController.StartAsync(Config);
             }
             else
@@ -187,7 +185,6 @@ public partial class ServiceItemViewModel : ViewModelBase
                     ProcessId = process.Id;
                     OnPropertyChanged(nameof(StatusTypeBarBrush));
                 }
-
                 _mainViewModel.RefreshCommand.Execute(null);
             }
         }
@@ -217,7 +214,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
-            if (Config.Type == ServiceType.Worker)
+            if (Config.Type == ServiceType.Worker && Config.UseWindowsService)
             {
                 await _windowsServiceController.StopAsync(Config);
             }
@@ -250,6 +247,8 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+        // Ensure CanStop/CanRestart are correct for worker services in both modes
+        // Status logic is handled in MainViewModel, which is now correct for both modes
     }
 
     [RelayCommand]

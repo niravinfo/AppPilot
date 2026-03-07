@@ -281,7 +281,7 @@
                                                             <Button.ContextMenu>
                                                                 <ContextMenu>
                                                                     <MenuItem Command="{Binding InstallCommand}"
-                                                                              Visibility="{Binding IsWorkerService, Converter={StaticResource BoolToVis}}"
+                                                                              Visibility="{Binding UseWindowsService, Converter={StaticResource BoolToVis}}"
                                                                               IsEnabled="{Binding CanInstall}"
                                                                               ToolTip="Install Windows Service">
                                                                         <MenuItem.Header>
@@ -292,7 +292,7 @@
                                                                         </MenuItem.Header>
                                                                     </MenuItem>
                                                                     <MenuItem Command="{Binding UninstallCommand}"
-                                                                              Visibility="{Binding IsWorkerService, Converter={StaticResource BoolToVis}}"
+                                                                              Visibility="{Binding UseWindowsService, Converter={StaticResource BoolToVis}}"
                                                                               IsEnabled="{Binding CanUninstall}"
                                                                               ToolTip="Uninstall Windows Service">
                                                                         <MenuItem.Header>

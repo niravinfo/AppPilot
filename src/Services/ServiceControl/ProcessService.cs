@@ -45,8 +45,8 @@ public class ProcessService : IProcessService
             {
                 FileName = config.ExecutablePath,
                 Arguments = config.Arguments,
-                WorkingDirectory = string.IsNullOrEmpty(config.WorkingDirectory) 
-                    ? System.IO.Path.GetDirectoryName(config.ExecutablePath) 
+                WorkingDirectory = string.IsNullOrEmpty(config.WorkingDirectory)
+                    ? System.IO.Path.GetDirectoryName(config.ExecutablePath)
                     : config.WorkingDirectory,
                 UseShellExecute = false,
                 CreateNoWindow = true
@@ -61,7 +61,7 @@ public class ProcessService : IProcessService
             }
 
             var process = Process.Start(startInfo);
-            
+
             if (process != null)
             {
                 _runningProcesses[config.Name] = process;
@@ -107,7 +107,10 @@ public class ProcessService : IProcessService
 
             return true;
         }
-        catch (OperationCanceledException) { throw; }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.Error(ex, "Failed to stop process {Name}", config.Name);
@@ -139,6 +142,7 @@ public class ProcessService : IProcessService
         {
             var processName = System.IO.Path.GetFileNameWithoutExtension(config.ExecutablePath);
             var processes = Process.GetProcessesByName(processName);
+            int? foundId = null;
 
             try
             {
@@ -149,8 +153,15 @@ public class ProcessService : IProcessService
                         // Match on full executable path to avoid false positives from any other
                         // process that happens to share the same executable name.
                         var mainModulePath = process.MainModule?.FileName;
-                        if (string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase))
-                            return process.Id;
+
+                        // Some processes may have the same name but different paths,
+                        // so we check the executable path to be sure
+                        if (!string.IsNullOrEmpty(mainModulePath)
+                            && string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase)
+                            && !process.HasExited)
+                        {
+                            foundId = process.Id;
+                        }
                     }
                     catch
                     {
@@ -160,8 +171,13 @@ public class ProcessService : IProcessService
             }
             finally
             {
-                foreach (var p in processes) p.Dispose();
+                foreach (var p in processes)
+                {
+                    p.Dispose();
+                }
             }
+
+            return foundId;
         }
         catch (Exception ex)
         {
@@ -178,7 +194,9 @@ public class ProcessService : IProcessService
         if (!processId.HasValue)
         {
             if (_runningProcesses.Remove(config.Name, out var stale))
+            {
                 stale?.Dispose();
+            }
 
             return ServiceStatus.Stopped;
         }
@@ -186,12 +204,27 @@ public class ProcessService : IProcessService
         try
         {
             using var process = Process.GetProcessById(processId.Value);
-            return process.HasExited ? ServiceStatus.Stopped : ServiceStatus.Running;
+            if (process.HasExited)
+            {
+                return ServiceStatus.Stopped;
+            }
+
+            // Double-check the path again for safety
+            string mainModulePath = process.MainModule?.FileName;
+            if (!string.IsNullOrEmpty(mainModulePath)
+                && string.Equals(mainModulePath, config.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return ServiceStatus.Running;
+            }
+
+            return ServiceStatus.Stopped;
         }
         catch
         {
             if (_runningProcesses.Remove(config.Name, out var stale))
+            {
                 stale?.Dispose();
+            }
 
             return ServiceStatus.Stopped;
         }
@@ -206,7 +239,9 @@ public class ProcessService : IProcessService
                 .Any(ep => ep.Port == port);
 
             if (!isInUse)
+            {
                 return null;
+            }
 
             return FindPortOwnerProcess(port);
         }
@@ -243,13 +278,24 @@ public class ProcessService : IProcessService
 
                 // netstat -ano TCP line: [TCP] [LocalAddr:Port] [ForeignAddr] [State] [PID]
                 if (parts.Length < 5)
+                {
                     continue;
+                }
+
                 if (!parts[0].Equals("TCP", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
+
                 if (!parts[1].EndsWith($":{port}", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
+
                 if (!parts[3].Equals("LISTENING", StringComparison.OrdinalIgnoreCase))
+                {
                     continue;
+                }
 
                 if (int.TryParse(parts[^1], out var pid))
                 {

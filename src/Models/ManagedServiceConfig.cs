@@ -18,6 +18,14 @@ public class ManagedServiceConfig
     public int StartOrder { get; set; }
     public List<string> Dependencies { get; set; } = new();
     public Dictionary<string, string> Environment { get; set; } = new();
-    /// <summary>Path to the .csproj for the Build command. Relative to BasePath or absolute.</summary>
+
+    /// <summary>
+    /// Path to the .csproj for the Build command. Relative to BasePath or absolute.
+    /// </summary>
     public string CsprojPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// If true, run/install as Windows Service. If false, run as regular process.
+    /// </summary>
+    public bool UseWindowsService { get; set; } = false;
 }

@@ -1,7 +1,6 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
-using System.Windows.Media;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
 using AppPilot.Services.Git;
@@ -14,8 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace AppPilot.ViewModels;
@@ -157,7 +156,7 @@ public partial class MainViewModel : ViewModelBase
             ServiceStatus status;
             string? healthError = null;
 
-            if (config.Type == ServiceType.Worker)
+            if (config.Type == ServiceType.Worker && config.UseWindowsService)
             {
                 status = _windowsServiceController.GetStatus(config);
             }
@@ -168,15 +167,21 @@ public partial class MainViewModel : ViewModelBase
                 // Keep ProcessId in sync with the live process so Stop works correctly
                 // even when AppPilot was restarted and the process was already running.
                 if (status == ServiceStatus.Running)
+                {
                     service.ProcessId ??= _processService.GetProcessId(config);
+                }
                 else if (status == ServiceStatus.Stopped)
+                {
                     service.ProcessId = null;
+                }
 
                 if (status == ServiceStatus.Running && !string.IsNullOrEmpty(config.HealthCheckUrl))
                 {
                     healthError = await _healthChecker.CheckHealthAsync(config.HealthCheckUrl);
                     if (healthError != null)
+                    {
                         status = ServiceStatus.Error;
+                    }
                 }
             }
 
@@ -186,9 +191,13 @@ public partial class MainViewModel : ViewModelBase
             // Set the real error when health check fails, clear it when healthy,
             // and leave it untouched when Stopped so the last user-action error stays visible.
             if (healthError != null)
+            {
                 service.ErrorMessage = healthError;
+            }
             else if (status == ServiceStatus.Running)
+            {
                 service.ErrorMessage = string.Empty;
+            }
         }
         catch (Exception ex)
         {
@@ -273,6 +282,7 @@ public partial class MainViewModel : ViewModelBase
     private void RebuildGroups()
     {
         Groups.Clear();
+
         var grouped = Services
             .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupName) ? "General" : s.Config.GroupName)
             .OrderBy(g => g.Key)
@@ -284,7 +294,10 @@ public partial class MainViewModel : ViewModelBase
         {
             var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
             foreach (var svc in g)
+            {
                 group.Items.Add(svc);
+            }
+
             Groups.Add(group);
         }
 
@@ -324,7 +337,10 @@ public partial class MainViewModel : ViewModelBase
         {
             var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
             foreach (var svc in g)
+            {
                 group.Items.Add(svc);
+            }
+
             FilteredGroups.Add(group);
         }
 
@@ -336,20 +352,29 @@ public partial class MainViewModel : ViewModelBase
     {
         FilteredGitRepositories.Clear();
         if (SelectedTab != 1)
+        {
             return;
+        }
+
         var filtered = string.IsNullOrWhiteSpace(SearchText)
             ? GitRepositories.AsEnumerable()
             : GitRepositories.Where(r =>
                 r.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+
         foreach (var repo in filtered)
+        {
             FilteredGitRepositories.Add(repo);
+        }
     }
 
     [RelayCommand]
     private void AddService()
     {
         var editorVm = new ServiceEditorViewModel();
-        if (_dialogService.ShowServiceEditor(editorVm) != true) return;
+        if (_dialogService.ShowServiceEditor(editorVm) != true)
+        {
+            return;
+        }
 
         var config = editorVm.ToConfig();
         _serviceConfigs.Add(config);
@@ -362,7 +387,10 @@ public partial class MainViewModel : ViewModelBase
     public void EditService(ServiceItemViewModel serviceVm)
     {
         var editorVm = new ServiceEditorViewModel(serviceVm.Config);
-        if (_dialogService.ShowServiceEditor(editorVm) != true) return;
+        if (_dialogService.ShowServiceEditor(editorVm) != true)
+        {
+            return;
+        }
 
         editorVm.ApplyTo(serviceVm.Config);
         serviceVm.NotifyDisplayPropertiesChanged();
@@ -375,7 +403,10 @@ public partial class MainViewModel : ViewModelBase
     {
         if (!_dialogService.Confirm(
             $"Remove '{serviceVm.DisplayName}' from AppPilot?\n\nThis will not stop or uninstall the service.",
-            "Remove Service")) return;
+            "Remove Service"))
+        {
+            return;
+        }
 
         _serviceConfigs.Remove(serviceVm.Config);
         Services.Remove(serviceVm);
@@ -396,19 +427,24 @@ public partial class MainViewModel : ViewModelBase
     private void AddGitRepository()
     {
         var editorVm = new GitRepositoryEditorViewModel();
-        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true) return;
+        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true)
+        {
+            return;
+        }
 
         var config = editorVm.ToConfig();
         _gitRepositoryConfigs.Add(config);
         var repoVm = new GitRepositoryViewModel(config, _buildService, _gitService, _logger, this);
-        
+
         foreach (var name in config.LinkedServiceNames)
         {
             var svc = Services.FirstOrDefault(s => s.Config.Name == name);
             if (svc is not null)
+            {
                 repoVm.LinkedServices.Add(svc);
+            }
         }
-        
+
         GitRepositories.Add(repoVm);
         _ = repoVm.InitializeAsync();
         SaveConfiguration();
@@ -418,18 +454,23 @@ public partial class MainViewModel : ViewModelBase
     public void EditGitRepository(GitRepositoryViewModel repoVm)
     {
         var editorVm = new GitRepositoryEditorViewModel(repoVm.Config);
-        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true) return;
+        if (_dialogService.ShowGitRepositoryEditor(editorVm) != true)
+        {
+            return;
+        }
 
         editorVm.ApplyTo(repoVm.Config);
-        
+
         repoVm.LinkedServices.Clear();
         foreach (var name in repoVm.Config.LinkedServiceNames)
         {
             var svc = Services.FirstOrDefault(s => s.Config.Name == name);
             if (svc is not null)
+            {
                 repoVm.LinkedServices.Add(svc);
+            }
         }
-        
+
         SaveConfiguration();
         StatusText = $"Repository '{repoVm.Config.DisplayName}' updated";
     }
@@ -438,7 +479,10 @@ public partial class MainViewModel : ViewModelBase
     {
         if (!_dialogService.Confirm(
             $"Remove '{repoVm.Name}' from AppPilot?\n\nThis will not delete the local repository.",
-            "Remove Repository")) return;
+            "Remove Repository"))
+        {
+            return;
+        }
 
         _gitRepositoryConfigs.Remove(repoVm.Config);
         GitRepositories.Remove(repoVm);
@@ -466,12 +510,14 @@ public partial class MainViewModel : ViewModelBase
         {
             service.RefreshColors();
         }
+
         foreach (var group in Groups)
         {
             group.GroupAccentBrush = ColorProvider.GetGroupBrush(group.GroupName, !IsLightTheme);
             var groupColor = ColorProvider.GetGroupColor(group.GroupName, !IsLightTheme);
             group.GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(!IsLightTheme ? 40 : 35), groupColor.R, groupColor.G, groupColor.B));
         }
+
         RebuildFilteredGroups();
     }
 
