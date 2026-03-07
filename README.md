@@ -2,6 +2,8 @@
 
 AppPilot is a lightweight Windows desktop application for managing multiple .NET worker services, gRPC APIs, and Web APIs locally during development. It provides a unified UI to install, start, stop, build, and monitor the status of multiple .NET projects ideal for microservices development.
 
+![Main Window](images/1%20-%20Main%20Window.png)
+
 ## Key Features
 
 - **Unified Service Management:** Start, stop, and monitor .NET Worker, gRPC, and Web API projects from a single UI.
@@ -72,3 +74,4 @@ Run the AppPilot executable. The UI will display all configured services, their 
 ## Example Config
 
 See [`AppData.example.json`](https://github.com/niravinfo/AppPilot/blob/main/src/AppData.example.json) for a full example.
+
