@@ -73,5 +73,5 @@ Run the AppPilot executable. The UI will display all configured services, their 
 
 ## Example Config
 
-See [`AppData.example.json`](https://github.com/niravinfo/AppPilot/blob/main/src/AppData.example.json) for a full example.
+See [`AppData.example.json`](src/AppData.example.json) for a full example.
 
