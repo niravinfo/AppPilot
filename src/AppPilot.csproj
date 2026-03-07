@@ -49,8 +49,12 @@
     <None Update="appsettings.Local.json" Condition="Exists('appsettings.Local.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- User-writable configuration - copied if exists, ignored from git -->
+    <None Update="AppData.json" Condition="Exists('AppData.json')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <!-- Committed template for new users to copy and rename -->
-    <None Update="appsettings.example.json">
+    <None Update="AppData.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

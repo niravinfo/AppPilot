@@ -26,7 +26,9 @@ public class ConfigurationService : IConfigurationService
         _logger = logger;
         _configuration = configuration;
         var basePath = AppDomain.CurrentDomain.BaseDirectory;
-        _configFilePath = Path.Combine(basePath, "appsettings.json");
+
+        // User settings are always saved to AppData.json
+        _configFilePath = Path.Combine(basePath, "AppData.json");
     }
 
     public AppSettings Load()
@@ -97,12 +99,13 @@ public class ConfigurationService : IConfigurationService
                 WriteIndented = true
             });
 
+            // Always save to AppData.json (user-writable configuration)
             File.WriteAllText(_configFilePath, json);
-            _logger.LogInformation("Configuration saved successfully");
+            _logger.LogInformation("Configuration saved successfully to {Path}", _configFilePath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save configuration");
+            _logger.LogError(ex, "Failed to save configuration to {Path}", _configFilePath);
         }
     }
 

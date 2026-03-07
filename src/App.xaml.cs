@@ -57,10 +57,15 @@ public partial class App : Application
             Log.Warning("Configuration file not found at {Path}, using default configuration", configFilePath);
         }
 
+        // Three-tier configuration:
+        // 1. appsettings.json - Shipped defaults (read-only)
+        // 2. appsettings.Local.json - Dev overrides (optional, gitignored)
+        // 3. AppData.json - User settings (highest priority, gitignored, user-writable)
         var configuration = new ConfigurationBuilder()
             .SetBasePath(basePath)
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
             .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .AddJsonFile("AppData.json", optional: true, reloadOnChange: false)
             .Build();
 
         _host = Host.CreateDefaultBuilder()

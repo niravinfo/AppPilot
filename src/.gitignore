@@ -6,6 +6,9 @@
 # AppPilot — personal machine configuration (never commit this)
 appsettings.Local.json
 
+# AppPilot — user-writable configuration (never commit this)
+AppData.json
+
 # User-specific files
 *.rsuser
 *.suo

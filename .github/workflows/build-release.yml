@@ -63,9 +63,9 @@ jobs:
         run: |
           mkdir -p publish/artifact
           cp publish/build/AppPilot.exe publish/artifact/AppPilot.exe
-          cp src/appsettings.example.json publish/artifact/appsettings.example.json
+          cp src/AppData.example.json publish/artifact/AppData.example.json
           cd publish/artifact
-          zip -j ../../AppPilot-v${{ env.VERSION }}-win-x64.zip AppPilot.exe appsettings.example.json
+          zip -j ../../AppPilot-v${{ env.VERSION }}-win-x64.zip AppPilot.exe AppData.example.json
 
       # softprops/action-gh-release automatically creates the release if the tag
       # does not exist, or updates it (replacing assets) if it already does.
@@ -82,7 +82,7 @@ jobs:
             ### Installation
             1. Download `AppPilot-v${{ env.VERSION }}-win-x64.zip`
             2. Extract the zip
-            3. Copy `appsettings.example.json` to `appsettings.json` and configure it
+            3. Copy `AppData.example.json` to `AppData.json` and configure it
             4. Run `AppPilot.exe`
 
             > **Requires:** .NET 10 runtime installed on the target machine ([download](https://dotnet.microsoft.com/download/dotnet/10.0))
