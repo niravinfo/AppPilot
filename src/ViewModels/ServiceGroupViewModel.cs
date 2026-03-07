@@ -9,9 +9,10 @@ using System.Windows.Media;
 
 namespace AppPilot.ViewModels;
 
+
 public partial class ServiceGroupViewModel : ViewModelBase
 {
-    public string GroupName { get; }
+    public GroupConfig Group { get; }
     public ObservableCollection<ServiceItemViewModel> Items { get; } = new();
     public bool ShowHeader { get; set; }
 
@@ -20,18 +21,31 @@ public partial class ServiceGroupViewModel : ViewModelBase
     [ObservableProperty]
     private Brush _groupBadgeBrush = Brushes.Gray;
 
-    public ServiceGroupViewModel(string groupName)
+    public string GroupName => Group.Name;
+    public string GroupColorCode => Group.ColorCode;
+    public int DisplayOrder => Group.DisplayOrder;
+
+    public ServiceGroupViewModel(GroupConfig group)
     {
-        GroupName = groupName;
+        Group = group;
         InitializeColors();
     }
 
     private void InitializeColors()
     {
         var isDark = !ThemeManager.IsLight;
-        GroupAccentBrush = ColorProvider.GetGroupBrush(GroupName, isDark);
-        var groupColor = ColorProvider.GetGroupColor(GroupName, isDark);
-        GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 40 : 35), groupColor.R, groupColor.G, groupColor.B));
+        if (!string.IsNullOrWhiteSpace(Group.ColorCode))
+        {
+            var color = (Color)ColorConverter.ConvertFromString(Group.ColorCode);
+            GroupAccentBrush = new SolidColorBrush(color);
+            GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 40 : 35), color.R, color.G, color.B));
+        }
+        else
+        {
+            var color = ColorProvider.GetGroupColor(Group.Name, isDark);
+            GroupAccentBrush = new SolidColorBrush(color);
+            GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 40 : 35), color.R, color.G, color.B));
+        }
     }
 
     [RelayCommand]

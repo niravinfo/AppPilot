@@ -14,14 +14,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace AppPilot.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    private readonly IConfigurationService _configService;
+    internal List<GroupConfig> _serviceGroups = [];
+    internal Dictionary<string, GroupConfig> _groupDict = [];
+    internal readonly IConfigurationService _configService;
+    internal IConfigurationService ConfigService => _configService;
     private readonly IServiceController _windowsServiceController;
     private readonly IProcessService _processService;
     private readonly IHealthChecker _healthChecker;
@@ -33,9 +35,6 @@ public partial class MainViewModel : ViewModelBase
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = new();
-
-    [ObservableProperty]
-    private ObservableCollection<ServiceGroupViewModel> _groups = new();
 
     [ObservableProperty]
     private bool _isLightTheme = ThemeManager.IsLight;
@@ -106,6 +105,8 @@ public partial class MainViewModel : ViewModelBase
         var settings = _configService.Load();
         _serviceConfigs = settings.Services;
         _gitRepositoryConfigs = settings.GitRepositories;
+        _serviceGroups = settings.Groups ?? [];
+        _groupDict = _serviceGroups.ToDictionary(g => g.Id);
 
         if (settings.AppPilot.PollingIntervalMs > 0)
         {
@@ -116,7 +117,8 @@ public partial class MainViewModel : ViewModelBase
 
         foreach (var config in _serviceConfigs.OrderBy(s => s.StartOrder))
         {
-            Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _buildService, _logger, this));
+            var groupName = string.IsNullOrWhiteSpace(config.GroupId) ? config.GroupId ?? "" : (_groupDict.TryGetValue(config.GroupId, out var group) ? group?.Name ?? config.GroupId : config.GroupId);
+            Services.Add(new ServiceItemViewModel(config, groupName, _windowsServiceController, _processService, _buildService, _logger, this));
         }
 
         // Load Git repositories and link services
@@ -139,7 +141,7 @@ public partial class MainViewModel : ViewModelBase
         // Initialise git info in background (non-blocking)
         _ = Task.WhenAll(GitRepositories.Select(r => r.InitializeAsync()));
 
-        RebuildGroups();
+        RebuildFilteredGroups();
         RebuildFilteredGitRepositories();
         StatusText = $"Loaded {_serviceConfigs.Count} services";
     }
@@ -287,31 +289,6 @@ public partial class MainViewModel : ViewModelBase
         await service.StopAsync();
     }
 
-    private void RebuildGroups()
-    {
-        Groups.Clear();
-
-        var grouped = Services
-            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupName) ? "General" : s.Config.GroupName)
-            .OrderBy(g => g.Key)
-            .ToList();
-
-        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].Key != "General");
-
-        foreach (var g in grouped)
-        {
-            var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
-            foreach (var svc in g)
-            {
-                group.Items.Add(svc);
-            }
-
-            Groups.Add(group);
-        }
-
-        RebuildFilteredGroups();
-    }
-
     partial void OnSearchTextChanged(string value)
     {
         RebuildFilteredGroups();
@@ -331,29 +308,35 @@ public partial class MainViewModel : ViewModelBase
             ? Services.AsEnumerable()
             : Services.Where(s =>
                 s.DisplayName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                s.GroupName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                (_groupDict.TryGetValue(s.Config.GroupId, out var group) && group.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
                 s.TypeName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
         var grouped = filtered
-            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupName) ? "General" : s.Config.GroupName)
-            .OrderBy(g => g.Key)
+            .GroupBy(s => string.IsNullOrWhiteSpace(s.Config.GroupId) ? "__ungrouped__" : s.Config.GroupId)
+            .Select(g => new
+            {
+                GroupId = g.Key,
+                GroupConfig = _groupDict.TryGetValue(g.Key, out var group) ? group : new GroupConfig { Id = g.Key, Name = g.Key, DisplayOrder = 9999 },
+                Services = g.ToList()
+            })
+            .OrderBy(g => g.GroupConfig.DisplayOrder)
+            .ThenBy(g => g.GroupConfig.Name)
             .ToList();
 
-        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].Key != "General");
+        var showHeaders = grouped.Count > 1 || (grouped.Count == 1 && grouped[0].GroupId != "__ungrouped__");
 
         foreach (var g in grouped)
         {
-            var group = new ServiceGroupViewModel(g.Key) { ShowHeader = showHeaders };
-            foreach (var svc in g)
+            var groupVm = new ServiceGroupViewModel(g.GroupConfig) { ShowHeader = showHeaders };
+            foreach (var svc in g.Services)
             {
-                group.Items.Add(svc);
+                groupVm.Items.Add(svc);
             }
 
-            FilteredGroups.Add(group);
+            FilteredGroups.Add(groupVm);
         }
 
         RebuildFilteredGitRepositories();
-
     }
 
     private void RebuildFilteredGitRepositories()
@@ -378,7 +361,7 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void AddService()
     {
-        var editorVm = new ServiceEditorViewModel();
+        var editorVm = new ServiceEditorViewModel(_serviceGroups);
         if (_dialogService.ShowServiceEditor(editorVm) != true)
         {
             return;
@@ -386,15 +369,16 @@ public partial class MainViewModel : ViewModelBase
 
         var config = editorVm.ToConfig();
         _serviceConfigs.Add(config);
-        Services.Add(new ServiceItemViewModel(config, _windowsServiceController, _processService, _buildService, _logger, this));
-        RebuildGroups();
+        var groupName = string.IsNullOrWhiteSpace(config.GroupId) ? config.GroupId ?? "" : (_groupDict.TryGetValue(config.GroupId, out var group) ? group?.Name ?? config.GroupId : config.GroupId);
+        Services.Add(new ServiceItemViewModel(config, groupName, _windowsServiceController, _processService, _buildService, _logger, this));
+        RebuildFilteredGroups();
         SaveConfiguration();
         StatusText = $"Service '{config.DisplayName}' added";
     }
 
     public void EditService(ServiceItemViewModel serviceVm)
     {
-        var editorVm = new ServiceEditorViewModel(serviceVm.Config);
+        var editorVm = new ServiceEditorViewModel(serviceVm.Config, _serviceGroups);
         if (_dialogService.ShowServiceEditor(editorVm) != true)
         {
             return;
@@ -402,7 +386,8 @@ public partial class MainViewModel : ViewModelBase
 
         editorVm.ApplyTo(serviceVm.Config);
         serviceVm.NotifyDisplayPropertiesChanged();
-        RebuildGroups();
+        serviceVm.RefreshColors();
+        RebuildFilteredGroups();
         SaveConfiguration();
         StatusText = $"Service '{serviceVm.Config.DisplayName}' updated";
     }
@@ -418,7 +403,7 @@ public partial class MainViewModel : ViewModelBase
 
         _serviceConfigs.Remove(serviceVm.Config);
         Services.Remove(serviceVm);
-        RebuildGroups();
+        RebuildFilteredGroups();
         SaveConfiguration();
         StatusText = $"Service '{serviceVm.DisplayName}' removed";
     }
@@ -517,13 +502,6 @@ public partial class MainViewModel : ViewModelBase
         foreach (var service in Services)
         {
             service.RefreshColors();
-        }
-
-        foreach (var group in Groups)
-        {
-            group.GroupAccentBrush = ColorProvider.GetGroupBrush(group.GroupName, !IsLightTheme);
-            var groupColor = ColorProvider.GetGroupColor(group.GroupName, !IsLightTheme);
-            group.GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(!IsLightTheme ? 40 : 35), groupColor.R, groupColor.G, groupColor.B));
         }
 
         RebuildFilteredGroups();

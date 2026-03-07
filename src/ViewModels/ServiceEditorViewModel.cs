@@ -19,10 +19,12 @@ public partial class ServiceEditorViewModel : ViewModelBase
     private string _name = string.Empty;
 
     [ObservableProperty]
-    private string _groupName = string.Empty;
+    private string _groupId = string.Empty;
 
     [ObservableProperty]
     private ServiceType _serviceType = ServiceType.WebApi;
+
+    public List<GroupConfig> Groups { get; }
 
     [ObservableProperty]
     private string _executablePath = string.Empty;
@@ -58,17 +60,18 @@ public partial class ServiceEditorViewModel : ViewModelBase
     public string Title => IsNew ? "Add Service" : $"Edit — {DisplayName}";
     public string SaveButtonText => IsNew ? "Add Service" : "Save Changes";
 
-    public ServiceEditorViewModel()
+    public ServiceEditorViewModel(List<GroupConfig> groups)
     {
         IsNew = true;
+        Groups = groups;
     }
 
-    public ServiceEditorViewModel(ManagedServiceConfig config)
+    public ServiceEditorViewModel(ManagedServiceConfig config, List<GroupConfig> groups)
     {
         IsNew = false;
         _displayName = config.DisplayName;
         _name = config.Name;
-        _groupName = config.GroupName;
+        _groupId = config.GroupId;
         _serviceType = config.Type;
         _executablePath = config.ExecutablePath;
         _arguments = config.Arguments;
@@ -79,14 +82,18 @@ public partial class ServiceEditorViewModel : ViewModelBase
         _startOrderText = config.StartOrder.ToString();
         _dependenciesText = string.Join(", ", config.Dependencies);
         foreach (var (key, value) in config.Environment)
+        {
             EnvironmentVariables.Add(new EnvironmentVariableViewModel(key, value));
+        }
+
+        Groups = groups;
     }
 
     public void ApplyTo(ManagedServiceConfig config)
     {
         config.Name = Name;
         config.DisplayName = DisplayName;
-        config.GroupName = GroupName;
+        config.GroupId = GroupId;
         config.Type = ServiceType;
         config.ExecutablePath = ExecutablePath;
         config.Arguments = Arguments;

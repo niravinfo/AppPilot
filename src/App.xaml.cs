@@ -25,6 +25,7 @@ public partial class App : Application
 {
     private IHost? _host;
     private ILogger<App>? _logger;
+    public static IServiceProvider Services { get; private set; } = null!;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -88,6 +89,8 @@ public partial class App : Application
             .Build();
 
         _logger = _host.Services.GetRequiredService<ILogger<App>>();
+        Services = _host.Services;
+
         _logger.LogInformation("AppPilot starting up");
 
         SetupExceptionHandling();

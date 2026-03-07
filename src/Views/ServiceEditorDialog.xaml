@@ -367,8 +367,11 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Group" Style="{StaticResource FormLabel}"/>
-                        <TextBox Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FormInput}"/>
+                        <ComboBox ItemsSource="{Binding Groups}"
+                                  SelectedValue="{Binding GroupId, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectedValuePath="Id"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FormCombo}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Type" Style="{StaticResource FormLabel}"/>

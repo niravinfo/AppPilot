@@ -38,7 +38,9 @@ public partial class ServiceItemViewModel : ViewModelBase
     private bool _isBusy;
 
     public string DisplayName => Config.DisplayName;
-    public string GroupName => Config.GroupName;
+    public string GroupId => Config.GroupId;
+
+    public string GroupName { get; }
     public string TypeName => Config.Type.ToString();
     public string Port => Config.Port?.ToString() ?? "-";
     public string StatusText => Status.ToString();
@@ -70,6 +72,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public ServiceItemViewModel(
         ManagedServiceConfig config,
+        string groupName,
         IServiceController windowsServiceController,
         IProcessService processService,
         IBuildService buildService,
@@ -77,14 +80,15 @@ public partial class ServiceItemViewModel : ViewModelBase
         MainViewModel mainViewModel)
     {
         Config = config;
-        _mainViewModel = mainViewModel;
+        GroupName = groupName;
         _windowsServiceController = windowsServiceController;
         _processService = processService;
         _buildService = buildService;
         _logger = logger;
-
+        _mainViewModel = mainViewModel;
         InitializeColors();
     }
+
 
     public Brush StatusTypeBarBrush
     {
@@ -116,8 +120,20 @@ public partial class ServiceItemViewModel : ViewModelBase
         TypeBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 50 : 40), typeColor.R, typeColor.G, typeColor.B));
         TypeBadgeFgBrush = new SolidColorBrush(typeColor);
 
-        var groupName = string.IsNullOrWhiteSpace(Config.GroupName) ? "General" : Config.GroupName;
-        var groupColor = ColorProvider.GetGroupColor(groupName, isDark);
+        GroupConfig group = null;
+        if (_mainViewModel != null && !string.IsNullOrWhiteSpace(Config.GroupId) && _mainViewModel._groupDict != null)
+            _mainViewModel._groupDict.TryGetValue(Config.GroupId, out group);
+
+        Color groupColor;
+        if (!string.IsNullOrWhiteSpace(group?.ColorCode))
+        {
+            groupColor = (Color)ColorConverter.ConvertFromString(group.ColorCode);
+        }
+        else
+        {
+            groupColor = ColorProvider.GetGroupColor(group?.Name ?? Config.GroupId ?? "", isDark);
+        }
+
         GroupAccentBrush = new SolidColorBrush(groupColor);
         GroupBadgeBrush = new SolidColorBrush(Color.FromArgb((byte)(isDark ? 30 : 25), groupColor.R, groupColor.G, groupColor.B));
     }

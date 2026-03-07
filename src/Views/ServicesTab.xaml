@@ -39,13 +39,6 @@
                                         <TextBlock Text="{Binding GroupName}"
                                                    FontSize="12" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource GroupHeaderFg}"/>
-                                        <Border Margin="8,0,0,0" Padding="5,1" CornerRadius="8"
-                                                Background="{Binding GroupBadgeBrush}"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Items.Count}"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{Binding GroupAccentBrush}"/>
-                                        </Border>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal"
                                                 HorizontalAlignment="Right"

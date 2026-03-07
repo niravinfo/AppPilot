@@ -5,8 +5,9 @@ namespace AppPilot.Models;
 public class AppSettings
 {
     public AppPilotSettings AppPilot { get; set; } = new();
-    public List<ManagedServiceConfig> Services { get; set; } = new();
+    public List<ManagedServiceConfig> Services { get; set; } = [];
     public List<GitRepositoryConfig> GitRepositories { get; set; } = [];
+    public List<GroupConfig> Groups { get; set; } = [];
 }
 
 public class AppPilotSettings
