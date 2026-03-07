@@ -34,7 +34,9 @@ class Program
             .Concat(Directory.GetDirectories(rootDir).SelectMany(d => Directory.GetFiles(d, "*.csproj", SearchOption.TopDirectoryOnly)))
             .Concat(Directory.GetDirectories(rootDir).SelectMany(d => Directory.GetDirectories(d).SelectMany(sd => Directory.GetFiles(sd, "*.csproj", SearchOption.TopDirectoryOnly))))
             .ToArray();
+
         var services = new List<ServiceInfo>();
+
         foreach (var csproj in csprojFiles)
         {
             var launchSettingsPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(csproj), "Properties", "launchSettings.json");
@@ -44,19 +46,29 @@ class Program
             }
 
             var projectName = System.IO.Path.GetFileNameWithoutExtension(csproj);
+            var csprojText = File.ReadAllText(csproj);
+            string tfm = null;
+
+            // Parse TargetFramework from csproj
+            var tfmMatch = Regex.Match(csprojText, @"<TargetFramework>([^<]+)</TargetFramework>", RegexOptions.IgnoreCase);
+            if (tfmMatch.Success)
+            {
+                tfm = tfmMatch.Groups[1].Value.Trim();
+            }
+
             var binDebugDir = Path.Combine(Path.GetDirectoryName(csproj), "bin", "Debug");
             string exePath = null;
             string workingDir = null;
-            // Try to find the latest target framework directory
-            if (Directory.Exists(binDebugDir))
+            if (!string.IsNullOrEmpty(tfm))
             {
-                var tfmDir = Directory.GetDirectories(binDebugDir).OrderByDescending(d => d).FirstOrDefault();
-                if (tfmDir != null)
+                var tfmDir = Path.Combine(binDebugDir, tfm);
+                if (Directory.Exists(tfmDir))
                 {
                     exePath = Path.Combine(tfmDir, projectName + ".exe");
                     workingDir = tfmDir;
                 }
             }
+
             var info = new ServiceInfo
             {
                 Name = projectName,
@@ -69,7 +81,6 @@ class Program
             };
 
             // Detect Worker
-            var csprojText = File.ReadAllText(csproj);
             if (csprojText.Contains("Microsoft.NET.Sdk.Worker", StringComparison.OrdinalIgnoreCase)
                 || (csprojText.Contains("Microsoft.NET.Sdk", StringComparison.OrdinalIgnoreCase)
                     && !csprojText.Contains("Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase))
