@@ -276,7 +276,7 @@ public partial class MainViewModel : ViewModelBase
             var orderedServices = new List<ServiceItemViewModel>();
             foreach (var s in Services)
             {
-                if (s.Config.AutoStart || s.Status != ServiceStatus.Running)
+                if (s.Status != ServiceStatus.Running)
                 {
                     orderedServices.Add(s);
                 }

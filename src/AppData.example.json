@@ -47,7 +47,6 @@
       "Arguments": "",
       "WorkingDirectory": "MyWorker\\bin\\Debug\\net10.0",
 
-      "AutoStart": false,
       "DisplayOrder": 1,
       "Dependencies": [],
       "Environment": {

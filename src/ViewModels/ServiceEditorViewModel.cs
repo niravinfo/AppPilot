@@ -41,8 +41,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
     [ObservableProperty]
     private string _healthCheckUrl = string.Empty;
 
-    [ObservableProperty]
-    private bool _autoStart;
 
     [ObservableProperty]
     private int _displayOrder = 999;
@@ -78,7 +76,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
         _workingDirectory = config.WorkingDirectory;
         _portText = config.Port?.ToString() ?? string.Empty;
         _healthCheckUrl = config.HealthCheckUrl;
-        _autoStart = config.AutoStart;
         _displayOrder = config.DisplayOrder ?? 999;
         _dependenciesText = string.Join(", ", config.Dependencies);
         foreach (var (key, value) in config.Environment)
@@ -100,7 +97,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.WorkingDirectory = WorkingDirectory;
         config.Port = int.TryParse(PortText, out var port) ? port : null;
         config.HealthCheckUrl = HealthCheckUrl;
-        config.AutoStart = AutoStart;
         config.DisplayOrder = DisplayOrder;
         config.Dependencies = [.. DependenciesText
             .Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)];

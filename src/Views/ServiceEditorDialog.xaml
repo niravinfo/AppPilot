@@ -393,10 +393,6 @@
                                  Style="{StaticResource FormInput}"/>
                     </StackPanel>
                     <StackPanel Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,7">
-                        <CheckBox Content="Auto-start on launch"
-                                  IsChecked="{Binding AutoStart}"
-                                  Foreground="{DynamicResource TextPrimary}"
-                                  FontSize="12"/>
                     </StackPanel>
                 </Grid>
 
