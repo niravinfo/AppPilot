@@ -520,7 +520,7 @@ public partial class MainViewModel : ViewModelBase
     {
         var loggerFactory = App.Services.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory)) as Microsoft.Extensions.Logging.ILoggerFactory;
         var logger = loggerFactory?.CreateLogger<ServiceDiscoveryViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-        var discoveryVm = new ServiceDiscoveryViewModel(_discoveryService, _configService, logger);
+        var discoveryVm = new ServiceDiscoveryViewModel(_discoveryService, _configService, _dialogService, logger, _serviceGroups);
 
         if (_configService.Load().AppPilot.BasePath is string basePath && !string.IsNullOrEmpty(basePath))
         {

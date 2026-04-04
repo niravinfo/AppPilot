@@ -481,13 +481,6 @@
                 <!-- Bulk actions -->
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
                     <Button Style="{StaticResource FormBtn}" Padding="8,5" Margin="0,0,6,0"
-                            Command="{Binding ToggleSelectAllCommand}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="☐" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="Toggle All" FontSize="10"/>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource FormBtn}" Padding="8,5" Margin="0,0,6,0"
                             Command="{Binding SelectAllCommand}">
                         <TextBlock Text="Select All" FontSize="10"/>
                     </Button>
@@ -573,6 +566,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
                                         <!-- Checkbox -->
@@ -650,7 +644,7 @@
                                         </StackPanel>
 
                                         <!-- Port badge -->
-                                        <Border Grid.Column="2" Padding="6,2" CornerRadius="4" Margin="0,0,8,0"
+                                        <Border Grid.Column="2" Padding="6,2" CornerRadius="4" Margin="0,0,6,0"
                                                 Background="{DynamicResource SectionBg}"
                                                 BorderBrush="{DynamicResource SectionBorder}"
                                                 BorderThickness="1"
@@ -670,8 +664,21 @@
                                                        Foreground="{DynamicResource TextSecondary}"/>
                                         </Border>
 
+                                        <!-- Edit button -->
+                                        <Button Grid.Column="3" Style="{StaticResource CardBtn}"
+                                                Width="30" Height="30"
+                                                ToolTip="Edit service details"
+                                                Command="{Binding DataContext.EditServiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="0,0,4,0">
+                                            <Path Data="{StaticResource IconPencil}"
+                                                  Fill="{DynamicResource CardBtnFg}"
+                                                  Width="13" Height="13"
+                                                  Stretch="Uniform"/>
+                                        </Button>
+
                                         <!-- Type badge -->
-                                        <Border Grid.Column="3" Padding="6,3" CornerRadius="5"
+                                        <Border Grid.Column="4" Padding="6,3" CornerRadius="5"
                                                 VerticalAlignment="Center">
                                             <Border.Style>
                                                 <Style TargetType="Border">

@@ -19,7 +19,9 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
 {
     private readonly IServiceDiscoveryService _discoveryService;
     private readonly IConfigurationService _configService;
+    private readonly IDialogService _dialogService;
     private readonly ILogger _logger;
+    private readonly List<GroupConfig> _groups;
 
     [ObservableProperty]
     private bool _isDiscovering;
@@ -61,11 +63,15 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     public ServiceDiscoveryViewModel(
         IServiceDiscoveryService discoveryService,
         IConfigurationService configService,
-        ILogger logger)
+        IDialogService dialogService,
+        ILogger logger,
+        List<GroupConfig> groups)
     {
         _discoveryService = discoveryService;
         _configService = configService;
+        _dialogService = dialogService;
         _logger = logger;
+        _groups = groups;
     }
 
     [RelayCommand]
@@ -127,7 +133,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     [RelayCommand]
     private void SelectAll()
     {
-        foreach (var service in FilteredServices)
+        foreach (var service in AllServices)
         {
             service.IsSelected = true;
         }
@@ -137,7 +143,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     [RelayCommand]
     private void DeselectAll()
     {
-        foreach (var service in FilteredServices)
+        foreach (var service in AllServices)
         {
             service.IsSelected = false;
         }
@@ -145,14 +151,32 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ToggleSelectAll()
+    private void EditService(DiscoveredServiceItemViewModel? item)
     {
-        var allSelected = FilteredServices.All(s => s.IsSelected);
-        foreach (var service in FilteredServices)
+        if (item == null) return;
+
+        var config = item.ToManagedServiceConfig();
+        var editorVm = new ServiceEditorViewModel(config, _groups);
+
+        if (_dialogService.ShowServiceEditor(editorVm) != true)
         {
-            service.IsSelected = !allSelected;
+            return;
         }
-        OnPropertyChanged(nameof(TotalSelected));
+
+        editorVm.ApplyTo(config);
+        item.Service.DisplayName = config.DisplayName;
+        item.Service.Type = config.Type;
+        item.Service.ExecutablePath = config.ExecutablePath;
+        item.Service.WorkingDirectory = config.WorkingDirectory;
+        item.Service.CsprojPath = config.CsprojPath;
+        item.Service.Port = config.Port;
+        item.Service.HealthCheckUrl = config.HealthCheckUrl;
+        item.Service.Arguments = config.Arguments;
+        item.Service.EnvironmentVariables = new Dictionary<string, string>(config.Environment);
+        item.Service.UseWindowsService = config.UseWindowsService;
+        item.Service.Dependencies = new List<string>(config.Dependencies);
+
+        ApplyFilters();
     }
 
     [RelayCommand]
@@ -195,9 +219,9 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
                 continue;
 
             if (hasSearch &&
-                !service.DisplayName.Contains(searchLower!, System.StringComparison.OrdinalIgnoreCase) &&
-                !service.ProjectName.Contains(searchLower!, System.StringComparison.OrdinalIgnoreCase) &&
-                !service.ProjectPath.Contains(searchLower!, System.StringComparison.OrdinalIgnoreCase))
+                !service.DisplayName.Contains(searchLower!, StringComparison.OrdinalIgnoreCase) &&
+                !service.ProjectName.Contains(searchLower!, StringComparison.OrdinalIgnoreCase) &&
+                !service.ProjectPath.Contains(searchLower!, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             FilteredServices.Add(service);
