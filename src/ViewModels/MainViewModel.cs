@@ -21,8 +21,8 @@ namespace AppPilot.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    internal List<GroupConfig> _serviceGroups = [];
-    internal Dictionary<string, GroupConfig> _groupDict = [];
+    internal ObservableCollection<GroupConfig> _serviceGroups = [];
+    internal Dictionary<string, GroupConfig> _groupDict = new();
     internal readonly IConfigurationService _configService;
     private readonly Dictionary<string, ServiceGroupViewModel> _groupViewModelCache = [];
     internal IConfigurationService ConfigService => _configService;
@@ -110,7 +110,7 @@ public partial class MainViewModel : ViewModelBase
         var settings = _configService.Load();
         _serviceConfigs = settings.Services;
         _gitRepositoryConfigs = settings.GitRepositories;
-        _serviceGroups = settings.Groups ?? [];
+        _serviceGroups = new ObservableCollection<GroupConfig>(settings.Groups ?? []);
         _groupDict = _serviceGroups.ToDictionary(g => g.Id);
 
         if (settings.AppPilot.PollingIntervalMs > 0)
@@ -601,7 +601,37 @@ public partial class MainViewModel : ViewModelBase
         var settings = _configService.Load();
         settings.Services = _serviceConfigs;
         settings.GitRepositories = _gitRepositoryConfigs;
+        settings.Groups = _serviceGroups.ToList();
         _configService.Save(settings);
+    }
+
+    [RelayCommand]
+    private void ManageGroups()
+    {
+        var serviceCounts = _serviceConfigs
+            .Where(s => !string.IsNullOrEmpty(s.GroupId))
+            .GroupBy(s => s.GroupId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var loggerFactory = App.Services.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory)) as Microsoft.Extensions.Logging.ILoggerFactory;
+        var logger = loggerFactory?.CreateLogger<GroupManagementViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var vm = new GroupManagementViewModel(_serviceGroups, _configService, logger, serviceCounts);
+
+        if (_dialogService.ShowGroupManagement(vm) != true)
+        {
+            return;
+        }
+
+        vm.SaveAllChanges(_serviceGroups);
+        _groupDict = _serviceGroups.ToDictionary(g => g.Id);
+
+        foreach (var serviceVm in Services)
+        {
+            serviceVm.RefreshColors();
+        }
+
+        RebuildFilteredGroups();
+        StatusText = "Groups updated";
     }
 
     [RelayCommand]

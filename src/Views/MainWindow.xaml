@@ -153,6 +153,25 @@
                                Fill="{DynamicResource HeaderBorder}"
                                Margin="4,0,12,0"
                                VerticalAlignment="Center"/>
+                    <!-- Manage Groups -->
+                    <Button Style="{StaticResource ToolbarBtn}"
+                            Command="{Binding ManageGroupsCommand}"
+                            Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+                                  Fill="Gray"
+                                  Width="14" Height="14"
+                                  Margin="0,0,5,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
+                            <TextBlock Text="Groups" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <!-- Separator -->
+                    <Rectangle Width="1" Height="20"
+                               Fill="{DynamicResource HeaderBorder}"
+                               Margin="4,0,12,0"
+                               VerticalAlignment="Center"/>
                     <!-- Theme toggle -->
                     <Button Style="{StaticResource ToolbarBtn}" Margin="0"
                             Command="{Binding ToggleThemeCommand}">

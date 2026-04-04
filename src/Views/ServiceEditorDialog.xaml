@@ -372,6 +372,63 @@
                                   SelectedValuePath="Id"
                                   DisplayMemberPath="Name"
                                   Style="{StaticResource FormCombo}"/>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormInput}" FontSize="10" Padding="8,5"
+                                     FontFamily="{StaticResource MonoFont}">
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Grid>
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="4">
+                                                <ScrollViewer x:Name="PART_ContentHost"
+                                                              Padding="{TemplateBinding Padding}"
+                                                              Focusable="False"
+                                                              HorizontalScrollBarVisibility="Hidden"
+                                                              VerticalScrollBarVisibility="Hidden"/>
+                                            </Border>
+                                            <TextBlock IsHitTestVisible="False"
+                                                       Text="New group name..."
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       FontSize="10"
+                                                       Margin="8,0,0,0"
+                                                       VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsFocused" Value="True">
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                            </TextBox>
+                            <Button Grid.Column="2" Style="{StaticResource FormBtn}" Padding="8,5"
+                                    Command="{Binding AddNewGroupCommand}" ToolTip="Create new group">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="+" FontSize="12" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Add" FontSize="10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
                     </StackPanel>
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Type" Style="{StaticResource FormLabel}"/>

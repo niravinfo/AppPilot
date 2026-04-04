@@ -22,6 +22,7 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
     public string ProjectPath => Service.ProjectPath;
     public string CsprojPath => Service.CsprojPath;
     public int? Port => Service.Port;
+    public int DisplayOrder => Service.DisplayOrder;
     public string HealthCheckUrl => Service.HealthCheckUrl;
     public string? GrpcEndpoint => Service.GrpcEndpoint;
     public string? SwaggerUrl => Service.SwaggerUrl;
@@ -66,7 +67,7 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
             UseWindowsService = Service.UseWindowsService,
             Dependencies = new List<string>(Service.Dependencies),
             GroupId = string.Empty,
-            DisplayOrder = null,
+            DisplayOrder = Service.DisplayOrder > 0 ? Service.DisplayOrder : null,
         };
     }
 }

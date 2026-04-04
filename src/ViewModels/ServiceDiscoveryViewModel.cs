@@ -21,7 +21,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     private readonly IConfigurationService _configService;
     private readonly IDialogService _dialogService;
     private readonly ILogger _logger;
-    private readonly List<GroupConfig> _groups;
+    private readonly ObservableCollection<GroupConfig> _groups;
 
     [ObservableProperty]
     private bool _isDiscovering;
@@ -65,7 +65,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         IConfigurationService configService,
         IDialogService dialogService,
         ILogger logger,
-        List<GroupConfig> groups)
+        ObservableCollection<GroupConfig> groups)
     {
         _discoveryService = discoveryService;
         _configService = configService;
@@ -175,6 +175,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         item.Service.EnvironmentVariables = new Dictionary<string, string>(config.Environment);
         item.Service.UseWindowsService = config.UseWindowsService;
         item.Service.Dependencies = new List<string>(config.Dependencies);
+        item.Service.DisplayOrder = config.DisplayOrder ?? item.Service.DisplayOrder;
 
         ApplyFilters();
     }

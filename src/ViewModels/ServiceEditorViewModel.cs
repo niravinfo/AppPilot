@@ -3,6 +3,7 @@ using AppPilot.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -24,7 +25,7 @@ public partial class ServiceEditorViewModel : ViewModelBase
     [ObservableProperty]
     private ServiceType _serviceType = ServiceType.WebApi;
 
-    public List<GroupConfig> Groups { get; }
+    public ObservableCollection<GroupConfig> Groups { get; }
 
     [ObservableProperty]
     private string _executablePath = string.Empty;
@@ -46,6 +47,9 @@ public partial class ServiceEditorViewModel : ViewModelBase
     private int _displayOrder = 999;
 
     [ObservableProperty]
+    private string _newGroupName = string.Empty;
+
+    [ObservableProperty]
     private string _dependenciesText = string.Empty;
 
     [ObservableProperty]
@@ -58,13 +62,13 @@ public partial class ServiceEditorViewModel : ViewModelBase
     public string Title => IsNew ? "Add Service" : $"Edit — {DisplayName}";
     public string SaveButtonText => IsNew ? "Add Service" : "Save Changes";
 
-    public ServiceEditorViewModel(List<GroupConfig> groups)
+    public ServiceEditorViewModel(ObservableCollection<GroupConfig> groups)
     {
         IsNew = true;
         Groups = groups;
     }
 
-    public ServiceEditorViewModel(ManagedServiceConfig config, List<GroupConfig> groups)
+    public ServiceEditorViewModel(ManagedServiceConfig config, ObservableCollection<GroupConfig> groups)
     {
         IsNew = false;
         _displayName = config.DisplayName;
@@ -144,5 +148,25 @@ public partial class ServiceEditorViewModel : ViewModelBase
         var dialog = new OpenFolderDialog { Title = "Select Working Directory" };
         if (dialog.ShowDialog() == true)
             WorkingDirectory = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void AddNewGroup()
+    {
+        if (string.IsNullOrWhiteSpace(NewGroupName))
+            return;
+
+        var trimmed = NewGroupName.Trim();
+        if (Groups.Any(g => g.Name.Equals(trimmed, System.StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        var newGroup = new GroupConfig
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = trimmed
+        };
+        Groups.Add(newGroup);
+        GroupId = newGroup.Id;
+        NewGroupName = string.Empty;
     }
 }

@@ -17,6 +17,7 @@ public class DiscoveryService : IServiceDiscoveryService
         return await Task.Run(() =>
         {
             var results = new List<DiscoveredService>();
+            int displayOrder = 0;
 
             // Restrict search to 2 folder levels only (matching console tool behavior)
             var csprojFiles = Directory.GetFiles(rootDirectory, "*.csproj", SearchOption.TopDirectoryOnly)
@@ -58,6 +59,7 @@ public class DiscoveryService : IServiceDiscoveryService
                         }
                     }
 
+                    displayOrder++;
                     var service = new DiscoveredService
                     {
                         ProjectPath = Path.GetDirectoryName(csproj)!,
@@ -77,6 +79,7 @@ public class DiscoveryService : IServiceDiscoveryService
                         OpenApiPath = null,
                         Dependencies = new List<string>(),
                         IsSelected = true,
+                        DisplayOrder = displayOrder,
                     };
 
                     // Detect Worker
@@ -120,7 +123,9 @@ public class DiscoveryService : IServiceDiscoveryService
                         service.UseWindowsService = true;
                     }
 
-                    // Extract only HTTPS port from non-IIS profiles in launchSettings.json
+                    // Extract ports from non-IIS profiles in launchSettings.json
+                    int? httpsPort = null;
+                    int? httpPort = null;
                     var launchText = File.ReadAllText(launchSettingsPath);
                     try
                     {
@@ -140,34 +145,36 @@ public class DiscoveryService : IServiceDiscoveryService
                                     var urls = appUrlProp.GetString()?.Split(';') ?? Array.Empty<string>();
                                     foreach (var url in urls)
                                     {
+                                        var portMatch = Regex.Match(url, @":(\d+)");
+                                        if (!portMatch.Success) continue;
+
+                                        var portStr = portMatch.Groups[1].Value;
+                                        if (!int.TryParse(portStr, out var port)) continue;
+
                                         if (url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                                         {
-                                            var portMatch = Regex.Match(url, @":(\d+)");
-                                            if (portMatch.Success)
+                                            httpsPort ??= port;
+                                            service.Port = port;
+
+                                            if (service.Type == ServiceType.WebApi || service.Type == ServiceType.Grpc)
                                             {
-                                                var portStr = portMatch.Groups[1].Value;
-                                                if (int.TryParse(portStr, out var port))
-                                                {
-                                                    service.Port = port;
-                                                }
-
-                                                // Build health check URL
-                                                if (service.Type == ServiceType.WebApi || service.Type == ServiceType.Grpc)
-                                                {
-                                                    var baseUrl = url.TrimEnd('/');
-                                                    service.HealthCheckUrl = $"{baseUrl}/health";
-                                                }
-
-                                                if (service.Type == ServiceType.Grpc && string.IsNullOrEmpty(service.GrpcEndpoint))
-                                                {
-                                                    service.GrpcEndpoint = url;
-                                                }
-
-                                                if (service.Type == ServiceType.WebApi && string.IsNullOrEmpty(service.SwaggerUrl))
-                                                {
-                                                    service.SwaggerUrl = $"{url.TrimEnd('/')}/swagger";
-                                                }
+                                                var baseUrl = url.TrimEnd('/');
+                                                service.HealthCheckUrl = $"{baseUrl}/health";
                                             }
+
+                                            if (service.Type == ServiceType.Grpc && string.IsNullOrEmpty(service.GrpcEndpoint))
+                                            {
+                                                service.GrpcEndpoint = url;
+                                            }
+
+                                            if (service.Type == ServiceType.WebApi && string.IsNullOrEmpty(service.SwaggerUrl))
+                                            {
+                                                service.SwaggerUrl = $"{url.TrimEnd('/')}/swagger";
+                                            }
+                                        }
+                                        else if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            httpPort ??= port;
                                         }
                                     }
                                 }
@@ -175,6 +182,17 @@ public class DiscoveryService : IServiceDiscoveryService
                         }
                     }
                     catch { /* Ignore malformed JSON */ }
+
+                    // Build --urls argument for API and gRPC services
+                    if (service.Type == ServiceType.WebApi || service.Type == ServiceType.Grpc)
+                    {
+                        var preferredPort = httpsPort ?? httpPort;
+                        if (preferredPort.HasValue)
+                        {
+                            var scheme = httpsPort.HasValue ? "https" : "http";
+                            service.Arguments = $"--urls={scheme}://localhost:{preferredPort.Value}";
+                        }
+                    }
 
                     results.Add(service);
                 }

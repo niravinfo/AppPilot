@@ -22,4 +22,5 @@ public class DiscoveredService
     public string? OpenApiPath { get; set; }
     public List<string> Dependencies { get; set; } = new();
     public bool IsSelected { get; set; } = true;
+    public int DisplayOrder { get; set; }
 }
