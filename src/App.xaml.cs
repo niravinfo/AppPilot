@@ -1,6 +1,7 @@
 using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
+using AppPilot.Services.Discovery;
 using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
@@ -87,6 +88,7 @@ public partial class App : Application
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IBuildService, BuildService>();
                 services.AddSingleton<IGitService, GitService>();
+                services.AddSingleton<IServiceDiscoveryService, DiscoveryService>();
                 services.AddSingleton<MainViewModel>();
                 services.AddSingleton<MainWindow>();
             })

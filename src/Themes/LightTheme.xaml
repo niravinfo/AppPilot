@@ -118,6 +118,12 @@
     <SolidColorBrush x:Key="ScrollTrack" Color="#F1F5F9"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SECTIONS                                                                 -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="SectionBg"       Color="#F8FAFC"/>
+    <SolidColorBrush x:Key="SectionBorder"   Color="#E2E8F0"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- OUTPUT CONSOLE                                                           -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <SolidColorBrush x:Key="OutputConsoleBg" Color="#1E293B"/>

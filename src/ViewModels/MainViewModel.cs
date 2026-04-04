@@ -3,6 +3,7 @@ using AppPilot.Models;
 using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
+using AppPilot.Services.Discovery;
 using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
@@ -32,6 +33,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly IBuildService _buildService;
     private readonly IGitService _gitService;
+    private readonly IServiceDiscoveryService _discoveryService;
     private readonly DispatcherTimer _pollingTimer;
 
     [ObservableProperty]
@@ -76,7 +78,8 @@ public partial class MainViewModel : ViewModelBase
         ILogger<MainViewModel> logger,
         IDialogService dialogService,
         IBuildService buildService,
-        IGitService gitService)
+        IGitService gitService,
+        IServiceDiscoveryService discoveryService)
     {
         _configService = configService;
         _windowsServiceController = windowsServiceController;
@@ -86,6 +89,7 @@ public partial class MainViewModel : ViewModelBase
         _dialogService = dialogService;
         _buildService = buildService;
         _gitService = gitService;
+        _discoveryService = discoveryService;
 
         _pollingTimer = new DispatcherTimer
         {
@@ -509,6 +513,55 @@ public partial class MainViewModel : ViewModelBase
         RebuildFilteredGroups();
         SaveConfiguration();
         StatusText = $"Service '{config.DisplayName}' added";
+    }
+
+    [RelayCommand]
+    private async Task DiscoverServicesAsync()
+    {
+        var loggerFactory = App.Services.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory)) as Microsoft.Extensions.Logging.ILoggerFactory;
+        var logger = loggerFactory?.CreateLogger<ServiceDiscoveryViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var discoveryVm = new ServiceDiscoveryViewModel(_discoveryService, _configService, logger);
+
+        if (_configService.Load().AppPilot.BasePath is string basePath && !string.IsNullOrEmpty(basePath))
+        {
+            discoveryVm.DiscoveryPath = basePath;
+        }
+
+        if (_dialogService.ShowServiceDiscovery(discoveryVm) != true)
+        {
+            return;
+        }
+
+        var configs = discoveryVm.GetSelectedConfigs();
+        if (configs.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var config in configs)
+        {
+            _serviceConfigs.Add(config);
+
+            var groupInfo = string.IsNullOrWhiteSpace(config.GroupId)
+                ? GroupInfo.Empty
+                : (_groupDict.TryGetValue(config.GroupId, out var group)
+                    ? GroupInfo.FromConfig(group)
+                    : new GroupInfo { Id = config.GroupId, Name = config.GroupId });
+
+            Services.Add(new ServiceItemViewModel(
+                config,
+                groupInfo,
+                _windowsServiceController,
+                _processService,
+                _buildService,
+                _logger,
+                editCallback: EditService,
+                deleteCallback: DeleteService));
+        }
+
+        RebuildFilteredGroups();
+        SaveConfiguration();
+        StatusText = $"Imported {configs.Count} service(s)";
     }
 
     public void EditService(ServiceItemViewModel serviceVm)
