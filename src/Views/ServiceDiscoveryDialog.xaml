@@ -358,7 +358,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <Border Margin="6,0,0,0" Padding="5,1" CornerRadius="8" VerticalAlignment="Center">
+                                <Border Margin="0,0,0,0" Padding="0,0" CornerRadius="8" VerticalAlignment="Center">
                                     <Border.Style>
                                         <Style TargetType="Border">
                                             <Setter Property="Background" Value="{DynamicResource TypeBadgeBg}"/>
@@ -369,18 +369,6 @@
                                             </Style.Triggers>
                                         </Style>
                                     </Border.Style>
-                                    <TextBlock Text="{Binding AllServices.Count}" FontSize="9" FontWeight="SemiBold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="{DynamicResource TypeBadgeFg}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsAllTabChecked}" Value="True">
-                                                        <Setter Property="Foreground" Value="#C7D2FE"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
                                 </Border>
                             </StackPanel>
                         </Button>
