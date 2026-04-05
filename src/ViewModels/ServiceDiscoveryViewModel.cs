@@ -145,7 +145,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
 
             foreach (var service in discovered)
             {
-                AllServices.Add(new DiscoveredServiceItemViewModel(service));
+                AllServices.Add(new DiscoveredServiceItemViewModel(service, _groups));
             }
 
             if (discovered.Count == 0)

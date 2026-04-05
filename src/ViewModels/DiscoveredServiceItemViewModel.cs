@@ -1,12 +1,17 @@
 using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace AppPilot.ViewModels;
 
 public partial class DiscoveredServiceItemViewModel : ViewModelBase
 {
+    private readonly ObservableCollection<GroupConfig> _groups;
+
     public DiscoveredService Service { get; }
 
     [ObservableProperty]
@@ -27,11 +32,19 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
     public string? GrpcEndpoint => Service.GrpcEndpoint;
     public string? SwaggerUrl => Service.SwaggerUrl;
     public bool UseWindowsService => Service.UseWindowsService;
+    public bool HasGroup => !string.IsNullOrEmpty(Service.GroupId);
+
     public string GroupName
     {
-        get => string.IsNullOrEmpty(Service.GroupId) ? "Ungrouped" : Service.GroupId;
+        get
+        {
+            if (string.IsNullOrEmpty(Service.GroupId))
+                return "Ungrouped";
+
+            var group = _groups.FirstOrDefault(g => g.Id == Service.GroupId);
+            return group?.Name ?? Service.GroupId;
+        }
     }
-    public bool HasGroup => !string.IsNullOrEmpty(Service.GroupId);
 
     public IReadOnlyDictionary<string, string> EnvironmentVariables => Service.EnvironmentVariables;
     public int EnvVarCount => Service.EnvironmentVariables.Count;
@@ -44,9 +57,10 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
     public bool HasEnvVars => EnvVarCount > 0;
     public bool HasDependencies => Dependencies.Count > 0;
 
-    public DiscoveredServiceItemViewModel(DiscoveredService service)
+    public DiscoveredServiceItemViewModel(DiscoveredService service, ObservableCollection<GroupConfig> groups)
     {
         Service = service;
+        _groups = groups;
         _isSelected = service.IsSelected;
     }
 
