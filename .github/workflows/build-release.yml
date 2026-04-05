@@ -75,14 +75,5 @@ jobs:
           tag_name: v${{ env.VERSION }}
           name: AppPilot v${{ env.VERSION }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          generate_release_notes: true
           files: AppPilot-v${{ env.VERSION }}-win-x64.zip
-          body: |
-            ## AppPilot v${{ env.VERSION }}
-
-            ### Installation
-            1. Download `AppPilot-v${{ env.VERSION }}-win-x64.zip`
-            2. Extract the zip
-            3. Copy `AppData.example.json` to `AppData.json` and configure it
-            4. Run `AppPilot.exe`
-
-            > **Requires:** .NET 10 runtime installed on the target machine ([download](https://dotnet.microsoft.com/download/dotnet/10.0))
