@@ -52,6 +52,17 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     [ObservableProperty]
     private int _totalSelected;
 
+    [ObservableProperty]
+    private string _bulkGroupAssignment = string.Empty;
+
+    [ObservableProperty]
+    private string _bulkNewGroupName = string.Empty;
+
+    [ObservableProperty]
+    private string _bulkGroupStatus = string.Empty;
+
+    public ObservableCollection<GroupConfig> Groups => _groups;
+
     public ObservableCollection<DiscoveredServiceItemViewModel> AllServices { get; } = [];
     public ObservableCollection<DiscoveredServiceItemViewModel> FilteredServices { get; } = [];
 
@@ -215,8 +226,83 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         item.Service.Dependencies = new List<string>(config.Dependencies);
         item.Service.DisplayOrder = config.DisplayOrder ?? item.Service.DisplayOrder;
         item.Service.GroupId = config.GroupId;
+        item.NotifyPropertiesChanged();
 
         ApplyFilters();
+    }
+
+    [RelayCommand]
+    private void AssignGroupToSelected()
+    {
+        var targetGroupId = BulkGroupAssignment;
+        if (string.IsNullOrEmpty(targetGroupId))
+        {
+            BulkGroupStatus = "Select a group first";
+            return;
+        }
+
+        var count = 0;
+        foreach (var service in FilteredServices.Where(s => s.IsSelected))
+        {
+            service.Service.GroupId = targetGroupId;
+            service.NotifyPropertiesChanged();
+            count++;
+        }
+
+        BulkGroupStatus = count > 0
+            ? $"Assigned to {count} service(s)"
+            : "No services selected";
+    }
+
+    [RelayCommand]
+    private void AddNewGroupForBulk()
+    {
+        if (string.IsNullOrWhiteSpace(BulkNewGroupName))
+        {
+            BulkGroupStatus = "Enter a group name";
+            return;
+        }
+
+        var trimmed = BulkNewGroupName.Trim();
+        var existing = _groups.FirstOrDefault(g =>
+            g.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+            g.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+
+        if (existing != null)
+        {
+            BulkGroupAssignment = existing.Id;
+            BulkNewGroupName = string.Empty;
+            BulkGroupStatus = $"Group '{trimmed}' selected";
+            return;
+        }
+
+        var maxOrder = _groups.Count > 0 ? _groups.Max(g => g.DisplayOrder) : 0;
+        var newGroup = new GroupConfig
+        {
+            Id = trimmed,
+            Name = trimmed,
+            DisplayOrder = maxOrder + 1
+        };
+        _groups.Add(newGroup);
+        BulkGroupAssignment = trimmed;
+        BulkNewGroupName = string.Empty;
+        BulkGroupStatus = $"Group '{trimmed}' created and selected";
+    }
+
+    [RelayCommand]
+    private void ClearGroupFromSelected()
+    {
+        var count = 0;
+        foreach (var service in FilteredServices.Where(s => s.IsSelected))
+        {
+            service.Service.GroupId = string.Empty;
+            service.NotifyPropertiesChanged();
+            count++;
+        }
+
+        BulkGroupStatus = count > 0
+            ? $"Cleared group from {count} service(s)"
+            : "No services selected";
     }
 
     [RelayCommand]

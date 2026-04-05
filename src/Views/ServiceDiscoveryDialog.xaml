@@ -206,6 +206,105 @@
             <Setter Property="Padding" Value="6,3"/>
             <Setter Property="Margin" Value="0,0,4,4"/>
         </Style>
+
+        <Style x:Key="FormCombo" TargetType="ComboBox">
+            <Setter Property="Foreground"    Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize"      Value="11"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Padding"    Value="10,7"/>
+                        <Setter Property="FontSize"   Value="11"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="Bd"
+                                            Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBg}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="Root">
+                            <Border x:Name="Bd"
+                                    Background="{DynamicResource InputBg}"
+                                    BorderBrush="{DynamicResource InputBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                <Grid Margin="10,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="24"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      VerticalAlignment="Center"
+                                                      IsHitTestVisible="False"/>
+                                    <Path Grid.Column="1"
+                                          Data="M7,10L12,15L17,10Z"
+                                          Fill="{DynamicResource TextMuted}"
+                                          Width="8" Height="8"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          IsHitTestVisible="False"/>
+                                </Grid>
+                            </Border>
+                            <ToggleButton Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent" BorderThickness="0">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{DynamicResource HeaderBg}"
+                                        BorderBrush="{DynamicResource CardBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        MinWidth="{Binding ActualWidth, ElementName=Root}"
+                                        Margin="0,2,0,0">
+                                    <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -564,6 +663,146 @@
                                VerticalAlignment="Center" Margin="8,0,0,0"/>
                 </StackPanel>
 
+                <!-- Bulk Group Assignment -->
+                <Border DockPanel.Dock="Top"
+                        Background="{DynamicResource SectionBg}"
+                        BorderBrush="{DynamicResource SectionBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,10"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Border Width="20" Height="20" CornerRadius="5" Margin="0,0,8,0"
+                                    Background="{DynamicResource AccentBg}"
+                                    VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconFolder}"
+                                      Fill="{DynamicResource AccentFg}"
+                                      Width="10" Height="10"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Assign Group to Selected"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Groups}"
+                                      SelectedValue="{Binding BulkGroupAssignment, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Id"
+                                      DisplayMemberPath="Name"
+                                      Height="30"
+                                      Style="{StaticResource FormCombo}"/>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource AccentBtn}"
+                                    Command="{Binding AssignGroupToSelectedCommand}"
+                                    Height="30"
+                                    Padding="12,6"
+                                    Margin="0,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Assign" FontSize="10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding BulkNewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="BulkNewGroup_KeyDown"
+                                     Height="28">
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Border x:Name="Bd"
+                                                Background="{DynamicResource InputBg}"
+                                                BorderBrush="{DynamicResource InputBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="6">
+                                            <Grid>
+                                                <ScrollViewer x:Name="PART_ContentHost"
+                                                              Padding="8,4"
+                                                              Focusable="False"
+                                                              HorizontalScrollBarVisibility="Hidden"
+                                                              VerticalScrollBarVisibility="Hidden"/>
+                                                <TextBlock x:Name="Placeholder"
+                                                           Text="Create new group..."
+                                                           Foreground="{DynamicResource TextMuted}"
+                                                           FontSize="10"
+                                                           Margin="8,0,0,0"
+                                                           VerticalAlignment="Center"
+                                                           IsHitTestVisible="False"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsFocused" Value="True">
+                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                                            </Trigger>
+                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="">
+                                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
+                                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="FontSize" Value="10"/>
+                                        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource FormBtn}"
+                                    Command="{Binding AddNewGroupForBulkCommand}"
+                                    Height="28"
+                                    Padding="8,4">
+                                <TextBlock Text="+ Add" FontSize="10" VerticalAlignment="Center"/>
+                            </Button>
+                            <Button Grid.Column="4"
+                                    Style="{StaticResource FormBtn}"
+                                    Command="{Binding ClearGroupFromSelectedCommand}"
+                                    Height="28"
+                                    Padding="8,4">
+                                <TextBlock Text="Clear" FontSize="10" VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="{Binding BulkGroupStatus}"
+                                   FontSize="10" Foreground="{DynamicResource AccentFg}"
+                                   Margin="0,4,0,0"
+                                   TextTrimming="CharacterEllipsis">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding BulkGroupStatus}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
                 <!-- Loading indicator -->
                 <Border DockPanel.Dock="Top"
                         Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource SectionBorder}"
@@ -635,6 +874,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
@@ -734,8 +974,40 @@
                                                        Foreground="{DynamicResource TextSecondary}"/>
                                         </Border>
 
+                                        <!-- Group badge -->
+                                        <Border Grid.Column="3" Padding="6,3" CornerRadius="5" Margin="0,0,6,0"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource SectionBg}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SectionBorder}"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasGroup}" Value="True">
+                                                            <Setter Property="Background" Value="#EEF2FF"/>
+                                                            <Setter Property="BorderBrush" Value="#C7D2FE"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="9" FontWeight="SemiBold"
+                                                       MaxWidth="100" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="{Binding GroupName}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasGroup}" Value="True">
+                                                                <Setter Property="Foreground" Value="#4F46E5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+
                                         <!-- Edit button -->
-                                        <Button Grid.Column="3" Style="{StaticResource CardBtn}"
+                                        <Button Grid.Column="4" Style="{StaticResource CardBtn}"
                                                 Width="30" Height="30"
                                                 ToolTip="Edit service details"
                                                 Command="{Binding DataContext.EditServiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -748,7 +1020,7 @@
                                         </Button>
 
                                         <!-- Type badge -->
-                                        <Border Grid.Column="4" Padding="6,3" CornerRadius="5"
+                                        <Border Grid.Column="5" Padding="6,3" CornerRadius="5"
                                                 VerticalAlignment="Center">
                                             <Border.Style>
                                                 <Style TargetType="Border">

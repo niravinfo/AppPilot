@@ -27,6 +27,11 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
     public string? GrpcEndpoint => Service.GrpcEndpoint;
     public string? SwaggerUrl => Service.SwaggerUrl;
     public bool UseWindowsService => Service.UseWindowsService;
+    public string GroupName
+    {
+        get => string.IsNullOrEmpty(Service.GroupId) ? "Ungrouped" : Service.GroupId;
+    }
+    public bool HasGroup => !string.IsNullOrEmpty(Service.GroupId);
 
     public IReadOnlyDictionary<string, string> EnvironmentVariables => Service.EnvironmentVariables;
     public int EnvVarCount => Service.EnvironmentVariables.Count;
@@ -48,6 +53,26 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
     partial void OnIsSelectedChanged(bool value)
     {
         Service.IsSelected = value;
+    }
+
+    public void NotifyPropertiesChanged()
+    {
+        OnPropertyChanged(nameof(GroupName));
+        OnPropertyChanged(nameof(HasGroup));
+        OnPropertyChanged(nameof(DisplayName));
+        OnPropertyChanged(nameof(TypeName));
+        OnPropertyChanged(nameof(Type));
+        OnPropertyChanged(nameof(Port));
+        OnPropertyChanged(nameof(HasPort));
+        OnPropertyChanged(nameof(HealthCheckUrl));
+        OnPropertyChanged(nameof(HasHealthCheckUrl));
+        OnPropertyChanged(nameof(GrpcEndpoint));
+        OnPropertyChanged(nameof(HasGrpcEndpoint));
+        OnPropertyChanged(nameof(SwaggerUrl));
+        OnPropertyChanged(nameof(HasSwaggerUrl));
+        OnPropertyChanged(nameof(EnvVarCount));
+        OnPropertyChanged(nameof(HasEnvVars));
+        OnPropertyChanged(nameof(HasDependencies));
     }
 
     public ManagedServiceConfig ToManagedServiceConfig()

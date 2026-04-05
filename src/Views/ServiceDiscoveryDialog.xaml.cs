@@ -26,4 +26,13 @@ public partial class ServiceDiscoveryDialog : Window
             }
         }
     }
+
+    private void BulkNewGroup_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && DataContext is ServiceDiscoveryViewModel vm)
+        {
+            vm.AddNewGroupForBulkCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
 }
