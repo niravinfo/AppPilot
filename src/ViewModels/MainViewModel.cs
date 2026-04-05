@@ -3,6 +3,7 @@ using AppPilot.Models;
 using AppPilot.Services;
 using AppPilot.Services.Build;
 using AppPilot.Services.Configuration;
+using AppPilot.Services.Discovery;
 using AppPilot.Services.Git;
 using AppPilot.Services.HealthCheck;
 using AppPilot.Services.ServiceControl;
@@ -20,8 +21,8 @@ namespace AppPilot.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
-    internal List<GroupConfig> _serviceGroups = [];
-    internal Dictionary<string, GroupConfig> _groupDict = [];
+    internal ObservableCollection<GroupConfig> _serviceGroups = [];
+    internal Dictionary<string, GroupConfig> _groupDict = new();
     internal readonly IConfigurationService _configService;
     private readonly Dictionary<string, ServiceGroupViewModel> _groupViewModelCache = [];
     internal IConfigurationService ConfigService => _configService;
@@ -32,6 +33,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IDialogService _dialogService;
     private readonly IBuildService _buildService;
     private readonly IGitService _gitService;
+    private readonly IServiceDiscoveryService _discoveryService;
     private readonly DispatcherTimer _pollingTimer;
 
     [ObservableProperty]
@@ -76,7 +78,8 @@ public partial class MainViewModel : ViewModelBase
         ILogger<MainViewModel> logger,
         IDialogService dialogService,
         IBuildService buildService,
-        IGitService gitService)
+        IGitService gitService,
+        IServiceDiscoveryService discoveryService)
     {
         _configService = configService;
         _windowsServiceController = windowsServiceController;
@@ -86,6 +89,7 @@ public partial class MainViewModel : ViewModelBase
         _dialogService = dialogService;
         _buildService = buildService;
         _gitService = gitService;
+        _discoveryService = discoveryService;
 
         _pollingTimer = new DispatcherTimer
         {
@@ -106,7 +110,7 @@ public partial class MainViewModel : ViewModelBase
         var settings = _configService.Load();
         _serviceConfigs = settings.Services;
         _gitRepositoryConfigs = settings.GitRepositories;
-        _serviceGroups = settings.Groups ?? [];
+        _serviceGroups = new ObservableCollection<GroupConfig>(settings.Groups ?? []);
         _groupDict = _serviceGroups.ToDictionary(g => g.Id);
 
         if (settings.AppPilot.PollingIntervalMs > 0)
@@ -511,6 +515,57 @@ public partial class MainViewModel : ViewModelBase
         StatusText = $"Service '{config.DisplayName}' added";
     }
 
+    [RelayCommand]
+    private async Task DiscoverServicesAsync()
+    {
+        var loggerFactory = App.Services.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory)) as Microsoft.Extensions.Logging.ILoggerFactory;
+        var logger = loggerFactory?.CreateLogger<ServiceDiscoveryViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var discoveryVm = new ServiceDiscoveryViewModel(_discoveryService, _configService, _dialogService, logger, _serviceGroups);
+
+        if (_configService.Load().AppPilot.BasePath is string basePath && !string.IsNullOrEmpty(basePath))
+        {
+            discoveryVm.DiscoveryPath = basePath;
+        }
+
+        if (_dialogService.ShowServiceDiscovery(discoveryVm) != true)
+        {
+            return;
+        }
+
+        _groupDict = _serviceGroups.ToDictionary(g => g.Id);
+
+        var configs = discoveryVm.GetSelectedConfigs();
+        if (configs.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var config in configs)
+        {
+            _serviceConfigs.Add(config);
+
+            var groupInfo = string.IsNullOrWhiteSpace(config.GroupId)
+                ? GroupInfo.Empty
+                : (_groupDict.TryGetValue(config.GroupId, out var group)
+                    ? GroupInfo.FromConfig(group)
+                    : new GroupInfo { Id = config.GroupId, Name = config.GroupId });
+
+            Services.Add(new ServiceItemViewModel(
+                config,
+                groupInfo,
+                _windowsServiceController,
+                _processService,
+                _buildService,
+                _logger,
+                editCallback: EditService,
+                deleteCallback: DeleteService));
+        }
+
+        RebuildFilteredGroups();
+        SaveConfiguration();
+        StatusText = $"Imported {configs.Count} service(s)";
+    }
+
     public void EditService(ServiceItemViewModel serviceVm)
     {
         var editorVm = new ServiceEditorViewModel(serviceVm.Config, _serviceGroups);
@@ -548,7 +603,37 @@ public partial class MainViewModel : ViewModelBase
         var settings = _configService.Load();
         settings.Services = _serviceConfigs;
         settings.GitRepositories = _gitRepositoryConfigs;
+        settings.Groups = _serviceGroups.ToList();
         _configService.Save(settings);
+    }
+
+    [RelayCommand]
+    private void ManageGroups()
+    {
+        var serviceCounts = _serviceConfigs
+            .Where(s => !string.IsNullOrEmpty(s.GroupId))
+            .GroupBy(s => s.GroupId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var loggerFactory = App.Services.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory)) as Microsoft.Extensions.Logging.ILoggerFactory;
+        var logger = loggerFactory?.CreateLogger<GroupManagementViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+        var vm = new GroupManagementViewModel(_serviceGroups, _configService, logger, serviceCounts);
+
+        if (_dialogService.ShowGroupManagement(vm) != true)
+        {
+            return;
+        }
+
+        vm.SaveAllChanges(_serviceGroups);
+        _groupDict = _serviceGroups.ToDictionary(g => g.Id);
+
+        foreach (var serviceVm in Services)
+        {
+            serviceVm.RefreshColors();
+        }
+
+        RebuildFilteredGroups();
+        StatusText = "Groups updated";
     }
 
     [RelayCommand]

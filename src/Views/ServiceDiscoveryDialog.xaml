@@ -1,0 +1,1353 @@
+<Window x:Class="AppPilot.Views.ServiceDiscoveryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:AppPilot.ViewModels"
+        xmlns:controls="clr-namespace:AppPilot.Controls"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:ServiceDiscoveryViewModel}"
+        Title="Service Discovery"
+        Width="1050"
+        Height="700"
+        MinWidth="800"
+        MinHeight="500"
+        Background="{DynamicResource WindowBg}"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        WindowStyle="SingleBorderWindow">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <BooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+
+        <Style x:Key="DlgScrollThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border Background="{DynamicResource ScrollThumb}" CornerRadius="3" Margin="2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="DlgScrollPageBtn" TargetType="{x:Type RepeatButton}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RepeatButton}">
+                        <Border Background="Transparent"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Border Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource DlgScrollPageBtn}" Command="ScrollBar.PageUpCommand"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource DlgScrollThumb}"/>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource DlgScrollPageBtn}" Command="ScrollBar.PageDownCommand"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground"  Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontSize"    Value="10"/>
+            <Setter Property="FontWeight"  Value="Bold"/>
+            <Setter Property="Margin"      Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="FormLabel" TargetType="TextBlock">
+            <Setter Property="Foreground"  Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontSize"    Value="11"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Margin"      Value="0,0,0,5"/>
+        </Style>
+
+        <Style x:Key="FormInput" TargetType="TextBox">
+            <Setter Property="Background"    Value="{DynamicResource InputBg}"/>
+            <Setter Property="Foreground"    Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush"   Value="{DynamicResource InputBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"       Value="10,8"/>
+            <Setter Property="FontSize"      Value="12"/>
+            <Setter Property="CaretBrush"    Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Padding="{TemplateBinding Padding}"
+                                          Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FormBtn" TargetType="Button">
+            <Setter Property="Background"      Value="{DynamicResource BtnBg}"/>
+            <Setter Property="Foreground"      Value="{DynamicResource BtnFg}"/>
+            <Setter Property="BorderBrush"     Value="{DynamicResource BtnBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="12,8"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background"  Value="{DynamicResource BtnHoverBg}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource BtnHoverBorder}"/>
+                                <Setter Property="Foreground"  Value="{DynamicResource BtnHoverFg}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource BtnPressedBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SaveBtn" TargetType="Button" BasedOn="{StaticResource FormBtn}">
+            <Setter Property="Background"  Value="{DynamicResource AccentBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBorder}"/>
+            <Setter Property="Foreground"  Value="{DynamicResource AccentFg}"/>
+            <Setter Property="Padding"     Value="20,8"/>
+        </Style>
+
+        <Style x:Key="TypeTabBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DetailLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+
+        <Style x:Key="DetailValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <Style x:Key="EnvVarBadge" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SectionBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SectionBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="6,3"/>
+            <Setter Property="Margin" Value="0,0,4,4"/>
+        </Style>
+
+        <Style x:Key="FormCombo" TargetType="ComboBox">
+            <Setter Property="Foreground"    Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize"      Value="11"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Padding"    Value="10,7"/>
+                        <Setter Property="FontSize"   Value="11"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="Bd"
+                                            Background="{TemplateBinding Background}"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBg}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid x:Name="Root">
+                            <Border x:Name="Bd"
+                                    Background="{DynamicResource InputBg}"
+                                    BorderBrush="{DynamicResource InputBorder}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+                                <Grid Margin="10,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="24"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      VerticalAlignment="Center"
+                                                      IsHitTestVisible="False"/>
+                                    <Path Grid.Column="1"
+                                          Data="M7,10L12,15L17,10Z"
+                                          Fill="{DynamicResource TextMuted}"
+                                          Width="8" Height="8"
+                                          Stretch="Uniform"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          IsHitTestVisible="False"/>
+                                </Grid>
+                            </Border>
+                            <ToggleButton Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent" BorderThickness="0">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   Placement="Bottom"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Fade">
+                                <Border Background="{DynamicResource HeaderBg}"
+                                        BorderBrush="{DynamicResource CardBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        MinWidth="{Binding ActualWidth, ElementName=Root}"
+                                        Margin="0,2,0,0">
+                                    <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══ Header ═══ -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource HeaderBg}"
+                BorderBrush="{DynamicResource HeaderBorder}"
+                BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="36" Height="36" CornerRadius="10" Margin="0,0,12,0">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#06B6D4" Offset="0"/>
+                                <GradientStop Color="#3B82F6" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Path Data="{StaticResource IconSearch}"
+                              Fill="White"
+                              Width="16" Height="16"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Service Discovery"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Text="Find and import .NET services from your projects"
+                                   FontSize="10.5" Foreground="{DynamicResource TextMuted}"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <TextBlock Text="{Binding StatusMessage}"
+                           FontSize="11" Foreground="{DynamicResource TextMuted}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                           MaxWidth="350" TextTrimming="CharacterEllipsis"/>
+            </Grid>
+        </Border>
+
+        <!-- ═══ Main Content ═══ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Discovery panel -->
+            <DockPanel Grid.Column="0" LastChildFill="True" Margin="16,12,0,12">
+
+                <!-- Directory selector -->
+                <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0,0,0,12">
+                    <Button DockPanel.Dock="Right" Style="{StaticResource AccentBtn}"
+                            Command="{Binding DiscoverCommand}"
+                            Padding="16,8" Margin="8,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconSearch}"
+                                  Fill="{DynamicResource AccentFg}"
+                                  Width="14" Height="14"
+                                  Margin="0,0,6,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
+                            <TextBlock Text="Discover" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Style="{StaticResource FormBtn}"
+                            Command="{Binding BrowseDirectoryCommand}"
+                            Padding="10,8" ToolTip="Browse for directory">
+                        <Path Data="{StaticResource IconFolder}"
+                              Fill="{DynamicResource BtnFg}"
+                              Width="14" Height="14"
+                              Stretch="Uniform"/>
+                    </Button>
+                    <TextBox Text="{Binding DiscoveryPath, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FormInput}"
+                             FontFamily="{StaticResource MonoFont}" FontSize="11"/>
+                </DockPanel>
+
+                <!-- Type filter tabs + search -->
+                <DockPanel DockPanel.Dock="Top" LastChildFill="True" Margin="0,0,0,10">
+                    <Border DockPanel.Dock="Right" Background="{DynamicResource InputBg}"
+                            BorderBrush="{DynamicResource InputBorder}"
+                            BorderThickness="1" CornerRadius="7"
+                            Width="280" Height="34">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="{StaticResource IconSearch}"
+                                  Fill="{DynamicResource TextMuted}" Width="14" Height="14"
+                                  Margin="10,0,4,0" Stretch="Uniform" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" BorderThickness="0"
+                                     Foreground="{DynamicResource TextPrimary}"
+                                     CaretBrush="{DynamicResource TextPrimary}"
+                                     Padding="4,8,8,6" FontSize="12"
+                                     VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- All tab -->
+                        <Button Margin="0" Command="{Binding FilterByAllCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Padding" Value="12,6"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#E0E7FF"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsAllTabChecked}" Value="True">
+                                            <Setter Property="Background" Value="#6366F1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="All" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAllTabChecked}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Border Margin="0,0,0,0" Padding="0,0" CornerRadius="8" VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource TypeBadgeBg}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAllTabChecked}" Value="True">
+                                                    <Setter Property="Background" Value="#818CF8"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Worker tab -->
+                        <Button Margin="4,0,0,0" Command="{Binding FilterByWorkersCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Padding" Value="12,6"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#E0E7FF"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsWorkersTabChecked}" Value="True">
+                                            <Setter Property="Background" Value="#6366F1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <controls:SvgIcon IconData="{StaticResource IconWorker}"
+                                                  IconSize="13" VerticalAlignment="Center" Margin="0,0,5,0">
+                                    <controls:SvgIcon.Style>
+                                        <Style TargetType="controls:SvgIcon">
+                                            <Setter Property="IconFill" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWorkersTabChecked}" Value="True">
+                                                    <Setter Property="IconFill" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </controls:SvgIcon.Style>
+                                </controls:SvgIcon>
+                                <TextBlock Text="Workers" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWorkersTabChecked}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- gRPC tab -->
+                        <Button Margin="4,0,0,0" Command="{Binding FilterByGrpcCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Padding" Value="12,6"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#DCFCE7"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsGrpcTabChecked}" Value="True">
+                                            <Setter Property="Background" Value="#16A34A"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <controls:SvgIcon IconData="{StaticResource IconGrpc}"
+                                                  IconSize="13" VerticalAlignment="Center" Margin="0,0,5,0">
+                                    <controls:SvgIcon.Style>
+                                        <Style TargetType="controls:SvgIcon">
+                                            <Setter Property="IconFill" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGrpcTabChecked}" Value="True">
+                                                    <Setter Property="IconFill" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </controls:SvgIcon.Style>
+                                </controls:SvgIcon>
+                                <TextBlock Text="gRPC" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGrpcTabChecked}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- WebAPI tab -->
+                        <Button Margin="4,0,0,0" Command="{Binding FilterByWebApisCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Padding" Value="12,6"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FEF3C7"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsWebApisTabChecked}" Value="True">
+                                            <Setter Property="Background" Value="#D97706"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <controls:SvgIcon IconData="{StaticResource IconWebApi}"
+                                                  IconSize="13" VerticalAlignment="Center" Margin="0,0,5,0">
+                                    <controls:SvgIcon.Style>
+                                        <Style TargetType="controls:SvgIcon">
+                                            <Setter Property="IconFill" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWebApisTabChecked}" Value="True">
+                                                    <Setter Property="IconFill" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </controls:SvgIcon.Style>
+                                </controls:SvgIcon>
+                                <TextBlock Text="Web APIs" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsWebApisTabChecked}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Bulk actions -->
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button Style="{StaticResource FormBtn}" Padding="8,5" Margin="0,0,6,0"
+                            Command="{Binding SelectAllCommand}">
+                        <TextBlock Text="Select All" FontSize="10"/>
+                    </Button>
+                    <Button Style="{StaticResource FormBtn}" Padding="8,5"
+                            Command="{Binding DeselectAllCommand}">
+                        <TextBlock Text="Deselect All" FontSize="10"/>
+                    </Button>
+                    <TextBlock Text="{Binding TotalSelected, StringFormat={}{0} selected}"
+                               FontSize="10" Foreground="{DynamicResource TextMuted}"
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </StackPanel>
+
+                <!-- Bulk Group Assignment -->
+                <Border DockPanel.Dock="Top"
+                        Background="{DynamicResource SectionBg}"
+                        BorderBrush="{DynamicResource SectionBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,10"
+                        Margin="0,0,0,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Border Width="20" Height="20" CornerRadius="5" Margin="0,0,8,0"
+                                    Background="{DynamicResource AccentBg}"
+                                    VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconFolder}"
+                                      Fill="{DynamicResource AccentFg}"
+                                      Width="10" Height="10"
+                                      Stretch="Uniform"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="Assign Group to Selected"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding Groups}"
+                                      SelectedValue="{Binding BulkGroupAssignment, UpdateSourceTrigger=PropertyChanged}"
+                                      SelectedValuePath="Id"
+                                      DisplayMemberPath="Name"
+                                      Height="30"
+                                      Style="{StaticResource FormCombo}"/>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource AccentBtn}"
+                                    Command="{Binding AssignGroupToSelectedCommand}"
+                                    Height="30"
+                                    Padding="12,6"
+                                    Margin="0,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Assign" FontSize="10" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="6"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding BulkNewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="BulkNewGroup_KeyDown"
+                                     Height="28"
+                                     Background="{DynamicResource InputBg}"
+                                     Foreground="{DynamicResource TextPrimary}"
+                                     BorderBrush="{DynamicResource InputBorder}"
+                                     BorderThickness="1"
+                                     FontSize="10"
+                                     CaretBrush="{DynamicResource TextPrimary}"
+                                     VerticalContentAlignment="Center"
+                                     Padding="8,0">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsFocused" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TextBlock Grid.Column="0"
+                                       Text="Create new group..."
+                                       Foreground="{DynamicResource TextMuted}"
+                                       FontSize="10"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding BulkNewGroupName}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding BulkNewGroupName}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource FormBtn}"
+                                    Command="{Binding AddNewGroupForBulkCommand}"
+                                    Height="28"
+                                    Padding="8,4">
+                                <TextBlock Text="+ Add" FontSize="10" VerticalAlignment="Center"/>
+                            </Button>
+                            <Button Grid.Column="4"
+                                    Style="{StaticResource FormBtn}"
+                                    Command="{Binding ClearGroupFromSelectedCommand}"
+                                    Height="28"
+                                    Padding="8,4">
+                                <TextBlock Text="Clear" FontSize="10" VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="{Binding BulkGroupStatus}"
+                                   FontSize="10" Foreground="{DynamicResource AccentFg}"
+                                   Margin="0,4,0,0"
+                                   TextTrimming="CharacterEllipsis">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding BulkGroupStatus}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Loading indicator -->
+                <Border DockPanel.Dock="Top"
+                        Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource SectionBorder}"
+                        BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDiscovering}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⟳" FontSize="14" Foreground="{DynamicResource AccentFg}"
+                                   VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock.RenderTransform>
+                                <RotateTransform CenterX="7" CenterY="7"/>
+                            </TextBlock.RenderTransform>
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDiscovering}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                         From="0" To="360" Duration="0:0:1" RepeatBehavior="Forever"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="Scanning for .NET projects..."
+                                   FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Services list -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding FilteredServices}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Cursor="Hand" Margin="0,0,0,6" CornerRadius="8"
+                                        BorderThickness="1" Padding="12,10"
+                                        MouseLeftButtonUp="ServiceRow_Click"
+                                        Tag="{Binding}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource CardBg}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource AccentBorder}"/>
+                                                    <Setter Property="BorderThickness" Value="1.5"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Checkbox -->
+                                        <CheckBox Grid.Column="0"
+                                                  IsChecked="{Binding IsSelected}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,10,0">
+                                            <CheckBox.Style>
+                                                <Style TargetType="CheckBox">
+                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="CheckBox">
+                                                                <Border x:Name="Border" Width="18" Height="18"
+                                                                        CornerRadius="4" BorderThickness="1.5"
+                                                                        Background="{DynamicResource InputBg}"
+                                                                        BorderBrush="{DynamicResource InputBorder}">
+                                                                    <Path x:Name="CheckMark"
+                                                                          Data="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
+                                                                          Fill="{DynamicResource AccentFg}"
+                                                                          Width="12" Height="12"
+                                                                          Stretch="Uniform"
+                                                                          HorizontalAlignment="Center"
+                                                                          VerticalAlignment="Center"
+                                                                          Opacity="0"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsChecked" Value="True">
+                                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBorder}"/>
+                                                                        <Setter TargetName="Border" Property="Background" Value="{DynamicResource AccentBg}"/>
+                                                                        <Setter TargetName="CheckMark" Property="Opacity" Value="1"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentFg}"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </CheckBox.Style>
+                                        </CheckBox>
+
+                                        <!-- Service info -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:SvgIcon IconSize="16" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                    <controls:SvgIcon.Style>
+                                                        <Style TargetType="controls:SvgIcon">
+                                                            <Setter Property="IconData" Value="{StaticResource IconWorker}"/>
+                                                            <Setter Property="IconFill" Value="#6366F1"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Type}" Value="Grpc">
+                                                                    <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                                    <Setter Property="IconFill" Value="#16A34A"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Type}" Value="WebApi">
+                                                                    <Setter Property="IconData" Value="{StaticResource IconWebApi}"/>
+                                                                    <Setter Property="IconFill" Value="#F59E0B"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </controls:SvgIcon.Style>
+                                                </controls:SvgIcon>
+                                                <TextBlock Text="{Binding DisplayName}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimary}"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding ProjectPath}"
+                                                       FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                                       FontFamily="{StaticResource MonoFont}"
+                                                       Margin="23,3,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+
+                                        <!-- Port badge -->
+                                        <Border Grid.Column="2" Padding="6,2" CornerRadius="4" Margin="0,0,6,0"
+                                                Background="{DynamicResource SectionBg}"
+                                                BorderBrush="{DynamicResource SectionBorder}"
+                                                BorderThickness="1"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasPort}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock Text="{Binding Port}" FontSize="10"
+                                                       FontFamily="{StaticResource MonoFont}"
+                                                       Foreground="{DynamicResource TextSecondary}"/>
+                                        </Border>
+
+                                        <!-- Group badge -->
+                                        <Border Grid.Column="3" Padding="6,3" CornerRadius="5" Margin="0,0,6,0"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource SectionBg}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SectionBorder}"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasGroup}" Value="True">
+                                                            <Setter Property="Background" Value="#EEF2FF"/>
+                                                            <Setter Property="BorderBrush" Value="#C7D2FE"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="9" FontWeight="SemiBold"
+                                                       MaxWidth="120" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="{Binding GroupName}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasGroup}" Value="True">
+                                                                <Setter Property="Foreground" Value="#4F46E5"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+
+                                        <!-- Edit button -->
+                                        <Button Grid.Column="4" Style="{StaticResource CardBtn}"
+                                                Width="30" Height="30"
+                                                ToolTip="Edit service details"
+                                                Command="{Binding DataContext.EditServiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Path Data="{StaticResource IconPencil}"
+                                                  Fill="{DynamicResource CardBtnFg}"
+                                                  Width="13" Height="13"
+                                                  Stretch="Uniform"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- Divider -->
+            <Rectangle Grid.Column="1" Width="1" Fill="{DynamicResource CardBorder}"
+                       Margin="12,12,0,12"/>
+
+            <!-- Right: Details panel -->
+            <DockPanel Grid.Column="2" LastChildFill="True" Margin="12,12,16,12">
+                <TextBlock DockPanel.Dock="Top" Text="SERVICE DETAILS"
+                           Style="{StaticResource SectionTitle}" Margin="0,0,0,12"/>
+
+                <!-- Empty state -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowDetailsPanel}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="🔍" FontSize="32" Foreground="{DynamicResource TextMuted}"
+                               HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="Select a service to view details"
+                               FontSize="11" Foreground="{DynamicResource TextMuted}"
+                               HorizontalAlignment="Center" TextAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Details content -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer.Style>
+                        <Style TargetType="ScrollViewer">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowDetailsPanel}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ScrollViewer.Style>
+                    <StackPanel>
+                        <TextBlock Text="{Binding SelectedService.DisplayName}"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   Margin="0,0,0,4"/>
+                        <TextBlock Text="{Binding SelectedService.ProjectName}"
+                                   FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                   FontFamily="{StaticResource MonoFont}"
+                                   Margin="0,0,0,14"/>
+
+                        <Rectangle Height="1" Fill="{DynamicResource CardBorder}" Margin="0,0,0,14"/>
+
+                        <!-- Type -->
+                        <TextBlock Text="TYPE" Style="{StaticResource DetailLabel}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <controls:SvgIcon IconSize="14" VerticalAlignment="Center" Margin="0,0,6,0">
+                                <controls:SvgIcon.Style>
+                                    <Style TargetType="controls:SvgIcon">
+                                        <Setter Property="IconData" Value="{StaticResource IconWorker}"/>
+                                        <Setter Property="IconFill" Value="#6366F1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedService.Type}" Value="Grpc">
+                                                <Setter Property="IconData" Value="{StaticResource IconGrpc}"/>
+                                                <Setter Property="IconFill" Value="#16A34A"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedService.Type}" Value="WebApi">
+                                                <Setter Property="IconData" Value="{StaticResource IconWebApi}"/>
+                                                <Setter Property="IconFill" Value="#F59E0B"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:SvgIcon.Style>
+                            </controls:SvgIcon>
+                            <TextBlock Text="{Binding SelectedService.TypeName}" FontSize="11"
+                                       Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Project path -->
+                        <TextBlock Text="PROJECT PATH" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock Text="{Binding SelectedService.ProjectPath}"
+                                   Style="{StaticResource DetailValue}"
+                                   Margin="0,0,0,14"/>
+
+                        <!-- Port -->
+                        <TextBlock Text="PORT">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasPort}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding SelectedService.Port}"
+                                   Margin="0,0,0,14">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasPort}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Health Check URL -->
+                        <TextBlock Text="HEALTH CHECK URL">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasHealthCheckUrl}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding SelectedService.HealthCheckUrl}"
+                                   Margin="0,0,0,14">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasHealthCheckUrl}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- gRPC Endpoint -->
+                        <TextBlock Text="gRPC ENDPOINT">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasGrpcEndpoint}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding SelectedService.GrpcEndpoint}"
+                                   Margin="0,0,0,14">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasGrpcEndpoint}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Swagger URL -->
+                        <TextBlock Text="SWAGGER URL">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasSwaggerUrl}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="{Binding SelectedService.SwaggerUrl}"
+                                   Margin="0,0,0,14">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasSwaggerUrl}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Windows Service -->
+                        <TextBlock Text="WINDOWS SERVICE" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock Margin="0,0,0,14">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailValue}">
+                                    <Setter Property="Text" Value="No"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.UseWindowsService}" Value="True">
+                                            <Setter Property="Text" Value="Yes"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Environment Variables -->
+                        <TextBlock Text="ENVIRONMENT VARIABLES">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasEnvVars}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ItemsControl ItemsSource="{Binding SelectedService.EnvironmentVariables}"
+                                      Margin="0,0,0,14">
+                            <ItemsControl.Style>
+                                <Style TargetType="ItemsControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasEnvVars}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ItemsControl.Style>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource EnvVarBadge}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Key}" FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextSecondary}"
+                                                       FontFamily="{StaticResource MonoFont}"/>
+                                            <TextBlock Text="=" FontSize="9" Foreground="{DynamicResource TextMuted}"
+                                                       Margin="2,0"/>
+                                            <TextBlock Text="{Binding Value}" FontSize="9"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       FontFamily="{StaticResource MonoFont}"
+                                                       MaxWidth="120" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Dependencies -->
+                        <TextBlock Text="DEPENDENCIES">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource DetailLabel}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasDependencies}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ItemsControl ItemsSource="{Binding SelectedService.Dependencies}"
+                                      Margin="0,0,0,14">
+                            <ItemsControl.Style>
+                                <Style TargetType="ItemsControl">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedService.HasDependencies}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ItemsControl.Style>
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource EnvVarBadge}">
+                                        <TextBlock Text="{Binding}" FontSize="9"
+                                                   Foreground="{DynamicResource TextSecondary}"
+                                                   FontFamily="{StaticResource MonoFont}"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
+
+        <!-- ═══ Footer ═══ -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource HeaderBg}"
+                BorderBrush="{DynamicResource HeaderBorder}"
+                BorderThickness="0,1,0,0"
+                Padding="20,14">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Style="{StaticResource FormBtn}"
+                            Padding="16,8" Margin="0,0,10,0"
+                            Click="OnCancel"/>
+                    <Button Style="{StaticResource SaveBtn}"
+                            Click="OnImport">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource IconDownload}"
+                                  Fill="{DynamicResource BtnFg}"
+                                  Width="12" Height="12"
+                                  Margin="0,0,7,0"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"/>
+                            <TextBlock Text="Import Selected" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
