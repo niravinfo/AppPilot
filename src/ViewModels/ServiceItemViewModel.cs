@@ -103,26 +103,34 @@ public partial class ServiceItemViewModel : ViewModelBase
     // Optimize: Cache status bar brushes to avoid repeated allocations
     private SolidColorBrush? _runningBrush;
     private SolidColorBrush? _stoppedBrush;
+    private bool _lastThemeWasLight = true;
 
     public Brush StatusTypeBarBrush
     {
         get
         {
             bool isRunning = Status == ServiceStatus.Running;
+            bool isDark = !ThemeManager.IsLight;
 
-            // Return cached brush based on service type and status
+            if (_lastThemeWasLight != ThemeManager.IsLight)
+            {
+                _runningBrush = null;
+                _stoppedBrush = null;
+                _lastThemeWasLight = ThemeManager.IsLight;
+            }
+
             if (isRunning)
             {
                 if (_runningBrush == null)
                 {
-                    var colorStr = Config.Type switch
+                    var color = Config.Type switch
                     {
-                        ServiceType.Grpc => "#FF818cf8",
-                        ServiceType.WebApi => "#FF22d3ee",
-                        ServiceType.Worker => "#FFf59e0b",
-                        _ => "#FF808080"
+                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDark),
+                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDark),
+                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDark),
+                        _ => Color.FromRgb(128, 128, 128)
                     };
-                    _runningBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorStr));
+                    _runningBrush = new SolidColorBrush(color);
                     _runningBrush.Freeze();
                 }
                 return _runningBrush;
@@ -131,14 +139,16 @@ public partial class ServiceItemViewModel : ViewModelBase
             {
                 if (_stoppedBrush == null)
                 {
-                    var colorStr = Config.Type switch
+                    var baseColor = Config.Type switch
                     {
-                        ServiceType.Grpc => "#FF6366f1",
-                        ServiceType.WebApi => "#FF0ea5e9",
-                        ServiceType.Worker => "#FFf97316",
-                        _ => "#FF606060"
+                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDark),
+                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDark),
+                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDark),
+                        _ => Color.FromRgb(96, 96, 96)
                     };
-                    _stoppedBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorStr));
+                    var alpha = (byte)(isDark ? 0x99 : 0xB3);
+                    var color = Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B);
+                    _stoppedBrush = new SolidColorBrush(color);
                     _stoppedBrush.Freeze();
                 }
                 return _stoppedBrush;
@@ -179,6 +189,8 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public void RefreshColors()
     {
+        _runningBrush = null;
+        _stoppedBrush = null;
         InitializeColors();
         OnPropertyChanged(nameof(TypeBadgeBrush));
         OnPropertyChanged(nameof(TypeBadgeFgBrush));

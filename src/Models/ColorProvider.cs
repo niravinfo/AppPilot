@@ -36,12 +36,12 @@ public static class ColorProvider
         _groupColorsDark.Clear();
 
         _serviceTypeColorsLight[ServiceType.Worker] = Color.FromRgb(99, 102, 241);
-        _serviceTypeColorsLight[ServiceType.Grpc] = Color.FromRgb(34, 197, 94);
-        _serviceTypeColorsLight[ServiceType.WebApi] = Color.FromRgb(249, 115, 22);
+        _serviceTypeColorsLight[ServiceType.Grpc] = Color.FromRgb(22, 163, 74);
+        _serviceTypeColorsLight[ServiceType.WebApi] = Color.FromRgb(217, 119, 6);
 
         _serviceTypeColorsDark[ServiceType.Worker] = Color.FromRgb(129, 140, 248);
         _serviceTypeColorsDark[ServiceType.Grpc] = Color.FromRgb(74, 222, 128);
-        _serviceTypeColorsDark[ServiceType.WebApi] = Color.FromRgb(251, 146, 60);
+        _serviceTypeColorsDark[ServiceType.WebApi] = Color.FromRgb(251, 191, 36);
     }
 
     public static Color GetGroupColor(string groupName, bool isDarkTheme)
@@ -79,21 +79,21 @@ public static class ColorProvider
 
     public static Color GetTypeBadgeBackground(bool isDarkTheme)
     {
-        return isDarkTheme ? Color.FromRgb(30, 30, 50) : Color.FromRgb(239, 246, 255);
+        return isDarkTheme ? Color.FromRgb(49, 46, 129) : Color.FromRgb(238, 242, 255);
     }
 
     public static Color GetTypeBadgeForeground(bool isDarkTheme)
     {
-        return isDarkTheme ? Color.FromRgb(199, 210, 254) : Color.FromRgb(29, 78, 216);
+        return isDarkTheme ? Color.FromRgb(199, 210, 254) : Color.FromRgb(79, 70, 229);
     }
 
     public static Color GetGroupHeaderBackground(bool isDarkTheme)
     {
-        return isDarkTheme ? Color.FromRgb(25, 25, 40) : Color.FromRgb(249, 250, 251);
+        return isDarkTheme ? Color.FromRgb(39, 39, 42) : Color.FromRgb(249, 250, 251);
     }
 
     public static Color GetGroupHeaderBorder(bool isDarkTheme)
     {
-        return isDarkTheme ? Color.FromRgb(45, 45, 70) : Color.FromRgb(229, 231, 235);
+        return isDarkTheme ? Color.FromRgb(63, 63, 70) : Color.FromRgb(229, 231, 235);
     }
 }
