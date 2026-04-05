@@ -176,10 +176,12 @@ public partial class ServiceEditorViewModel : ViewModelBase
                             g.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
             return;
 
+        var maxOrder = Groups.Count > 0 ? Groups.Max(g => g.DisplayOrder) : 0;
         var newGroup = new GroupConfig
         {
             Id = trimmed,
-            Name = trimmed
+            Name = trimmed,
+            DisplayOrder = maxOrder + 1
         };
         Groups.Add(newGroup);
         GroupId = trimmed;

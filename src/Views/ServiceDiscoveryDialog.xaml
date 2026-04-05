@@ -721,9 +721,8 @@
                                             <TextBlock Text="{Binding ProjectPath}"
                                                        FontSize="10" Foreground="{DynamicResource TextMuted}"
                                                        FontFamily="{StaticResource MonoFont}"
-                                                       Margin="22,2,0,0"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       MaxWidth="400"/>
+                                                       Margin="23,3,0,0"
+                                                       TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
 
                                         <!-- Port badge -->
