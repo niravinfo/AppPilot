@@ -176,11 +176,12 @@
                 <Border Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#4C8EF8" Offset="0"/>
-                            <GradientStop Color="#7C50D8" Offset="1"/>
+                            <GradientStop Color="{Binding Source={StaticResource DialogIconGradientStart}, Path=Color}" Offset="0"/>
+                            <GradientStop Color="{Binding Source={StaticResource DialogIconGradientEnd}, Path=Color}" Offset="1"/>
                         </LinearGradientBrush>
                     </Border.Background>
                     <TextBlock Text="⎇" FontSize="16"
+                               Foreground="{DynamicResource DialogIconFill}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">

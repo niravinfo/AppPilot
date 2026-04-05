@@ -4,74 +4,70 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- WINDOW & SURFACES                                                        -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="WindowBg"        Color="#0F172A"/>
-    <SolidColorBrush x:Key="HeaderBg"        Color="#1E293B"/>
-    <SolidColorBrush x:Key="HeaderBorder"    Color="#334155"/>
-    <SolidColorBrush x:Key="TabNavBg"        Color="#1E293B"/>
+    <SolidColorBrush x:Key="WindowBg"        Color="#18181B"/>
+    <SolidColorBrush x:Key="HeaderBg"        Color="#27272A"/>
+    <SolidColorBrush x:Key="HeaderBorder"    Color="#3F3F46"/>
+    <SolidColorBrush x:Key="TabNavBg"        Color="#27272A"/>
     <SolidColorBrush x:Key="TabActiveBorder" Color="#818CF8"/>
-    <SolidColorBrush x:Key="TabInactiveFg"   Color="#64748B"/>
-    <SolidColorBrush x:Key="TabActiveFg"     Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="TabInactiveFg"   Color="#71717A"/>
+    <SolidColorBrush x:Key="TabActiveFg"     Color="#FAFAFA"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- CARDS                                                                    -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="CardBg"          Color="#1E293B"/>
-    <SolidColorBrush x:Key="CardBorder"      Color="#334155"/>
-    <SolidColorBrush x:Key="CardHoverBg"     Color="#27354A"/>
-    <SolidColorBrush x:Key="CardErrorBorder" Color="#7F1D1D"/>
-    <SolidColorBrush x:Key="CardDivider"     Color="#334155"/>
+    <SolidColorBrush x:Key="CardBg"          Color="#27272A"/>
+    <SolidColorBrush x:Key="CardBorder"      Color="#3F3F46"/>
+    <SolidColorBrush x:Key="CardHoverBg"     Color="#323238"/>
+    <SolidColorBrush x:Key="CardErrorBorder" Color="#991B1B"/>
+    <SolidColorBrush x:Key="CardDivider"     Color="#3F3F46"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- BUTTONS                                                                  -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="BtnBg"           Color="#334155"/>
-    <SolidColorBrush x:Key="BtnBorder"       Color="#475569"/>
-    <SolidColorBrush x:Key="BtnFg"           Color="#CBD5E1"/>
-    <SolidColorBrush x:Key="BtnHoverBg"      Color="#475569"/>
-    <SolidColorBrush x:Key="BtnHoverBorder"  Color="#64748B"/>
-    <SolidColorBrush x:Key="BtnHoverFg"      Color="#F1F5F9"/>
-    <SolidColorBrush x:Key="BtnPressedBg"    Color="#475569"/>
+    <SolidColorBrush x:Key="BtnBg"           Color="#3F3F46"/>
+    <SolidColorBrush x:Key="BtnBorder"       Color="#52525B"/>
+    <SolidColorBrush x:Key="BtnFg"           Color="#D4D4D8"/>
+    <SolidColorBrush x:Key="BtnHoverBg"      Color="#52525B"/>
+    <SolidColorBrush x:Key="BtnHoverBorder"  Color="#71717A"/>
+    <SolidColorBrush x:Key="BtnHoverFg"      Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="BtnPressedBg"    Color="#52525B"/>
 
-    <!-- Accent (Start All) - Indigo Light -->
+    <!-- Accent (Start All) -->
     <SolidColorBrush x:Key="AccentBg"        Color="#312E81"/>
     <SolidColorBrush x:Key="AccentBorder"    Color="#4338CA"/>
     <SolidColorBrush x:Key="AccentFg"        Color="#A5B4FC"/>
-
-    <!--<SolidColorBrush x:Key="StartBg"        Color="#007af5"/>
-    <SolidColorBrush x:Key="StartBorder"    Color="#0080ff"/>
-    <SolidColorBrush x:Key="StartFg"        Color="#FFFFFF"/>-->
 
     <SolidColorBrush x:Key="StartBg"        Color="#4CAF50"/>
     <SolidColorBrush x:Key="StartBorder"    Color="#388E3C"/>
     <SolidColorBrush x:Key="StartFg"        Color="#FFFFFF"/>
 
-    <!-- Danger (Stop All) - Red Light -->
+    <!-- Danger (Stop All) -->
     <SolidColorBrush x:Key="DangerBg"        Color="#450A0A"/>
     <SolidColorBrush x:Key="DangerBorder"    Color="#7F1D1D"/>
     <SolidColorBrush x:Key="DangerFg"        Color="#FCA5A5"/>
 
     <!-- Card icon buttons -->
-    <SolidColorBrush x:Key="CardBtnFg"       Color="#64748B"/>
-    <SolidColorBrush x:Key="CardBtnHoverBg"  Color="#334155"/>
-    <SolidColorBrush x:Key="CardBtnHoverFg"  Color="#E2E8F0"/>
-    <SolidColorBrush x:Key="CardBtnPressedBg" Color="#475569"/>
+    <SolidColorBrush x:Key="CardBtnFg"       Color="#71717A"/>
+    <SolidColorBrush x:Key="CardBtnHoverBg"  Color="#3F3F46"/>
+    <SolidColorBrush x:Key="CardBtnHoverFg"  Color="#E4E4E7"/>
+    <SolidColorBrush x:Key="CardBtnPressedBg" Color="#52525B"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- STATUS INDICATORS                                                        -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="StatusStoppedColor"   Color="#64748B"/>
+    <SolidColorBrush x:Key="StatusStoppedColor"   Color="#71717A"/>
     <SolidColorBrush x:Key="StatusRunningColor"   Color="#4ADE80"/>
     <SolidColorBrush x:Key="StatusTransientColor" Color="#FBBF24"/>
     <SolidColorBrush x:Key="StatusErrorColor"     Color="#F87171"/>
 
     <!-- Status pill backgrounds -->
-    <SolidColorBrush x:Key="PillDefaultBg"   Color="#334155"/>
-    <SolidColorBrush x:Key="PillRunningBg"  Color="#14532D"/>
+    <SolidColorBrush x:Key="PillDefaultBg"   Color="#3F3F46"/>
+    <SolidColorBrush x:Key="PillRunningBg"   Color="#14532D"/>
     <SolidColorBrush x:Key="PillTransientBg" Color="#78350F"/>
     <SolidColorBrush x:Key="PillErrorBg"     Color="#7F1D1D"/>
 
     <!-- Status pill text -->
-    <SolidColorBrush x:Key="PillDefaultFg"   Color="#94A3B8"/>
+    <SolidColorBrush x:Key="PillDefaultFg"   Color="#A1A1AA"/>
     <SolidColorBrush x:Key="PillRunningFg"   Color="#4ADE80"/>
     <SolidColorBrush x:Key="PillTransientFg" Color="#FBBF24"/>
     <SolidColorBrush x:Key="PillErrorFg"     Color="#F87171"/>
@@ -86,25 +82,25 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- GROUP HEADERS                                                            -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="GroupHeaderBg"     Color="#1E293B"/>
-    <SolidColorBrush x:Key="GroupHeaderFg"    Color="#94A3B8"/>
-    <SolidColorBrush x:Key="GroupHeaderBorder" Color="#334155"/>
+    <SolidColorBrush x:Key="GroupHeaderBg"     Color="#27272A"/>
+    <SolidColorBrush x:Key="GroupHeaderFg"    Color="#A1A1AA"/>
+    <SolidColorBrush x:Key="GroupHeaderBorder" Color="#3F3F46"/>
     <SolidColorBrush x:Key="GroupHeaderAccent" Color="#818CF8"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- TYPOGRAPHY                                                               -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="TextPrimary"   Color="#F1F5F9"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#CBD5E1"/>
-    <SolidColorBrush x:Key="TextMuted"     Color="#64748B"/>
-    <SolidColorBrush x:Key="PortFg"        Color="#94A3B8"/>
+    <SolidColorBrush x:Key="TextPrimary"   Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#D4D4D8"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#71717A"/>
+    <SolidColorBrush x:Key="PortFg"        Color="#A1A1AA"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- INPUTS                                                                   -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="InputBg"       Color="#1E293B"/>
-    <SolidColorBrush x:Key="InputBorder"   Color="#475569"/>
-    <SolidColorBrush x:Key="InputFg"       Color="#F1F5F9"/>
+    <SolidColorBrush x:Key="InputBg"       Color="#27272A"/>
+    <SolidColorBrush x:Key="InputBorder"   Color="#52525B"/>
+    <SolidColorBrush x:Key="InputFg"       Color="#FAFAFA"/>
     <SolidColorBrush x:Key="InputFocusBorder" Color="#818CF8"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -118,26 +114,55 @@
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- SCROLLBAR                                                                -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="ScrollThumb" Color="#475569"/>
-    <SolidColorBrush x:Key="ScrollTrack" Color="#1E293B"/>
+    <SolidColorBrush x:Key="ScrollThumb" Color="#52525B"/>
+    <SolidColorBrush x:Key="ScrollTrack" Color="#27272A"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- SECTIONS                                                                 -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="SectionBg"       Color="#0F172A"/>
-    <SolidColorBrush x:Key="SectionBorder"   Color="#334155"/>
+    <SolidColorBrush x:Key="SectionBg"       Color="#18181B"/>
+    <SolidColorBrush x:Key="SectionBorder"   Color="#3F3F46"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- OUTPUT CONSOLE                                                           -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="OutputConsoleBg" Color="#020617"/>
-    <SolidColorBrush x:Key="OutputConsoleFg" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="OutputConsoleBg" Color="#09090B"/>
+    <SolidColorBrush x:Key="OutputConsoleFg" Color="#E4E4E7"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <!-- BRANDING                                                                  -->
+    <!-- BRANDING & GRADIENTS                                                     -->
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <SolidColorBrush x:Key="BrandGradientStart" Color="#818CF8"/>
     <SolidColorBrush x:Key="BrandGradientEnd"   Color="#A78BFA"/>
+
+    <!-- Dialog header icon gradients -->
+    <SolidColorBrush x:Key="DialogIconGradientStart" Color="#818CF8"/>
+    <SolidColorBrush x:Key="DialogIconGradientEnd"   Color="#A78BFA"/>
+
+    <!-- Dialog header icon fill -->
+    <SolidColorBrush x:Key="DialogIconFill" Color="#FFFFFF"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- SERVICE TYPE COLORS (for tabs, icons, status bars)                      -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="TypeWorkerColor" Color="#818CF8"/>
+    <SolidColorBrush x:Key="TypeGrpcColor"   Color="#4ADE80"/>
+    <SolidColorBrush x:Key="TypeWebApiColor" Color="#FBBF24"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- TAB BUTTON STATES (ServiceDiscoveryDialog)                              -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="TabBtnHoverBg"      Color="#3F3F46"/>
+    <SolidColorBrush x:Key="TabBtnActiveBg"     Color="#4F46E5"/>
+    <SolidColorBrush x:Key="TabBtnActiveFg"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TabBtnBadgeActiveBg" Color="#818CF8"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- GROUP BADGE (ServiceDiscoveryDialog)                                    -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="GroupBadgeBg"       Color="#312E81"/>
+    <SolidColorBrush x:Key="GroupBadgeBorder"   Color="#3730A3"/>
+    <SolidColorBrush x:Key="GroupBadgeFg"       Color="#C7D2FE"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
     <!-- ENHANCED TYPOGRAPHY (Fonts)                                              -->
