@@ -172,9 +172,14 @@ public partial class ServiceEditorViewModel : ViewModelBase
             return;
 
         var trimmed = NewGroupName.Trim();
-        if (Groups.Any(g => g.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
-                            g.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
+        var existing = Groups.FirstOrDefault(g => g.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+                                                   g.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            GroupId = existing.Id;
+            NewGroupName = string.Empty;
             return;
+        }
 
         var maxOrder = Groups.Count > 0 ? Groups.Max(g => g.DisplayOrder) : 0;
         var newGroup = new GroupConfig
