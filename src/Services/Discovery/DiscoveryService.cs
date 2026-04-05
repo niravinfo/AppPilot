@@ -118,10 +118,10 @@ public class DiscoveryService : IServiceDiscoveryService
                     }
 
                     // Detect Windows Service hosting
-                    if (csprojText.Contains("Microsoft.Extensions.Hosting.WindowsServices", StringComparison.OrdinalIgnoreCase))
-                    {
-                        service.UseWindowsService = true;
-                    }
+                    //if (csprojText.Contains("Microsoft.Extensions.Hosting.WindowsServices", StringComparison.OrdinalIgnoreCase))
+                    //{
+                    //    service.UseWindowsService = true;
+                    //}
 
                     // Extract ports from non-IIS profiles in launchSettings.json
                     int? httpsPort = null;
@@ -155,12 +155,6 @@ public class DiscoveryService : IServiceDiscoveryService
                                         {
                                             httpsPort ??= port;
                                             service.Port = port;
-
-                                            if (service.Type == ServiceType.WebApi || service.Type == ServiceType.Grpc)
-                                            {
-                                                var baseUrl = url.TrimEnd('/');
-                                                service.HealthCheckUrl = $"{baseUrl}/health";
-                                            }
 
                                             if (service.Type == ServiceType.Grpc && string.IsNullOrEmpty(service.GrpcEndpoint))
                                             {
