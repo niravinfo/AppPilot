@@ -378,57 +378,50 @@
                                 <ColumnDefinition Width="6"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0" Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
-                                     KeyDown="NewGroupTextBox_KeyDown"
-                                     Height="28">
-                                <TextBox.Template>
-                                    <ControlTemplate TargetType="TextBox">
-                                        <Border x:Name="Bd"
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="4">
-                                            <Grid>
-                                                <ScrollViewer x:Name="PART_ContentHost"
-                                                              Padding="8,4"
-                                                              Focusable="False"
-                                                              HorizontalScrollBarVisibility="Hidden"
-                                                              VerticalScrollBarVisibility="Hidden"/>
-                                                <TextBlock x:Name="Placeholder"
-                                                           Text="New group name..."
-                                                           Foreground="{DynamicResource TextMuted}"
-                                                           FontSize="10"
-                                                           Margin="8,0,0,0"
-                                                           VerticalAlignment="Center"
-                                                           IsHitTestVisible="False"/>
-                                            </Grid>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsFocused" Value="True">
-                                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="">
-                                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
-                                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </TextBox.Template>
-                                <TextBox.Style>
-                                    <Style TargetType="TextBox">
-                                        <Setter Property="Background" Value="{DynamicResource InputBg}"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                                        <Setter Property="BorderBrush" Value="{DynamicResource InputBorder}"/>
-                                        <Setter Property="BorderThickness" Value="1"/>
-                                        <Setter Property="FontSize" Value="10"/>
-                                        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}"/>
-                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
-                                    </Style>
-                                </TextBox.Style>
-                            </TextBox>
+                            <Grid Grid.Column="0">
+                                <TextBox Text="{Binding NewGroupName, UpdateSourceTrigger=PropertyChanged}"
+                                         KeyDown="NewGroupTextBox_KeyDown"
+                                         Height="28"
+                                         Background="{DynamicResource InputBg}"
+                                         Foreground="{DynamicResource TextPrimary}"
+                                         BorderBrush="{DynamicResource InputBorder}"
+                                         BorderThickness="1"
+                                         FontSize="10"
+                                         CaretBrush="{DynamicResource TextPrimary}"
+                                         VerticalContentAlignment="Center"
+                                         Padding="8,0">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsFocused" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource InputFocusBorder}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <TextBlock Text="New group name..."
+                                           Foreground="{DynamicResource TextMuted}"
+                                           FontSize="10"
+                                           Margin="11,0,0,0"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding NewGroupName}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding NewGroupName}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
                             <Button Grid.Column="2" Style="{StaticResource FormBtn}"
                                     Command="{Binding AddNewGroupCommand}"
                                     ToolTip="Create new group"
