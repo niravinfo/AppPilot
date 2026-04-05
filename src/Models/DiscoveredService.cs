@@ -23,4 +23,5 @@ public class DiscoveredService
     public List<string> Dependencies { get; set; } = new();
     public bool IsSelected { get; set; } = true;
     public int DisplayOrder { get; set; }
+    public string GroupId { get; set; } = string.Empty;
 }

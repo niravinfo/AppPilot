@@ -532,6 +532,8 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
+        _groupDict = _serviceGroups.ToDictionary(g => g.Id);
+
         var configs = discoveryVm.GetSelectedConfigs();
         if (configs.Count == 0)
         {

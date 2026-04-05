@@ -65,7 +65,7 @@ public partial class GroupManagementViewModel : ViewModelBase
         var maxOrder = Groups.Count > 0 ? Groups.Max(g => g.DisplayOrder) : 0;
         var newGroup = new GroupConfig
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = trimmed,
             Name = trimmed,
             DisplayOrder = maxOrder + 1,
             ColorCode = string.Empty

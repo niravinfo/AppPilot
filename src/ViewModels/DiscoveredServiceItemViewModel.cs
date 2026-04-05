@@ -66,7 +66,7 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
             Environment = new Dictionary<string, string>(Service.EnvironmentVariables),
             UseWindowsService = Service.UseWindowsService,
             Dependencies = new List<string>(Service.Dependencies),
-            GroupId = string.Empty,
+            GroupId = Service.GroupId,
             DisplayOrder = Service.DisplayOrder > 0 ? Service.DisplayOrder : null,
         };
     }

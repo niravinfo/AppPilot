@@ -10,6 +10,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -44,6 +45,9 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _showDetailsPanel;
 
+    [ObservableProperty]
+    private int _totalSelected;
+
     public ObservableCollection<DiscoveredServiceItemViewModel> AllServices { get; } = [];
     public ObservableCollection<DiscoveredServiceItemViewModel> FilteredServices { get; } = [];
 
@@ -58,7 +62,6 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     };
 
     public int GetTabCount(ServiceType type) => AllServices.Count(s => s.Type == type);
-    public int TotalSelected => AllServices.Count(s => s.IsSelected);
 
     public ServiceDiscoveryViewModel(
         IServiceDiscoveryService discoveryService,
@@ -72,6 +75,37 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         _dialogService = dialogService;
         _logger = logger;
         _groups = groups;
+
+        AllServices.CollectionChanged += (s, e) =>
+        {
+            if (e.NewItems != null)
+            {
+                foreach (DiscoveredServiceItemViewModel item in e.NewItems)
+                {
+                    item.PropertyChanged += OnItemPropertyChanged;
+                }
+            }
+            if (e.OldItems != null)
+            {
+                foreach (DiscoveredServiceItemViewModel item in e.OldItems)
+                {
+                    item.PropertyChanged -= OnItemPropertyChanged;
+                }
+            }
+        };
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(DiscoveredServiceItemViewModel.IsSelected))
+        {
+            TotalSelected = AllServices.Count(s => s.IsSelected);
+        }
+    }
+
+    private void RecalculateSelected()
+    {
+        TotalSelected = AllServices.Count(s => s.IsSelected);
     }
 
     [RelayCommand]
@@ -86,6 +120,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         IsDiscovering = true;
         StatusMessage = "Discovering services...";
         AllServices.Clear();
+        TotalSelected = 0;
         SelectedService = null;
         ShowDetailsPanel = false;
 
@@ -108,6 +143,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
             }
 
             ApplyFilters();
+            RecalculateSelected();
         }
         catch (Exception ex)
         {
@@ -133,21 +169,19 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     [RelayCommand]
     private void SelectAll()
     {
-        foreach (var service in AllServices)
+        foreach (var service in FilteredServices)
         {
             service.IsSelected = true;
         }
-        OnPropertyChanged(nameof(TotalSelected));
     }
 
     [RelayCommand]
     private void DeselectAll()
     {
-        foreach (var service in AllServices)
+        foreach (var service in FilteredServices)
         {
             service.IsSelected = false;
         }
-        OnPropertyChanged(nameof(TotalSelected));
     }
 
     [RelayCommand]
@@ -176,6 +210,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         item.Service.UseWindowsService = config.UseWindowsService;
         item.Service.Dependencies = new List<string>(config.Dependencies);
         item.Service.DisplayOrder = config.DisplayOrder ?? item.Service.DisplayOrder;
+        item.Service.GroupId = config.GroupId;
 
         ApplyFilters();
     }

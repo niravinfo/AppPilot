@@ -73,7 +73,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
         IsNew = false;
         _displayName = config.DisplayName;
         _name = config.Name;
-        _groupId = config.GroupId;
         _serviceType = config.Type;
         _executablePath = config.ExecutablePath;
         _arguments = config.Arguments;
@@ -88,6 +87,22 @@ public partial class ServiceEditorViewModel : ViewModelBase
         }
 
         Groups = groups;
+        _groupId = ResolveGroupId(config.GroupId);
+    }
+
+    private string ResolveGroupId(string configGroupId)
+    {
+        if (string.IsNullOrEmpty(configGroupId))
+            return string.Empty;
+
+        if (Groups.Any(g => g.Id == configGroupId))
+            return configGroupId;
+
+        var matchByName = Groups.FirstOrDefault(g => g.Name.Equals(configGroupId, StringComparison.OrdinalIgnoreCase));
+        if (matchByName != null)
+            return matchByName.Id;
+
+        return string.Empty;
     }
 
     public void ApplyTo(ManagedServiceConfig config)
@@ -157,16 +172,17 @@ public partial class ServiceEditorViewModel : ViewModelBase
             return;
 
         var trimmed = NewGroupName.Trim();
-        if (Groups.Any(g => g.Name.Equals(trimmed, System.StringComparison.OrdinalIgnoreCase)))
+        if (Groups.Any(g => g.Id.Equals(trimmed, StringComparison.OrdinalIgnoreCase) ||
+                            g.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
             return;
 
         var newGroup = new GroupConfig
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = trimmed,
             Name = trimmed
         };
         Groups.Add(newGroup);
-        GroupId = newGroup.Id;
+        GroupId = trimmed;
         NewGroupName = string.Empty;
     }
 }
