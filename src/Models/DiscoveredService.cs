@@ -20,7 +20,6 @@ public class DiscoveredService
     public string? GrpcEndpoint { get; set; }
     public string? SwaggerUrl { get; set; }
     public string? OpenApiPath { get; set; }
-    public List<string> Dependencies { get; set; } = new();
     public bool IsSelected { get; set; } = true;
     public int DisplayOrder { get; set; }
     public string GroupId { get; set; } = string.Empty;

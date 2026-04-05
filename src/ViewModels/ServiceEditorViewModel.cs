@@ -53,9 +53,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
     private int _displayOrder = 999;
 
     [ObservableProperty]
-    private string _dependenciesText = string.Empty;
-
-    [ObservableProperty]
     private string _newGroupName = string.Empty;
 
     [ObservableProperty]
@@ -91,7 +88,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
         _healthCheckUrl = config.HealthCheckUrl;
         _useWindowsService = config.UseWindowsService;
         _displayOrder = config.DisplayOrder ?? 999;
-        _dependenciesText = string.Join(", ", config.Dependencies);
         foreach (var (key, value) in config.Environment)
         {
             EnvironmentVariables.Add(new EnvironmentVariableViewModel(key, value));
@@ -130,8 +126,6 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.HealthCheckUrl = IsApiOrGrpcType ? HealthCheckUrl : string.Empty;
         config.UseWindowsService = IsWorkerType && UseWindowsService;
         config.DisplayOrder = DisplayOrder;
-        config.Dependencies = [.. DependenciesText
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
         config.Environment = EnvironmentVariables.ToDictionary(e => e.Key, e => e.Value);
     }
 

@@ -680,23 +680,6 @@
                     <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,0,0,16"/>
                 </StackPanel>
 
-                <!-- ── DEPENDENCIES ── -->
-                <StackPanel Margin="0,0,0,16">
-                    <TextBlock Text="DEPENDENCIES" Style="{StaticResource SectionTitle}"/>
-                    <TextBox Text="{Binding DependenciesText, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FormInput}"
-                             FontFamily="{StaticResource MonoFont}" FontSize="11"
-                             Height="60"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             VerticalScrollBarVisibility="Auto"
-                             ToolTip="Comma-separated list of service dependencies"/>
-                    <TextBlock Text="Comma-separated names of services this depends on" Style="{StaticResource FormHint}"/>
-                </StackPanel>
-
-                <!-- Divider -->
-                <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,0,0,16"/>
-
                 <!-- ── ENVIRONMENT VARIABLES ── -->
                 <Grid Margin="0,0,0,10">
                     <TextBlock Text="ENVIRONMENT VARIABLES"

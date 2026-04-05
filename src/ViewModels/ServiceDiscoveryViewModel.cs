@@ -223,7 +223,6 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
         item.Service.Arguments = config.Arguments;
         item.Service.EnvironmentVariables = new Dictionary<string, string>(config.Environment);
         item.Service.UseWindowsService = config.UseWindowsService;
-        item.Service.Dependencies = new List<string>(config.Dependencies);
         item.Service.DisplayOrder = config.DisplayOrder ?? item.Service.DisplayOrder;
         item.Service.GroupId = config.GroupId;
         item.NotifyPropertiesChanged();
