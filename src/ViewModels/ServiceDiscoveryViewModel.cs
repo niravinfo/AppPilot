@@ -34,6 +34,10 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
     private string _statusMessage = "Select a directory to discover .NET services";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAllTabChecked))]
+    [NotifyPropertyChangedFor(nameof(IsWorkersTabChecked))]
+    [NotifyPropertyChangedFor(nameof(IsGrpcTabChecked))]
+    [NotifyPropertyChangedFor(nameof(IsWebApisTabChecked))]
     private int _selectedTypeTab;
 
     [ObservableProperty]
