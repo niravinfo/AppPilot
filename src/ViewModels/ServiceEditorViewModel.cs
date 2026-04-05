@@ -14,6 +14,12 @@ public partial class ServiceEditorViewModel : ViewModelBase
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(IsWorkerType))]
+    [NotifyPropertyChangedFor(nameof(IsApiOrGrpcType))]
+    private ServiceType _serviceType = ServiceType.WebApi;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Title))]
     private string _displayName = string.Empty;
 
     [ObservableProperty]
@@ -23,12 +29,10 @@ public partial class ServiceEditorViewModel : ViewModelBase
     private string _groupId = string.Empty;
 
     [ObservableProperty]
-    private ServiceType _serviceType = ServiceType.WebApi;
-
-    public ObservableCollection<GroupConfig> Groups { get; }
+    private string _executablePath = string.Empty;
 
     [ObservableProperty]
-    private string _executablePath = string.Empty;
+    private string _csprojPath = string.Empty;
 
     [ObservableProperty]
     private string _arguments = string.Empty;
@@ -42,25 +46,30 @@ public partial class ServiceEditorViewModel : ViewModelBase
     [ObservableProperty]
     private string _healthCheckUrl = string.Empty;
 
+    [ObservableProperty]
+    private bool _useWindowsService;
 
     [ObservableProperty]
     private int _displayOrder = 999;
 
     [ObservableProperty]
-    private string _newGroupName = string.Empty;
+    private string _dependenciesText = string.Empty;
 
     [ObservableProperty]
-    private string _dependenciesText = string.Empty;
+    private string _newGroupName = string.Empty;
 
     [ObservableProperty]
     private EnvironmentVariableViewModel? _selectedEnvVar;
 
+    public ObservableCollection<GroupConfig> Groups { get; }
     public ObservableCollection<EnvironmentVariableViewModel> EnvironmentVariables { get; } = [];
-    public IReadOnlyList<ServiceType> ServiceTypes { get; } = System.Enum.GetValues<ServiceType>();
+    public IReadOnlyList<ServiceType> ServiceTypes { get; } = Enum.GetValues<ServiceType>();
 
     public bool IsNew { get; }
     public string Title => IsNew ? "Add Service" : $"Edit — {DisplayName}";
     public string SaveButtonText => IsNew ? "Add Service" : "Save Changes";
+    public bool IsWorkerType => ServiceType == ServiceType.Worker;
+    public bool IsApiOrGrpcType => ServiceType == ServiceType.Grpc || ServiceType == ServiceType.WebApi;
 
     public ServiceEditorViewModel(ObservableCollection<GroupConfig> groups)
     {
@@ -71,14 +80,16 @@ public partial class ServiceEditorViewModel : ViewModelBase
     public ServiceEditorViewModel(ManagedServiceConfig config, ObservableCollection<GroupConfig> groups)
     {
         IsNew = false;
+        _serviceType = config.Type;
         _displayName = config.DisplayName;
         _name = config.Name;
-        _serviceType = config.Type;
         _executablePath = config.ExecutablePath;
+        _csprojPath = config.CsprojPath;
         _arguments = config.Arguments;
         _workingDirectory = config.WorkingDirectory;
         _portText = config.Port?.ToString() ?? string.Empty;
         _healthCheckUrl = config.HealthCheckUrl;
+        _useWindowsService = config.UseWindowsService;
         _displayOrder = config.DisplayOrder ?? 999;
         _dependenciesText = string.Join(", ", config.Dependencies);
         foreach (var (key, value) in config.Environment)
@@ -112,13 +123,15 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.GroupId = GroupId;
         config.Type = ServiceType;
         config.ExecutablePath = ExecutablePath;
+        config.CsprojPath = CsprojPath;
         config.Arguments = Arguments;
         config.WorkingDirectory = WorkingDirectory;
-        config.Port = int.TryParse(PortText, out var port) ? port : null;
-        config.HealthCheckUrl = HealthCheckUrl;
+        config.Port = IsApiOrGrpcType && int.TryParse(PortText, out var port) ? port : null;
+        config.HealthCheckUrl = IsApiOrGrpcType ? HealthCheckUrl : string.Empty;
+        config.UseWindowsService = IsWorkerType && UseWindowsService;
         config.DisplayOrder = DisplayOrder;
         config.Dependencies = [.. DependenciesText
-            .Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries)];
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
         config.Environment = EnvironmentVariables.ToDictionary(e => e.Key, e => e.Value);
     }
 
@@ -155,6 +168,19 @@ public partial class ServiceEditorViewModel : ViewModelBase
         };
         if (dialog.ShowDialog() == true)
             ExecutablePath = dialog.FileName;
+    }
+
+    [RelayCommand]
+    private void BrowseCsprojPath()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Select Project File",
+            Filter = "Project Files (*.csproj, *.slnx)|*.csproj;*.slnx|All Files (*.*)|*.*",
+            CheckFileExists = false
+        };
+        if (dialog.ShowDialog() == true)
+            CsprojPath = dialog.FileName;
     }
 
     [RelayCommand]
