@@ -22,6 +22,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     private readonly GroupInfo _groupInfo;
     private readonly Action<ServiceItemViewModel>? _editCallback;
     private readonly Action<ServiceItemViewModel>? _deleteCallback;
+    private readonly Action<ServiceItemViewModel>? _onStatusChangedCallback;
 
     public ManagedServiceConfig Config { get; }
 
@@ -246,8 +247,6 @@ public partial class ServiceItemViewModel : ViewModelBase
         _onStatusChangedCallback = onStatusChangedCallback;
         InitializeColors();
     }
-
-    private readonly Action<ServiceItemViewModel>? _onStatusChangedCallback;
 
     private void InitializeColors()
     {

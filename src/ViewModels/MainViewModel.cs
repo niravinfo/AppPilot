@@ -112,7 +112,7 @@ public partial class MainViewModel : ViewModelBase
     {
         var now = DateTime.Now;
         var servicesToRefresh = new List<ServiceItemViewModel>();
-        
+
         foreach (var service in Services)
         {
             if (service.NeedsRefresh)
@@ -166,14 +166,7 @@ public partial class MainViewModel : ViewModelBase
 
         foreach (var service in servicesToRefresh)
         {
-            if (service.Status == ServiceStatus.Running || service.Status == ServiceStatus.Stopped)
-            {
-                if (!service.TryScheduleNextAcceleratedRefresh())
-                {
-                    service.ScheduleNextRefresh(_defaultRefreshInterval);
-                }
-            }
-            else
+            if (!service.TryScheduleNextAcceleratedRefresh())
             {
                 service.ScheduleNextRefresh(_defaultRefreshInterval);
             }
@@ -669,6 +662,7 @@ public partial class MainViewModel : ViewModelBase
         {
             TriggerImmediateRefresh(service);
         }
+
         StatusText = $"Imported {configs.Count} service(s)";
     }
 
