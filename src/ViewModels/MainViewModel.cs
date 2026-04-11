@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
@@ -75,7 +76,7 @@ public partial class MainViewModel : ViewModelBase
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
 
-    private bool _isRefreshing;
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
     public MainViewModel(
         IConfigurationService configService,
@@ -107,12 +108,22 @@ public partial class MainViewModel : ViewModelBase
 
     private async void OnPollingTimerTick(object? sender, EventArgs e)
     {
-        if (_isRefreshing)
-        {
-            return;
-        }
+        await RunSmartRefreshAsync(skipIfBusy: true);
+    }
 
-        _isRefreshing = true;
+    private async Task RunSmartRefreshAsync(bool skipIfBusy = false)
+    {
+        if (skipIfBusy)
+        {
+            if (!await _refreshGate.WaitAsync(0))
+            {
+                return;
+            }
+        }
+        else
+        {
+            await _refreshGate.WaitAsync();
+        }
 
         try
         {
@@ -124,7 +135,7 @@ public partial class MainViewModel : ViewModelBase
         }
         finally
         {
-            _isRefreshing = false;
+            _refreshGate.Release();
         }
     }
 
@@ -161,6 +172,7 @@ public partial class MainViewModel : ViewModelBase
             {
                 tasks[i] = UpdateServiceStatusAsync(servicesToRefresh[i]);
             }
+
             await Task.WhenAll(tasks);
         }
         else
@@ -177,6 +189,7 @@ public partial class MainViewModel : ViewModelBase
                     {
                         tasks[j] = UpdateServiceStatusAsync(batch[j]);
                     }
+
                     await Task.WhenAll(tasks);
                     await Task.Delay(_staggerDelay);
                     batches.Clear();
@@ -199,7 +212,7 @@ public partial class MainViewModel : ViewModelBase
     {
         LoadConfiguration();
         _pollingTimer.Start();
-        _ = SmartRefreshAsync();
+        _ = RunSmartRefreshAsync();
     }
 
     private void LoadConfiguration()
@@ -297,7 +310,8 @@ public partial class MainViewModel : ViewModelBase
             service.CancelAcceleratedRefresh();
             service.MarkAsNeedingRefresh();
         }
-        await SmartRefreshAsync();
+
+        await RunSmartRefreshAsync();
     }
 
     private async Task UpdateServiceStatusAsync(ServiceItemViewModel service)
