@@ -198,6 +198,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                     _runningBrush = new SolidColorBrush(color);
                     _runningBrush.Freeze();
                 }
+
                 return _runningBrush;
             }
             else
@@ -211,11 +212,13 @@ public partial class ServiceItemViewModel : ViewModelBase
                         ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDark),
                         _ => Color.FromRgb(96, 96, 96)
                     };
+
                     var alpha = (byte)(isDark ? 0x99 : 0xB3);
                     var color = Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B);
                     _stoppedBrush = new SolidColorBrush(color);
                     _stoppedBrush.Freeze();
                 }
+
                 return _stoppedBrush;
             }
         }
@@ -277,6 +280,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
+            var originalStatus = Status;
             Status = ServiceStatus.Starting;
 
             if (Config.Port.HasValue)
@@ -292,7 +296,7 @@ public partial class ServiceItemViewModel : ViewModelBase
 
             if (Config.Type == ServiceType.Worker && Config.UseWindowsService)
             {
-                if (Status == ServiceStatus.NotInstalled)
+                if (originalStatus == ServiceStatus.NotInstalled)
                 {
                     if (!System.IO.File.Exists(Config.ExecutablePath))
                     {
@@ -300,8 +304,10 @@ public partial class ServiceItemViewModel : ViewModelBase
                         Status = ServiceStatus.Error;
                         return;
                     }
+
                     await _windowsServiceController.InstallAsync(Config);
                 }
+
                 await _windowsServiceController.StartAsync(Config);
                 Status = ServiceStatus.Running;
             }
@@ -313,6 +319,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                     Status = ServiceStatus.Error;
                     return;
                 }
+
                 var process = _processService.Start(Config);
                 if (process == null)
                 {
@@ -354,6 +361,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             ErrorMessage = string.Empty;
             Status = ServiceStatus.Stopping;
+
             if (Config.Type == ServiceType.Worker && Config.UseWindowsService)
             {
                 await _windowsServiceController.StopAsync(Config);
@@ -362,6 +370,7 @@ public partial class ServiceItemViewModel : ViewModelBase
             else
             {
                 var pidToStop = ProcessId ?? _processService.GetProcessId(Config);
+
                 if (pidToStop.HasValue)
                 {
                     await _processService.StopAsync(Config, pidToStop.Value);
@@ -399,6 +408,7 @@ public partial class ServiceItemViewModel : ViewModelBase
             await StopAsync();
             await Task.Delay(1000);
         }
+
         await StartAsync();
     }
 
