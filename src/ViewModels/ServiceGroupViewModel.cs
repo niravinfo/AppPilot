@@ -17,6 +17,7 @@ public partial class ServiceGroupViewModel : ViewModelBase
     public GroupConfig Group { get; }
     public ObservableCollection<ServiceItemViewModel> Items { get; } = new();
     public bool ShowHeader { get; set; }
+    private readonly Action<IEnumerable<ServiceItemViewModel>>? _onGroupStateChanged;
 
     [ObservableProperty]
     private Brush _groupAccentBrush = Brushes.Gray;
@@ -27,9 +28,10 @@ public partial class ServiceGroupViewModel : ViewModelBase
     public string GroupColorCode => Group.ColorCode;
     public int DisplayOrder => Group.DisplayOrder;
 
-    public ServiceGroupViewModel(GroupConfig group)
+    public ServiceGroupViewModel(GroupConfig group, Action<IEnumerable<ServiceItemViewModel>>? onGroupStateChanged = null)
     {
         Group = group;
+        _onGroupStateChanged = onGroupStateChanged;
         InitializeColors();
     }
 
@@ -63,6 +65,8 @@ public partial class ServiceGroupViewModel : ViewModelBase
             await service.StartAsync();
             await Task.Delay(200);
         }
+
+        _onGroupStateChanged?.Invoke(services);
     }
 
     [RelayCommand]
@@ -88,5 +92,7 @@ public partial class ServiceGroupViewModel : ViewModelBase
             await service.StopAsync();
             await Task.Delay(200);
         }
+
+        _onGroupStateChanged?.Invoke(services);
     }
 }

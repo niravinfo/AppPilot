@@ -36,6 +36,71 @@ public partial class ServiceItemViewModel : ViewModelBase
 
     public DateTime LastChecked { get; set; }
 
+    private DateTime _nextRefreshTime = DateTime.MinValue;
+    private DateTime _acceleratedRefreshUntil = DateTime.MinValue;
+    private int _acceleratedRefreshAttempts;
+    private static readonly TimeSpan[] AcceleratedIntervals =
+    [
+        TimeSpan.FromSeconds(1),
+        TimeSpan.FromSeconds(2),
+        TimeSpan.FromSeconds(3),
+        TimeSpan.FromSeconds(5),
+        TimeSpan.FromSeconds(10)
+    ];
+    private const int MaxAcceleratedAttempts = 5;
+
+    public DateTime NextRefreshTime
+    {
+        get => _nextRefreshTime;
+        set => _nextRefreshTime = value;
+    }
+
+    public bool NeedsRefresh
+    {
+        get
+        {
+            if (DateTime.Now < _acceleratedRefreshUntil)
+                return true;
+            return DateTime.Now >= _nextRefreshTime;
+        }
+    }
+
+    public void ScheduleNextRefresh(TimeSpan interval)
+    {
+        _nextRefreshTime = DateTime.Now.Add(interval);
+    }
+
+    public void MarkAsNeedingRefresh()
+    {
+        _nextRefreshTime = DateTime.MinValue;
+    }
+
+    public void StartAcceleratedRefresh()
+    {
+        _acceleratedRefreshAttempts = 0;
+        _acceleratedRefreshUntil = DateTime.Now.Add(AcceleratedIntervals[0]);
+        _nextRefreshTime = DateTime.MinValue;
+    }
+
+    public bool TryScheduleNextAcceleratedRefresh()
+    {
+        _acceleratedRefreshAttempts++;
+        if (_acceleratedRefreshAttempts >= MaxAcceleratedAttempts)
+        {
+            _acceleratedRefreshUntil = DateTime.MinValue;
+            return false;
+        }
+
+        _acceleratedRefreshUntil = DateTime.Now.Add(AcceleratedIntervals[_acceleratedRefreshAttempts]);
+        return true;
+    }
+
+    public void CancelAcceleratedRefresh()
+    {
+        _acceleratedRefreshUntil = DateTime.MinValue;
+        _acceleratedRefreshAttempts = 0;
+    }
+
     [ObservableProperty]
     private bool _isBusy;
 
@@ -164,7 +229,8 @@ public partial class ServiceItemViewModel : ViewModelBase
         IBuildService buildService,
         ILogger logger,
         Action<ServiceItemViewModel>? editCallback = null,
-        Action<ServiceItemViewModel>? deleteCallback = null)
+        Action<ServiceItemViewModel>? deleteCallback = null,
+        Action<ServiceItemViewModel>? onStatusChangedCallback = null)
     {
         Config = config;
         _groupInfo = groupInfo;
@@ -174,8 +240,11 @@ public partial class ServiceItemViewModel : ViewModelBase
         _logger = logger;
         _editCallback = editCallback;
         _deleteCallback = deleteCallback;
+        _onStatusChangedCallback = onStatusChangedCallback;
         InitializeColors();
     }
+
+    private readonly Action<ServiceItemViewModel>? _onStatusChangedCallback;
 
     private void InitializeColors()
     {
@@ -208,6 +277,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
+            Status = ServiceStatus.Starting;
 
             if (Config.Port.HasValue)
             {
@@ -233,6 +303,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                     await _windowsServiceController.InstallAsync(Config);
                 }
                 await _windowsServiceController.StartAsync(Config);
+                Status = ServiceStatus.Running;
             }
             else
             {
@@ -251,6 +322,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                 else
                 {
                     ProcessId = process.Id;
+                    Status = ServiceStatus.Running;
                     OnPropertyChanged(nameof(StatusTypeBarBrush));
                 }
             }
@@ -281,9 +353,11 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
+            Status = ServiceStatus.Stopping;
             if (Config.Type == ServiceType.Worker && Config.UseWindowsService)
             {
                 await _windowsServiceController.StopAsync(Config);
+                Status = ServiceStatus.Stopped;
             }
             else
             {
@@ -292,6 +366,7 @@ public partial class ServiceItemViewModel : ViewModelBase
                 {
                     await _processService.StopAsync(Config, pidToStop.Value);
                     ProcessId = null;
+                    Status = ServiceStatus.Stopped;
                 }
                 else
                 {
@@ -459,6 +534,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanStop));
         OnPropertyChanged(nameof(CanRestart));
         OnPropertyChanged(nameof(StatusTypeBarBrush));
+        _onStatusChangedCallback?.Invoke(this);
     }
 
     partial void OnErrorMessageChanged(string value)
