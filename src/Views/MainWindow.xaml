@@ -48,13 +48,8 @@
             <Grid>
                 <!-- Branding -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="40" Height="40" CornerRadius="12" Margin="0,0,14,0">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="{Binding Source={StaticResource BrandGradientStart}, Path=Color}" Offset="0"/>
-                                <GradientStop Color="{Binding Source={StaticResource BrandGradientEnd}, Path=Color}" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
+                    <Border Width="40" Height="40" CornerRadius="12" Margin="0,0,14,0"
+                            Background="{DynamicResource BrandGradient}">
                         <Grid>
                             <Path Data="{StaticResource IconLightning}" 
                                   Fill="{DynamicResource DialogIconFill}"

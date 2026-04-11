@@ -173,13 +173,8 @@
                 BorderThickness="0,0,0,1"
                 Padding="20,16">
             <StackPanel Orientation="Horizontal">
-                <Border Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="{Binding Source={StaticResource DialogIconGradientStart}, Path=Color}" Offset="0"/>
-                            <GradientStop Color="{Binding Source={StaticResource DialogIconGradientEnd}, Path=Color}" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
+                <Border Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0"
+                        Background="{DynamicResource DialogIconGradient}">
                     <TextBlock Text="⎇" FontSize="16"
                                Foreground="{DynamicResource DialogIconFill}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>

@@ -77,7 +77,6 @@ public class DiscoveryService : IServiceDiscoveryService
                         GrpcEndpoint = null,
                         SwaggerUrl = null,
                         OpenApiPath = null,
-                        Dependencies = new List<string>(),
                         IsSelected = true,
                         DisplayOrder = displayOrder,
                     };

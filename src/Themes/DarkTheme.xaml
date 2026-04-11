@@ -135,9 +135,16 @@
     <SolidColorBrush x:Key="BrandGradientStart" Color="#818CF8"/>
     <SolidColorBrush x:Key="BrandGradientEnd"   Color="#A78BFA"/>
 
-    <!-- Dialog header icon gradients -->
-    <SolidColorBrush x:Key="DialogIconGradientStart" Color="#818CF8"/>
-    <SolidColorBrush x:Key="DialogIconGradientEnd"   Color="#A78BFA"/>
+    <LinearGradientBrush x:Key="BrandGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#818CF8" Offset="0"/>
+        <GradientStop Color="#A78BFA" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Dialog header icon gradient -->
+    <LinearGradientBrush x:Key="DialogIconGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#818CF8" Offset="0"/>
+        <GradientStop Color="#A78BFA" Offset="1"/>
+    </LinearGradientBrush>
 
     <!-- Dialog header icon fill -->
     <SolidColorBrush x:Key="DialogIconFill" Color="#FFFFFF"/>

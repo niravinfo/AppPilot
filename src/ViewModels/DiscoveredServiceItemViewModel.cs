@@ -48,14 +48,12 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
 
     public IReadOnlyDictionary<string, string> EnvironmentVariables => Service.EnvironmentVariables;
     public int EnvVarCount => Service.EnvironmentVariables.Count;
-    public List<string> Dependencies => Service.Dependencies;
 
     public bool HasPort => Port.HasValue;
     public bool HasHealthCheckUrl => !string.IsNullOrEmpty(HealthCheckUrl);
     public bool HasGrpcEndpoint => !string.IsNullOrEmpty(GrpcEndpoint);
     public bool HasSwaggerUrl => !string.IsNullOrEmpty(SwaggerUrl);
     public bool HasEnvVars => EnvVarCount > 0;
-    public bool HasDependencies => Dependencies.Count > 0;
 
     public DiscoveredServiceItemViewModel(DiscoveredService service, ObservableCollection<GroupConfig> groups)
     {
@@ -86,7 +84,6 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSwaggerUrl));
         OnPropertyChanged(nameof(EnvVarCount));
         OnPropertyChanged(nameof(HasEnvVars));
-        OnPropertyChanged(nameof(HasDependencies));
     }
 
     public ManagedServiceConfig ToManagedServiceConfig()
@@ -104,7 +101,6 @@ public partial class DiscoveredServiceItemViewModel : ViewModelBase
             Arguments = Service.Arguments,
             Environment = new Dictionary<string, string>(Service.EnvironmentVariables),
             UseWindowsService = Service.UseWindowsService,
-            Dependencies = new List<string>(Service.Dependencies),
             GroupId = Service.GroupId,
             DisplayOrder = Service.DisplayOrder > 0 ? Service.DisplayOrder : null,
         };
