@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 
@@ -35,6 +36,11 @@ public partial class MainViewModel : ViewModelBase
     private readonly IGitService _gitService;
     private readonly IServiceDiscoveryService _discoveryService;
     private readonly DispatcherTimer _pollingTimer;
+    private readonly TimeSpan _defaultRefreshInterval = TimeSpan.FromSeconds(30);
+    private readonly TimeSpan _staggerDelay = TimeSpan.FromMilliseconds(100);
+    private readonly int _maxConcurrentRefresh = 10;
+    private DateTime _lastFullRefresh = DateTime.MinValue;
+    private readonly TimeSpan _fullRefreshInterval = TimeSpan.FromMinutes(5);
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = new();
@@ -70,6 +76,8 @@ public partial class MainViewModel : ViewModelBase
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
 
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
+
     public MainViewModel(
         IConfigurationService configService,
         IServiceController windowsServiceController,
@@ -95,14 +103,116 @@ public partial class MainViewModel : ViewModelBase
         {
             Interval = TimeSpan.FromSeconds(5)
         };
-        _pollingTimer.Tick += async (s, e) => await RefreshStatusAsync();
+        _pollingTimer.Tick += OnPollingTimerTick;
+    }
+
+    private async void OnPollingTimerTick(object? sender, EventArgs e)
+    {
+        await RunSmartRefreshAsync(skipIfBusy: true);
+    }
+
+    private async Task RunSmartRefreshAsync(bool skipIfBusy = false)
+    {
+        if (skipIfBusy)
+        {
+            if (!await _refreshGate.WaitAsync(0))
+            {
+                return;
+            }
+        }
+        else
+        {
+            await _refreshGate.WaitAsync();
+        }
+
+        try
+        {
+            await SmartRefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during smart refresh");
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
+    }
+
+    private async Task SmartRefreshAsync()
+    {
+        var now = DateTime.Now;
+        var servicesToRefresh = new List<ServiceItemViewModel>();
+
+        foreach (var service in Services)
+        {
+            if (service.NeedsRefresh)
+            {
+                servicesToRefresh.Add(service);
+            }
+        }
+
+        if (servicesToRefresh.Count == 0)
+        {
+            if (now - _lastFullRefresh >= _fullRefreshInterval)
+            {
+                _lastFullRefresh = now;
+                servicesToRefresh.AddRange(Services);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        if (servicesToRefresh.Count <= _maxConcurrentRefresh)
+        {
+            var tasks = new Task[servicesToRefresh.Count];
+            for (int i = 0; i < servicesToRefresh.Count; i++)
+            {
+                tasks[i] = UpdateServiceStatusAsync(servicesToRefresh[i]);
+            }
+
+            await Task.WhenAll(tasks);
+        }
+        else
+        {
+            var batches = new List<ServiceItemViewModel>();
+            for (int i = 0; i < servicesToRefresh.Count; i++)
+            {
+                batches.Add(servicesToRefresh[i]);
+                if (batches.Count >= _maxConcurrentRefresh || i == servicesToRefresh.Count - 1)
+                {
+                    var batch = batches.ToList();
+                    var tasks = new Task[batch.Count];
+                    for (int j = 0; j < batch.Count; j++)
+                    {
+                        tasks[j] = UpdateServiceStatusAsync(batch[j]);
+                    }
+
+                    await Task.WhenAll(tasks);
+                    await Task.Delay(_staggerDelay);
+                    batches.Clear();
+                }
+            }
+        }
+
+        foreach (var service in servicesToRefresh)
+        {
+            if (!service.TryScheduleNextAcceleratedRefresh())
+            {
+                service.ScheduleNextRefresh(_defaultRefreshInterval);
+            }
+        }
+
+        LastUpdateTime = now.ToString("HH:mm:ss");
     }
 
     public void Initialize()
     {
         LoadConfiguration();
         _pollingTimer.Start();
-        _ = RefreshStatusAsync();
+        _ = RunSmartRefreshAsync();
     }
 
     private void LoadConfiguration()
@@ -148,7 +258,8 @@ public partial class MainViewModel : ViewModelBase
                 _buildService,
                 _logger,
                 editCallback: EditService,
-                deleteCallback: DeleteService));
+                deleteCallback: DeleteService,
+                onStatusChangedCallback: TriggerImmediateRefresh));
         }
 
         // Load Git repositories and link services
@@ -191,22 +302,16 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Refresh()
+    private async Task RefreshAsync()
     {
-        _ = RefreshStatusAsync();
-    }
-
-    private async Task RefreshStatusAsync()
-    {
-        // Optimize: Avoid LINQ Select allocation - build task array directly
-        var tasks = new Task[Services.Count];
-        for (int i = 0; i < Services.Count; i++)
+        _lastFullRefresh = DateTime.Now;
+        foreach (var service in Services)
         {
-            tasks[i] = UpdateServiceStatusAsync(Services[i]);
+            service.CancelAcceleratedRefresh();
+            service.MarkAsNeedingRefresh();
         }
 
-        await Task.WhenAll(tasks);
-        LastUpdateTime = DateTime.Now.ToString("HH:mm:ss");
+        await RunSmartRefreshAsync();
     }
 
     private async Task UpdateServiceStatusAsync(ServiceItemViewModel service)
@@ -291,12 +396,15 @@ public partial class MainViewModel : ViewModelBase
                     ? (a.Config.DisplayOrder ?? 999).CompareTo(b.Config.DisplayOrder ?? 999)
                     : string.Compare(a.Config.Name, b.Config.Name, StringComparison.OrdinalIgnoreCase));
 
+            var startedServices = new List<ServiceItemViewModel>();
             foreach (var service in orderedServices)
             {
                 await service.StartAsync();
+                startedServices.Add(service);
                 await Task.Delay(500);
             }
 
+            TriggerImmediateRefresh(startedServices);
             StatusText = "All services started";
         }
         finally
@@ -328,12 +436,15 @@ public partial class MainViewModel : ViewModelBase
                     ? (b.Config.DisplayOrder ?? 999).CompareTo(a.Config.DisplayOrder ?? 999)
                     : string.Compare(b.Config.Name, a.Config.Name, StringComparison.OrdinalIgnoreCase));
 
+            var stoppedServices = new List<ServiceItemViewModel>();
             foreach (var service in orderedServices)
             {
                 await service.StopAsync();
+                stoppedServices.Add(service);
                 await Task.Delay(500);
             }
 
+            TriggerImmediateRefresh(stoppedServices);
             StatusText = "All services stopped";
         }
         finally
@@ -345,6 +456,20 @@ public partial class MainViewModel : ViewModelBase
     public async Task StartServiceAsync(ServiceItemViewModel service)
     {
         await service.StartAsync();
+        TriggerImmediateRefresh(service);
+    }
+
+    public void TriggerImmediateRefresh(ServiceItemViewModel service)
+    {
+        service.StartAcceleratedRefresh();
+    }
+
+    public void TriggerImmediateRefresh(IEnumerable<ServiceItemViewModel> services)
+    {
+        foreach (var service in services)
+        {
+            service.StartAcceleratedRefresh();
+        }
     }
 
     public event Action? FocusSearchRequested;
@@ -358,6 +483,7 @@ public partial class MainViewModel : ViewModelBase
     public async Task StopServiceAsync(ServiceItemViewModel service)
     {
         await service.StopAsync();
+        TriggerImmediateRefresh(service);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -433,7 +559,7 @@ public partial class MainViewModel : ViewModelBase
             // Optimize: Reuse cached ServiceGroupViewModel if possible
             if (!_groupViewModelCache.TryGetValue(groupConfig.Id, out var groupVm))
             {
-                groupVm = new ServiceGroupViewModel(groupConfig);
+                groupVm = new ServiceGroupViewModel(groupConfig, TriggerImmediateRefresh);
                 _groupViewModelCache[groupConfig.Id] = groupVm;
             }
 
@@ -508,10 +634,12 @@ public partial class MainViewModel : ViewModelBase
             _buildService,
             _logger,
             editCallback: EditService,
-            deleteCallback: DeleteService));
+            deleteCallback: DeleteService,
+            onStatusChangedCallback: TriggerImmediateRefresh));
 
         RebuildFilteredGroups();
         SaveConfiguration();
+        TriggerImmediateRefresh(Services.Last());
         StatusText = $"Service '{config.DisplayName}' added";
     }
 
@@ -558,11 +686,17 @@ public partial class MainViewModel : ViewModelBase
                 _buildService,
                 _logger,
                 editCallback: EditService,
-                deleteCallback: DeleteService));
+                deleteCallback: DeleteService,
+                onStatusChangedCallback: TriggerImmediateRefresh));
         }
 
         RebuildFilteredGroups();
         SaveConfiguration();
+        foreach (var service in Services.TakeLast(configs.Count))
+        {
+            TriggerImmediateRefresh(service);
+        }
+
         StatusText = $"Imported {configs.Count} service(s)";
     }
 
