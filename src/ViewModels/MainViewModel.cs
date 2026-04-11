@@ -851,6 +851,20 @@ public partial class MainViewModel : ViewModelBase
         RefreshServiceColors();
     }
 
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        var vm = new SettingsViewModel(_configService);
+        if (_dialogService.ShowSettings(vm) != true)
+        {
+            return;
+        }
+
+        IsLightTheme = ThemeManager.IsLight;
+        _pollingTimer.Interval = TimeSpan.FromMilliseconds(vm.PollingIntervalSeconds * 1000);
+        RefreshServiceColors();
+    }
+
     private void RefreshServiceColors()
     {
         foreach (var service in Services)
