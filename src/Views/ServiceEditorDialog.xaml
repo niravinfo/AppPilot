@@ -379,7 +379,7 @@
                                         <Setter Property="Text" Value="Configure worker service settings"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsApiOrGrpcType}" Value="True">
-                                        <Setter Property="Text" Value="Configure API service settings"/>
+                                        <Setter Property="Text" Value="Configure API / gRPC service settings"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

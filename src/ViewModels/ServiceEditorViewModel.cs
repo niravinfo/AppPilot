@@ -122,7 +122,15 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.CsprojPath = CsprojPath;
         config.Arguments = Arguments;
         config.WorkingDirectory = WorkingDirectory;
-        config.Port = IsApiOrGrpcType && int.TryParse(PortText, out var port) ? port : null;
+        if (!IsApiOrGrpcType || string.IsNullOrWhiteSpace(PortText))
+        {
+            config.Port = null;
+        }
+        else if (ushort.TryParse(PortText, out var port) && port > 0)
+        {
+            config.Port = port;
+        }
+
         config.HealthCheckUrl = IsApiOrGrpcType ? HealthCheckUrl : string.Empty;
         config.UseWindowsService = IsWorkerType && UseWindowsService;
         config.DisplayOrder = DisplayOrder;
@@ -160,8 +168,11 @@ public partial class ServiceEditorViewModel : ViewModelBase
             Filter = "Executables (*.exe)|*.exe|All Files (*.*)|*.*",
             CheckFileExists = false
         };
+
         if (dialog.ShowDialog() == true)
+        {
             ExecutablePath = dialog.FileName;
+        }
     }
 
     [RelayCommand]
@@ -171,10 +182,13 @@ public partial class ServiceEditorViewModel : ViewModelBase
         {
             Title = "Select Project File",
             Filter = "Project Files (*.csproj, *.slnx)|*.csproj;*.slnx|All Files (*.*)|*.*",
-            CheckFileExists = false
+            CheckFileExists = true
         };
+
         if (dialog.ShowDialog() == true)
+        {
             CsprojPath = dialog.FileName;
+        }
     }
 
     [RelayCommand]
