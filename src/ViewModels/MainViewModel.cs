@@ -75,6 +75,8 @@ public partial class MainViewModel : ViewModelBase
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
 
+    private bool _isRefreshing;
+
     public MainViewModel(
         IConfigurationService configService,
         IServiceController windowsServiceController,
@@ -105,7 +107,25 @@ public partial class MainViewModel : ViewModelBase
 
     private async void OnPollingTimerTick(object? sender, EventArgs e)
     {
-        await SmartRefreshAsync();
+        if (_isRefreshing)
+        {
+            return;
+        }
+
+        _isRefreshing = true;
+
+        try
+        {
+            await SmartRefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during smart refresh");
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
     }
 
     private async Task SmartRefreshAsync()
