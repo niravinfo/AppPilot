@@ -275,37 +275,38 @@
                                 BorderBrush="{DynamicResource CardBorder}"
                                 BorderThickness="1"
                                 CornerRadius="8"
-                                Padding="16,12"
+                                Padding="20,16"
                                 Cursor="Hand"
-                                MinWidth="80">
+                                MinWidth="90">
                             <StackPanel HorizontalAlignment="Center">
                                 <Path x:Name="ThemeIcon"
-                                      Width="28" Height="28"
+                                      Width="32" Height="32"
                                       HorizontalAlignment="Center"
-                                      Margin="0,0,0,8"
+                                      Margin="0,0,0,10"
                                       Stretch="Uniform"
                                       Fill="{DynamicResource TextMuted}"/>
                                 <TextBlock x:Name="ThemeLabel"
-                                           Text="{TemplateBinding Tag}"
-                                           FontSize="11"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextMuted}"
                                            HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="Light">
+                                <Setter TargetName="ThemeIcon" Property="Data" Value="{StaticResource IconLight}"/>
+                                <Setter TargetName="ThemeLabel" Property="Text" Value="Light"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Dark">
+                                <Setter TargetName="ThemeIcon" Property="Data" Value="{StaticResource IconDark}"/>
+                                <Setter TargetName="ThemeLabel" Property="Text" Value="Dark"/>
+                            </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="ThemeBorder" Property="Background" Value="{DynamicResource AccentBg}"/>
                                 <Setter TargetName="ThemeBorder" Property="BorderBrush" Value="{DynamicResource AccentBorder}"/>
                                 <Setter TargetName="ThemeLabel" Property="Foreground" Value="{DynamicResource AccentFg}"/>
                                 <Setter TargetName="ThemeIcon" Property="Fill" Value="{DynamicResource AccentFg}"/>
                             </Trigger>
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Light">
-                                <Setter TargetName="ThemeIcon" Property="Data" Value="{StaticResource IconLight}"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="Dark">
-                                <Setter TargetName="ThemeIcon" Property="Data" Value="{StaticResource IconDark}"/>
-                            </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -390,17 +391,17 @@
                     <StackPanel>
                         <TextBlock Text="Select Theme" Style="{StaticResource FormLabel}" Margin="0,0,0,12"/>
                         <StackPanel Orientation="Horizontal">
-                            <RadioButton Content="Light"
-                                         Tag="Light"
+                            <RadioButton Tag="Light"
                                          GroupName="Theme"
                                          IsChecked="{Binding Theme, Converter={StaticResource BoolToStringConverter}, ConverterParameter=Light}"
                                          Style="{StaticResource ThemeToggle}"
+                                         ToolTip="Switch to Light theme"
                                          Margin="0,0,12,0"/>
-                            <RadioButton Content="Dark"
-                                         Tag="Dark"
+                            <RadioButton Tag="Dark"
                                          GroupName="Theme"
                                          IsChecked="{Binding Theme, Converter={StaticResource BoolToStringConverter}, ConverterParameter=Dark}"
-                                         Style="{StaticResource ThemeToggle}"/>
+                                         Style="{StaticResource ThemeToggle}"
+                                         ToolTip="Switch to Dark theme"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
