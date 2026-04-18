@@ -1,8 +1,9 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using AppPilot.Models;
 using AppPilot.Services;
 using AppPilot.Services.Configuration;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -38,10 +39,10 @@ public partial class SettingsViewModel : ObservableObject
     {
         _configService = configService;
 
-        var settings = _configService.Load();
+        var settings = _configService.Settings;
         _originalSettings = settings.AppPilot;
 
-        PollingIntervalSeconds = _originalSettings.PollingIntervalMs / 1000;
+        PollingIntervalSeconds = Math.Max(1, _originalSettings.PollingIntervalMs / 1000);
         LogDirectory = _originalSettings.LogDirectory;
         Theme = ThemeManager.IsLight ? "Light" : "Dark";
 
@@ -67,12 +68,18 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void Save()
     {
-        var settings = _configService.Load();
-        settings.AppPilot.PollingIntervalMs = PollingIntervalSeconds * 1000;
-        settings.AppPilot.LogDirectory = LogDirectory;
-        _configService.Save(settings);
+        var settings = _configService.Settings;
 
-        if ((Theme == "Light" && !ThemeManager.IsLight) || (Theme == "Dark" && ThemeManager.IsLight))
+        var newInterval = PollingIntervalSeconds * 1000;
+        if (newInterval < 1000) newInterval = 1000;
+        if (newInterval > 3600000) newInterval = 3600000;
+
+        settings.AppPilot.PollingIntervalMs = newInterval;
+        settings.AppPilot.LogDirectory = string.IsNullOrEmpty(LogDirectory) ? "Logs" : LogDirectory;
+        _configService.Save();
+
+        if ((Theme == "Light" && !ThemeManager.IsLight)
+            || (Theme == "Dark" && ThemeManager.IsLight))
         {
             ThemeManager.Toggle();
         }
@@ -97,7 +104,7 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void ResetToDefaults()
     {
-        PollingIntervalSeconds = 3;
+        PollingIntervalSeconds = 30;
         LogDirectory = "Logs";
         Theme = "Light";
     }

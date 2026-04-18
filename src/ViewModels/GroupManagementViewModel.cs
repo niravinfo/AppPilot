@@ -102,8 +102,8 @@ public partial class GroupManagementViewModel : ViewModelBase
             sourceGroups.Add(item.Group);
         }
 
-        var settings = _configService.Load();
+        var settings = _configService.Settings;
         settings.Groups = sourceGroups.ToList();
-        _configService.Save(settings);
+        _configService.Save();
     }
 }
