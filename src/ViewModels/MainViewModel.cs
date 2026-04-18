@@ -36,11 +36,11 @@ public partial class MainViewModel : ViewModelBase
     private readonly IGitService _gitService;
     private readonly IServiceDiscoveryService _discoveryService;
     private readonly DispatcherTimer _pollingTimer;
-    private readonly TimeSpan _defaultRefreshInterval = TimeSpan.FromSeconds(30);
-    private readonly TimeSpan _staggerDelay = TimeSpan.FromMilliseconds(100);
+    private TimeSpan _configuredRefreshInterval = TimeSpan.FromSeconds(30);
+    private TimeSpan _staggerDelay = TimeSpan.FromMilliseconds(100);
     private readonly int _maxConcurrentRefresh = 10;
     private DateTime _lastFullRefresh = DateTime.MinValue;
-    private readonly TimeSpan _fullRefreshInterval = TimeSpan.FromMinutes(5);
+    private TimeSpan _fullRefreshInterval = TimeSpan.FromMinutes(5);
 
     [ObservableProperty]
     private ObservableCollection<ServiceItemViewModel> _services = new();
@@ -99,10 +99,7 @@ public partial class MainViewModel : ViewModelBase
         _gitService = gitService;
         _discoveryService = discoveryService;
 
-        _pollingTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromSeconds(5)
-        };
+        _pollingTimer = new DispatcherTimer();
         _pollingTimer.Tick += OnPollingTimerTick;
     }
 
@@ -146,7 +143,7 @@ public partial class MainViewModel : ViewModelBase
 
         foreach (var service in Services)
         {
-            if (service.NeedsRefresh)
+            if (now >= service.NextRefreshTime)
             {
                 servicesToRefresh.Add(service);
             }
@@ -197,14 +194,6 @@ public partial class MainViewModel : ViewModelBase
             }
         }
 
-        foreach (var service in servicesToRefresh)
-        {
-            if (!service.TryScheduleNextAcceleratedRefresh())
-            {
-                service.ScheduleNextRefresh(_defaultRefreshInterval);
-            }
-        }
-
         LastUpdateTime = now.ToString("HH:mm:ss");
     }
 
@@ -217,7 +206,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void LoadConfiguration()
     {
-        var settings = _configService.Load();
+        var settings = _configService.Settings;
         _serviceConfigs = settings.Services;
         _gitRepositoryConfigs = settings.GitRepositories;
         _serviceGroups = new ObservableCollection<GroupConfig>(settings.Groups ?? []);
@@ -225,7 +214,13 @@ public partial class MainViewModel : ViewModelBase
 
         if (settings.AppPilot.PollingIntervalMs > 0)
         {
-            _pollingTimer.Interval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
+            _configuredRefreshInterval = TimeSpan.FromMilliseconds(settings.AppPilot.PollingIntervalMs);
+            _pollingTimer.Interval = _configuredRefreshInterval;
+        }
+        else
+        {
+            _configuredRefreshInterval = TimeSpan.FromSeconds(30);
+            _pollingTimer.Interval = _configuredRefreshInterval;
         }
 
         Services.Clear();
@@ -650,7 +645,7 @@ public partial class MainViewModel : ViewModelBase
         var logger = loggerFactory?.CreateLogger<ServiceDiscoveryViewModel>() ?? (Microsoft.Extensions.Logging.ILogger)Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
         var discoveryVm = new ServiceDiscoveryViewModel(_discoveryService, _configService, _dialogService, logger, _serviceGroups);
 
-        if (_configService.Load().AppPilot.BasePath is string basePath && !string.IsNullOrEmpty(basePath))
+        if (_configService.Settings.AppPilot.BasePath is string basePath && !string.IsNullOrEmpty(basePath))
         {
             discoveryVm.DiscoveryPath = basePath;
         }
@@ -734,11 +729,11 @@ public partial class MainViewModel : ViewModelBase
 
     private void SaveConfiguration()
     {
-        var settings = _configService.Load();
+        var settings = _configService.Settings;
         settings.Services = _serviceConfigs;
         settings.GitRepositories = _gitRepositoryConfigs;
         settings.Groups = _serviceGroups.ToList();
-        _configService.Save(settings);
+        _configService.Save();
     }
 
     [RelayCommand]
@@ -848,6 +843,21 @@ public partial class MainViewModel : ViewModelBase
     {
         ThemeManager.Toggle();
         IsLightTheme = ThemeManager.IsLight;
+        RefreshServiceColors();
+    }
+
+    [RelayCommand]
+    private void OpenSettings()
+    {
+        var vm = new SettingsViewModel(_configService);
+        if (_dialogService.ShowSettings(vm) != true)
+        {
+            return;
+        }
+
+        IsLightTheme = ThemeManager.IsLight;
+        _configuredRefreshInterval = TimeSpan.FromMilliseconds(vm.PollingIntervalSeconds * 1000);
+        _pollingTimer.Interval = _configuredRefreshInterval;
         RefreshServiceColors();
     }
 

@@ -14,7 +14,7 @@ public class AppPilotSettings
 {
     public string BasePath { get; set; } = string.Empty;
     public string ConfigurationPath { get; set; } = string.Empty;
-    public int PollingIntervalMs { get; set; } = 3000;
+    public int PollingIntervalMs { get; set; } = 0;
     public bool MinimizeToTray { get; set; } = true;
     public string LogDirectory { get; set; } = "Logs";
 }

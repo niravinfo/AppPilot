@@ -355,7 +355,7 @@ public partial class ServiceDiscoveryViewModel : ViewModelBase
 
     public List<ManagedServiceConfig> GetSelectedConfigs()
     {
-        var existingNames = _configService.Load().Services.Select(s => s.Name).ToHashSet();
+        var existingNames = _configService.Settings.Services.Select(s => s.Name).ToHashSet();
         var selected = AllServices.Where(s => s.IsSelected).ToList();
         var configs = new List<ManagedServiceConfig>();
 
