@@ -12,6 +12,7 @@ public class BoolToStringConverter : IValueConverter
         {
             return str == param;
         }
+
         return false;
     }
 
@@ -21,6 +22,7 @@ public class BoolToStringConverter : IValueConverter
         {
             return param;
         }
+
         return Binding.DoNothing;
     }
 }
