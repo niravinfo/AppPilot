@@ -145,11 +145,10 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <!-- Status pill (hidden for NodeApp) -->
+                                                    <!-- Status pill (hidden for NodeApp via Style DataTrigger) -->
                                                     <Border Grid.Column="2" Margin="0,0,10,0"
                                                             Padding="10,4" CornerRadius="20"
-                                                            VerticalAlignment="Center"
-                                                            Visibility="{Binding IsNodeApp, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+                                                            VerticalAlignment="Center">
                                                         <Border.Style>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="Background" Value="{DynamicResource PillDefaultBg}"/>

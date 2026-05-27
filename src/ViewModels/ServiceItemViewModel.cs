@@ -643,29 +643,38 @@ public partial class ServiceItemViewModel : ViewModelBase
         try
         {
             ErrorMessage = string.Empty;
+            bool launched = false;
 
-            // Try Windows Terminal first, fall back to cmd.exe
+            // Prefer Windows Terminal for a better UX (tabbed terminal)
             try
             {
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "wt.exe",
-                    Arguments = $"-d \"{Config.ProjectPath}\" cmd /k \"{command}\"",
+                    Arguments = $"new-tab -d \"{Config.ProjectPath}\" cmd /K \"{command}\"",
                     UseShellExecute = true
                 });
+                launched = true;
             }
             catch
             {
-                // Fall back to cmd.exe if Windows Terminal is not available
+                // Windows Terminal not installed — fall through to cmd.exe
+            }
+
+            if (!launched)
+            {
+                // cmd.exe: /K keeps the window open so the user can see npm output
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "cmd.exe",
-                    Arguments = $"/k cd /d \"{Config.ProjectPath}\" && {command}",
-                    UseShellExecute = true
+                    Arguments = $"/K \"{command}\"",
+                    WorkingDirectory = Config.ProjectPath,
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Normal
                 });
             }
 
-            _logger.LogInformation("Running npm command '{Command}' for {Name}", commandName, Config.Name);
+            _logger.LogInformation("Launched npm command '{CommandName}' for {Name}", commandName, Config.Name);
         }
         catch (Exception ex)
         {
