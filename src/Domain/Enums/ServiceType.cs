@@ -4,5 +4,6 @@ public enum ServiceType
 {
     Worker,
     Grpc,
-    WebApi
+    WebApi,
+    NodeApp
 }

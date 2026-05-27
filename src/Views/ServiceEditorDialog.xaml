@@ -381,6 +381,9 @@
                                     <DataTrigger Binding="{Binding IsApiOrGrpcType}" Value="True">
                                         <Setter Property="Text" Value="Configure API / gRPC service settings"/>
                                     </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsNodeAppType}" Value="True">
+                                        <Setter Property="Text" Value="Configure Node.js / React application"/>
+                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
@@ -526,7 +529,19 @@
                 <!-- Divider -->
                 <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,0,0,16"/>
 
-                <!-- ── PROCESS ── -->
+                <!-- ── PROCESS (.NET services only) ── -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsNodeAppType}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
                 <TextBlock Text="PROCESS" Style="{StaticResource SectionTitle}"/>
 
                 <!-- Executable Path -->
@@ -614,8 +629,164 @@
                     </Grid>
                 </StackPanel>
 
-                <!-- Divider -->
+                <!-- Divider (.NET services) -->
                 <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,0,0,16"/>
+                </StackPanel>
+
+                <!-- ── NODE.JS PROJECT (NodeApp only) ── -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsNodeAppType}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+
+                    <TextBlock Text="NODE.JS PROJECT" Style="{StaticResource SectionTitle}"/>
+
+                    <!-- Project Path -->
+                    <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="Project Folder" Style="{StaticResource FormLabel}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding ProjectPath, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FormInput}"
+                                     FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                     ToolTip="Path to the Node.js project folder containing package.json"/>
+                            <Button Grid.Column="2" Style="{StaticResource FormBtn}"
+                                    Command="{Binding BrowseProjectPathCommand}"
+                                    Padding="10,8" ToolTip="Browse for project folder">
+                                <Path Data="{StaticResource IconFolder}" 
+                                      Fill="{DynamicResource BtnFg}"
+                                      Width="13" Height="13"
+                                      Stretch="Uniform"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Text="Folder containing package.json where npm commands will run" Style="{StaticResource FormHint}"/>
+                    </StackPanel>
+
+                    <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,0,0,16"/>
+
+                    <!-- npm Commands -->
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="NPM COMMANDS"
+                                   Style="{StaticResource SectionTitle}"
+                                   VerticalAlignment="Center" Margin="0"/>
+                        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                            <Button Style="{StaticResource FormBtn}"
+                                    Command="{Binding AddDefaultNpmCommandsCommand}"
+                                    Padding="10,5" Margin="0,0,6,0"
+                                    ToolTip="Add default npm commands (build, start, serve, preview)">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⟳" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Defaults" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource FormBtn}"
+                                    Command="{Binding AddNpmCommandCommand}"
+                                    Padding="10,5">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="+" FontSize="13" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Add Command" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Background="{DynamicResource SectionBg}"
+                            BorderBrush="{DynamicResource CardBorder}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10,8"
+                            Margin="0,0,0,4">
+                        <StackPanel>
+                            <!-- Column headers -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="30"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="NAME"
+                                           Style="{StaticResource SectionTitle}"
+                                           Margin="4,0,0,0"/>
+                                <TextBlock Grid.Column="2" Text="COMMAND"
+                                           Style="{StaticResource SectionTitle}"
+                                           Margin="4,0,0,0"/>
+                            </Grid>
+
+                            <!-- Command rows -->
+                            <ItemsControl ItemsSource="{Binding NpmCommands}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="140"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="30"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormInput}"
+                                                     FontSize="11"
+                                                     ToolTip="Command name (first letter shown on button)"/>
+                                            <TextBox Grid.Column="2"
+                                                     Text="{Binding Command, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource FormInput}"
+                                                     FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                                     ToolTip="npm command to execute (e.g., npm run build)"/>
+                                            <Button Grid.Column="3"
+                                                    Style="{StaticResource EnvRemoveBtn}"
+                                                    Command="{Binding DataContext.RemoveNpmCommandCommand,
+                                                                      RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Remove command">
+                                                <Path Data="{StaticResource IconClose}" 
+                                                      Fill="{DynamicResource CardBtnFg}"
+                                                      Width="10" Height="10"
+                                                      Stretch="Uniform"/>
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Empty state -->
+                            <TextBlock Text="No npm commands configured. Click 'Defaults' to add common commands."
+                                       Foreground="{DynamicResource TextMuted}"
+                                       FontSize="11" FontStyle="Italic"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,10,0,6">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding NpmCommands.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="Button shows first letter of name. Full name appears on hover." 
+                               Style="{StaticResource FormHint}" Margin="0,4,0,0"/>
+
+                    <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="0,16,0,16"/>
+                </StackPanel>
 
                 <!-- ── CONNECTION (API / gRPC only) ── -->
                 <StackPanel>

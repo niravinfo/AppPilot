@@ -1,3 +1,4 @@
+using AppPilot.Domain.Enums;
 using AppPilot.Models;
 using AppPilot.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -46,10 +47,11 @@ public partial class ServiceGroupViewModel : ViewModelBase
     private async Task StartGroupAsync()
     {
         // Optimize: Avoid LINQ allocations - use List and manual sort
+        // Exclude NodeApp services from group start (they don't support automatic start/stop)
         var services = new List<ServiceItemViewModel>();
         foreach (var service in Items)
         {
-            if (service.CanStart)
+            if (service.CanStart && service.Config.Type != ServiceType.NodeApp)
             {
                 services.Add(service);
             }
@@ -73,10 +75,11 @@ public partial class ServiceGroupViewModel : ViewModelBase
     private async Task StopGroupAsync()
     {
         // Optimize: Avoid LINQ allocations - use List and manual sort
+        // Exclude NodeApp services from group stop (they don't support automatic start/stop)
         var services = new List<ServiceItemViewModel>();
         foreach (var service in Items)
         {
-            if (service.CanStop)
+            if (service.CanStop && service.Config.Type != ServiceType.NodeApp)
             {
                 services.Add(service);
             }

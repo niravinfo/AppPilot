@@ -30,6 +30,12 @@
       "Id": "workers_01",
       "Name": "Workers",
       "DisplayOrder": 2
+    },
+    {
+      "Id": "frontend_01",
+      "Name": "Frontend",
+      "DisplayOrder": 3,
+      "ColorCode": "#22C55E"
     }
   ],
   "Services": [
@@ -97,6 +103,29 @@
       "Environment": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    {
+      // --- Node.js / React Application ---
+      // For Node.js/React apps, AppPilot runs npm commands in a visible terminal window.
+      // These apps have manual lifecycle management - npm commands open in a new terminal.
+      "Name": "MyReactApp",
+      "DisplayName": "My React Frontend",
+      "Type": "NodeApp",
+      "GroupId": "frontend_01",
+
+      // ProjectPath: Path to the folder containing package.json
+      "ProjectPath": "frontend\\my-react-app",
+
+      // NpmCommands: Customizable npm commands with display name and full command.
+      // The first letter of Name is shown on the button; full name on hover.
+      "NpmCommands": [
+        { "Name": "Build", "Command": "npm run build" },
+        { "Name": "Start", "Command": "npm run start" },
+        { "Name": "Serve", "Command": "npm run serve" },
+        { "Name": "Preview", "Command": "npm run preview" }
+      ],
+      "DisplayOrder": 4,
+      "Dependencies": []
     }
   ]
 }

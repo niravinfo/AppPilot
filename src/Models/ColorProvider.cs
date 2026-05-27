@@ -38,10 +38,12 @@ public static class ColorProvider
         _serviceTypeColorsLight[ServiceType.Worker] = Color.FromRgb(99, 102, 241);
         _serviceTypeColorsLight[ServiceType.Grpc] = Color.FromRgb(22, 163, 74);
         _serviceTypeColorsLight[ServiceType.WebApi] = Color.FromRgb(217, 119, 6);
+        _serviceTypeColorsLight[ServiceType.NodeApp] = Color.FromRgb(34, 197, 94); // Node.js green
 
         _serviceTypeColorsDark[ServiceType.Worker] = Color.FromRgb(129, 140, 248);
         _serviceTypeColorsDark[ServiceType.Grpc] = Color.FromRgb(74, 222, 128);
         _serviceTypeColorsDark[ServiceType.WebApi] = Color.FromRgb(251, 191, 36);
+        _serviceTypeColorsDark[ServiceType.NodeApp] = Color.FromRgb(74, 222, 128); // Node.js green
     }
 
     public static Color GetGroupColor(string groupName, bool isDarkTheme)
