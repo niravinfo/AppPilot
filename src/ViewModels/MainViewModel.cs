@@ -314,6 +314,14 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             var config = service.Config;
+
+            // Skip status checking for NodeApp - npm processes can't be reliably detected
+            if (config.Type == ServiceType.NodeApp)
+            {
+                service.LastChecked = DateTime.Now;
+                return;
+            }
+
             ServiceStatus status;
             string? healthError = null;
 
@@ -377,10 +385,11 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             // Optimize: Use List and manual sort to avoid LINQ allocations
+            // Exclude NodeApp services from global start (they don't support automatic start/stop)
             var orderedServices = new List<ServiceItemViewModel>();
             foreach (var s in Services)
             {
-                if (s.Status != ServiceStatus.Running)
+                if (s.Status != ServiceStatus.Running && s.Config.Type != ServiceType.NodeApp)
                 {
                     orderedServices.Add(s);
                 }
@@ -417,10 +426,11 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             // Optimize: Use List and manual sort to avoid LINQ allocations
+            // Exclude NodeApp services from global stop (they don't support automatic start/stop)
             var orderedServices = new List<ServiceItemViewModel>();
             foreach (var s in Services)
             {
-                if (s.Status == ServiceStatus.Running)
+                if (s.Status == ServiceStatus.Running && s.Config.Type != ServiceType.NodeApp)
                 {
                     orderedServices.Add(s);
                 }

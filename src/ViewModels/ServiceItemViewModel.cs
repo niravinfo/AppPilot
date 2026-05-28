@@ -158,13 +158,28 @@ public partial class ServiceItemViewModel : ViewModelBase
     public bool CanInstall => Config.Type == ServiceType.Worker && Status == ServiceStatus.NotInstalled;
     public bool CanUninstall => Config.Type == ServiceType.Worker && Status != ServiceStatus.NotInstalled;
     public bool UseWindowsService => Config.Type == ServiceType.Worker && Config.UseWindowsService;
-    public bool CanStart => Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled;
-    public bool CanStop => Status == ServiceStatus.Running;
-    public bool CanRestart => Status == ServiceStatus.Running;
+    public bool CanStart => Config.Type != ServiceType.NodeApp && (Status == ServiceStatus.Stopped || Status == ServiceStatus.Error || Status == ServiceStatus.NotInstalled);
+    public bool CanStop => Config.Type != ServiceType.NodeApp && Status == ServiceStatus.Running;
+    public bool CanRestart => Config.Type != ServiceType.NodeApp && Status == ServiceStatus.Running;
 
-    public bool HasBrowserUrl => Config.Type != ServiceType.Worker && (!string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue);
+    public bool HasBrowserUrl => Config.Type != ServiceType.Worker && Config.Type != ServiceType.NodeApp && (!string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue);
     public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
     public bool HasCsprojPath => !string.IsNullOrWhiteSpace(Config.CsprojPath);
+
+    /// <summary>
+    /// Whether this is a Node.js application.
+    /// </summary>
+    public bool IsNodeApp => Config.Type == ServiceType.NodeApp;
+
+    /// <summary>
+    /// Whether the Node.js project path is configured.
+    /// </summary>
+    public bool HasProjectPath => !string.IsNullOrWhiteSpace(Config.ProjectPath);
+
+    /// <summary>
+    /// Whether this Node.js app has npm commands configured.
+    /// </summary>
+    public bool HasNpmCommands => Config.Type == ServiceType.NodeApp && Config.NpmCommands?.Count > 0;
 
     // Optimize: Cache status bar brushes to avoid repeated allocations
     private SolidColorBrush? _runningBrush;
@@ -175,8 +190,22 @@ public partial class ServiceItemViewModel : ViewModelBase
     {
         get
         {
+            // NodeApp type doesn't track running status, always show the type color
+            if (Config.Type == ServiceType.NodeApp)
+            {
+                bool isDark = !ThemeManager.IsLight;
+                if (_stoppedBrush == null || _lastThemeWasLight != ThemeManager.IsLight)
+                {
+                    _lastThemeWasLight = ThemeManager.IsLight;
+                    var color = ColorProvider.GetServiceTypeColor(ServiceType.NodeApp, isDark);
+                    _stoppedBrush = new SolidColorBrush(color);
+                    _stoppedBrush.Freeze();
+                }
+                return _stoppedBrush;
+            }
+
             bool isRunning = Status == ServiceStatus.Running;
-            bool isDark = !ThemeManager.IsLight;
+            bool isDarkTheme = !ThemeManager.IsLight;
 
             if (_lastThemeWasLight != ThemeManager.IsLight)
             {
@@ -191,9 +220,10 @@ public partial class ServiceItemViewModel : ViewModelBase
                 {
                     var color = Config.Type switch
                     {
-                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDark),
-                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDark),
-                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDark),
+                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDarkTheme),
+                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDarkTheme),
+                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDarkTheme),
+                        ServiceType.NodeApp => ColorProvider.GetServiceTypeColor(ServiceType.NodeApp, isDarkTheme),
                         _ => Color.FromRgb(128, 128, 128)
                     };
                     _runningBrush = new SolidColorBrush(color);
@@ -208,13 +238,14 @@ public partial class ServiceItemViewModel : ViewModelBase
                 {
                     var baseColor = Config.Type switch
                     {
-                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDark),
-                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDark),
-                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDark),
+                        ServiceType.Grpc => ColorProvider.GetServiceTypeColor(ServiceType.Grpc, isDarkTheme),
+                        ServiceType.WebApi => ColorProvider.GetServiceTypeColor(ServiceType.WebApi, isDarkTheme),
+                        ServiceType.Worker => ColorProvider.GetServiceTypeColor(ServiceType.Worker, isDarkTheme),
+                        ServiceType.NodeApp => ColorProvider.GetServiceTypeColor(ServiceType.NodeApp, isDarkTheme),
                         _ => Color.FromRgb(96, 96, 96)
                     };
 
-                    var alpha = (byte)(isDark ? 0x99 : 0xB3);
+                    var alpha = (byte)(isDarkTheme ? 0x99 : 0xB3);
                     var color = Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B);
                     _stoppedBrush = new SolidColorBrush(color);
                     _stoppedBrush.Freeze();
@@ -591,6 +622,121 @@ public partial class ServiceItemViewModel : ViewModelBase
         }
     }
 
+    /// <summary>
+    /// Runs an npm command in a visible terminal window.
+    /// The command runs from the project path with the terminal visible to the user.
+    /// </summary>
+    public void RunNpmCommand(string commandName, string command)
+    {
+        if (string.IsNullOrWhiteSpace(Config.ProjectPath))
+        {
+            ErrorMessage = "Project path is not configured.";
+            return;
+        }
+
+        if (!System.IO.Directory.Exists(Config.ProjectPath))
+        {
+            ErrorMessage = $"Project folder not found: {Config.ProjectPath}";
+            return;
+        }
+
+        try
+        {
+            ErrorMessage = string.Empty;
+            bool launched = false;
+
+            // Prefer Windows Terminal for a better UX (tabbed terminal)
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "wt.exe",
+                    Arguments = $"new-tab -d \"{Config.ProjectPath}\" cmd /K \"{command}\"",
+                    UseShellExecute = true
+                });
+                launched = true;
+            }
+            catch
+            {
+                // Windows Terminal not installed — fall through to cmd.exe
+            }
+
+            if (!launched)
+            {
+                // cmd.exe: /K keeps the window open so the user can see npm output
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/K \"{command}\"",
+                    WorkingDirectory = Config.ProjectPath,
+                    UseShellExecute = true,
+                    WindowStyle = ProcessWindowStyle.Normal
+                });
+            }
+
+            _logger.LogInformation("Launched npm command '{CommandName}' for {Name}", commandName, Config.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to run npm command '{Command}' for {Name}", commandName, Config.Name);
+            ErrorMessage = $"Failed to run '{commandName}': {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Opens the project folder in file explorer (for NodeApp type).
+    /// </summary>
+    [RelayCommand]
+    private void OpenProjectFolder()
+    {
+        if (!HasProjectPath) return;
+        try
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{Config.ProjectPath}\"")
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open project folder for {Name}", Config.Name);
+        }
+    }
+
+    /// <summary>
+    /// Opens terminal in the project folder (for NodeApp type).
+    /// </summary>
+    [RelayCommand]
+    private void OpenProjectTerminal()
+    {
+        if (!HasProjectPath) return;
+        try
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "wt.exe",
+                    Arguments = $"-d \"{Config.ProjectPath}\"",
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    WorkingDirectory = Config.ProjectPath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open project terminal for {Name}", Config.Name);
+        }
+    }
+
     public void NotifyDisplayPropertiesChanged()
     {
         OnPropertyChanged(nameof(DisplayName));
@@ -603,5 +749,8 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasCsprojPath));
         OnPropertyChanged(nameof(CanInstall));
         OnPropertyChanged(nameof(CanUninstall));
+        OnPropertyChanged(nameof(IsNodeApp));
+        OnPropertyChanged(nameof(HasProjectPath));
+        OnPropertyChanged(nameof(HasNpmCommands));
     }
 }

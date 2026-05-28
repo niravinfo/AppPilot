@@ -29,4 +29,14 @@ public class ManagedServiceConfig
     /// If true, run/install as Windows Service. If false, run as regular process.
     /// </summary>
     public bool UseWindowsService { get; set; } = false;
+
+    /// <summary>
+    /// Path to the Node.js project folder (for NodeApp type).
+    /// </summary>
+    public string ProjectPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Configurable npm commands for NodeApp type.
+    /// </summary>
+    public List<NpmCommandConfig> NpmCommands { get; set; } = [];
 }

@@ -5,11 +5,13 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:AppPilot.ViewModels"
              xmlns:controls="clr-namespace:AppPilot.Controls"
+             xmlns:converters="clr-namespace:AppPilot.Converters"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InitialConverter x:Key="InitialConverter"/>
     </UserControl.Resources>
 
     <!-- Grouped service list -->
@@ -130,6 +132,9 @@
                                                                             <DataTrigger Binding="{Binding Config.Type}" Value="Worker">
                                                                                 <Setter Property="IconData" Value="{StaticResource IconWorker}"/>
                                                                             </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding Config.Type}" Value="NodeApp">
+                                                                                <Setter Property="IconData" Value="{StaticResource IconNodeJs}"/>
+                                                                            </DataTrigger>
                                                                         </Style.Triggers>
                                                                     </Style>
                                                                 </controls:SvgIcon.Style>
@@ -140,13 +145,14 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <!-- Status pill -->
+                                                    <!-- Status pill (hidden for NodeApp via Style DataTrigger) -->
                                                     <Border Grid.Column="2" Margin="0,0,10,0"
                                                             Padding="10,4" CornerRadius="20"
                                                             VerticalAlignment="Center">
                                                         <Border.Style>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="Background" Value="{DynamicResource PillDefaultBg}"/>
+                                                                <Setter Property="Visibility" Value="Visible"/>
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Status}" Value="Running">
                                                                         <Setter Property="Background" Value="{DynamicResource PillRunningBg}"/>
@@ -159,6 +165,9 @@
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Status}" Value="Error">
                                                                         <Setter Property="Background" Value="{DynamicResource PillErrorBg}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsNodeApp}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -209,46 +218,94 @@
                                                         </StackPanel>
                                                     </Border>
 
-                                                    <!-- Port -->
+                                                    <!-- Port (hidden for NodeApp) -->
                                                     <TextBlock Grid.Column="3"
                                                                Text="{Binding Port}"
                                                                FontSize="12"
                                                                FontFamily="Consolas"
                                                                Foreground="{DynamicResource PortFg}"
-                                                               VerticalAlignment="Center"/>
+                                                               VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsNodeApp}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
 
                                                     <!-- Action buttons (medium icons) -->
                                                     <StackPanel Grid.Column="4"
                                                                 Orientation="Horizontal"
                                                                 VerticalAlignment="Center"
                                                                 Margin="0,0,8,0">
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding StartCommand}"
-                                                                IsEnabled="{Binding CanStart}"
-                                                                ToolTip="Start">
-                                                            <Path Data="{StaticResource IconPlay}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="13" Height="13"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding StopCommand}"
-                                                                IsEnabled="{Binding CanStop}"
-                                                                ToolTip="Stop">
-                                                            <Path Data="{StaticResource IconStop}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="13" Height="13"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
-                                                        <Button Style="{StaticResource CardBtn}"
-                                                                Command="{Binding RestartCommand}"
-                                                                IsEnabled="{Binding CanRestart}"
-                                                                ToolTip="Restart">
-                                                            <Path Data="{StaticResource IconRefresh}" 
-                                                                  Fill="{DynamicResource CardBtnFg}"
-                                                                  Width="15" Height="15"
-                                                                  Stretch="Uniform"/>
-                                                        </Button>
+                                                        
+                                                        <!-- .NET service buttons (hidden for NodeApp) -->
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <StackPanel.Style>
+                                                                <Style TargetType="StackPanel">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsNodeApp}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </StackPanel.Style>
+                                                            <Button Style="{StaticResource CardBtn}"
+                                                                    Command="{Binding StartCommand}"
+                                                                    IsEnabled="{Binding CanStart}"
+                                                                    ToolTip="Start">
+                                                                <Path Data="{StaticResource IconPlay}" 
+                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                      Width="13" Height="13"
+                                                                      Stretch="Uniform"/>
+                                                            </Button>
+                                                            <Button Style="{StaticResource CardBtn}"
+                                                                    Command="{Binding StopCommand}"
+                                                                    IsEnabled="{Binding CanStop}"
+                                                                    ToolTip="Stop">
+                                                                <Path Data="{StaticResource IconStop}" 
+                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                      Width="13" Height="13"
+                                                                      Stretch="Uniform"/>
+                                                            </Button>
+                                                            <Button Style="{StaticResource CardBtn}"
+                                                                    Command="{Binding RestartCommand}"
+                                                                    IsEnabled="{Binding CanRestart}"
+                                                                    ToolTip="Restart">
+                                                                <Path Data="{StaticResource IconRefresh}" 
+                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                      Width="15" Height="15"
+                                                                      Stretch="Uniform"/>
+                                                            </Button>
+                                                        </StackPanel>
+
+                                                        <!-- npm command buttons (shown for NodeApp only) -->
+                                                        <ItemsControl ItemsSource="{Binding Config.NpmCommands}"
+                                                                      Visibility="{Binding IsNodeApp, Converter={StaticResource BoolToVis}}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <StackPanel Orientation="Horizontal"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Button Style="{StaticResource CardBtn}"
+                                                                            ToolTip="{Binding Name}"
+                                                                            Click="NpmCommandButton_Click"
+                                                                            Tag="{Binding}">
+                                                                        <TextBlock Text="{Binding Name, Converter={StaticResource InitialConverter}}"
+                                                                                   FontSize="12" FontWeight="SemiBold"
+                                                                                   Foreground="{DynamicResource CardBtnFg}"/>
+                                                                    </Button>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+
                                                         <Rectangle Width="1" Height="16"
                                                                    Fill="{DynamicResource CardDivider}"
                                                                    Margin="3,0" VerticalAlignment="Center"
@@ -328,6 +385,37 @@
                                                                                       Margin="0,0,8,0"
                                                                                       VerticalAlignment="Center"/>
                                                                                 <TextBlock Text="Open Terminal" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <!-- NodeApp-specific menu items -->
+                                                                    <MenuItem Command="{Binding OpenProjectFolderCommand}"
+                                                                              Visibility="{Binding HasProjectPath, Converter={StaticResource BoolToVis}}"
+                                                                              ToolTip="{Binding Config.ProjectPath}">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconFolder}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Open Project Folder" VerticalAlignment="Center"/>
+                                                                            </StackPanel>
+                                                                        </MenuItem.Header>
+                                                                    </MenuItem>
+                                                                    <MenuItem Command="{Binding OpenProjectTerminalCommand}"
+                                                                              Visibility="{Binding HasProjectPath, Converter={StaticResource BoolToVis}}"
+                                                                              ToolTip="Open Terminal in Project Folder">
+                                                                        <MenuItem.Header>
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <Path Data="{StaticResource IconTerminal}" 
+                                                                                      Fill="{DynamicResource CardBtnFg}"
+                                                                                      Width="13" Height="13"
+                                                                                      Stretch="Uniform"
+                                                                                      Margin="0,0,8,0"
+                                                                                      VerticalAlignment="Center"/>
+                                                                                <TextBlock Text="Open Project Terminal" VerticalAlignment="Center"/>
                                                                             </StackPanel>
                                                                         </MenuItem.Header>
                                                                     </MenuItem>

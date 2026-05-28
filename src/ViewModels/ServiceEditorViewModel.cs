@@ -16,6 +16,8 @@ public partial class ServiceEditorViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(Title))]
     [NotifyPropertyChangedFor(nameof(IsWorkerType))]
     [NotifyPropertyChangedFor(nameof(IsApiOrGrpcType))]
+    [NotifyPropertyChangedFor(nameof(IsNodeAppType))]
+    [NotifyPropertyChangedFor(nameof(IsDotNetService))]
     private ServiceType _serviceType = ServiceType.WebApi;
 
     [ObservableProperty]
@@ -58,8 +60,15 @@ public partial class ServiceEditorViewModel : ViewModelBase
     [ObservableProperty]
     private EnvironmentVariableViewModel? _selectedEnvVar;
 
+    [ObservableProperty]
+    private string _projectPath = string.Empty;
+
+    [ObservableProperty]
+    private NpmCommandViewModel? _selectedNpmCommand;
+
     public ObservableCollection<GroupConfig> Groups { get; }
     public ObservableCollection<EnvironmentVariableViewModel> EnvironmentVariables { get; } = [];
+    public ObservableCollection<NpmCommandViewModel> NpmCommands { get; } = [];
     public IReadOnlyList<ServiceType> ServiceTypes { get; } = Enum.GetValues<ServiceType>();
 
     public bool IsNew { get; }
@@ -67,6 +76,8 @@ public partial class ServiceEditorViewModel : ViewModelBase
     public string SaveButtonText => IsNew ? "Add Service" : "Save Changes";
     public bool IsWorkerType => ServiceType == ServiceType.Worker;
     public bool IsApiOrGrpcType => ServiceType == ServiceType.Grpc || ServiceType == ServiceType.WebApi;
+    public bool IsNodeAppType => ServiceType == ServiceType.NodeApp;
+    public bool IsDotNetService => ServiceType != ServiceType.NodeApp;
 
     public ServiceEditorViewModel(ObservableCollection<GroupConfig> groups)
     {
@@ -88,9 +99,20 @@ public partial class ServiceEditorViewModel : ViewModelBase
         _healthCheckUrl = config.HealthCheckUrl;
         _useWindowsService = config.UseWindowsService;
         _displayOrder = config.DisplayOrder ?? 999;
+        _projectPath = config.ProjectPath;
+        
         foreach (var (key, value) in config.Environment)
         {
             EnvironmentVariables.Add(new EnvironmentVariableViewModel(key, value));
+        }
+
+        // Load npm commands
+        if (config.NpmCommands?.Count > 0)
+        {
+            foreach (var cmd in config.NpmCommands)
+            {
+                NpmCommands.Add(new NpmCommandViewModel(cmd.Name, cmd.Command));
+            }
         }
 
         Groups = groups;
@@ -118,23 +140,51 @@ public partial class ServiceEditorViewModel : ViewModelBase
         config.DisplayName = DisplayName;
         config.GroupId = GroupId;
         config.Type = ServiceType;
-        config.ExecutablePath = ExecutablePath;
-        config.CsprojPath = CsprojPath;
-        config.Arguments = Arguments;
-        config.WorkingDirectory = WorkingDirectory;
-        if (!IsApiOrGrpcType || string.IsNullOrWhiteSpace(PortText))
-        {
-            config.Port = null;
-        }
-        else if (ushort.TryParse(PortText, out var port) && port > 0)
-        {
-            config.Port = port;
-        }
-
-        config.HealthCheckUrl = IsApiOrGrpcType ? HealthCheckUrl : string.Empty;
-        config.UseWindowsService = IsWorkerType && UseWindowsService;
         config.DisplayOrder = DisplayOrder;
         config.Environment = EnvironmentVariables.ToDictionary(e => e.Key, e => e.Value);
+
+        if (IsNodeAppType)
+        {
+            // NodeApp type - clear .NET specific fields
+            config.ExecutablePath = string.Empty;
+            config.CsprojPath = string.Empty;
+            config.Arguments = string.Empty;
+            config.WorkingDirectory = string.Empty;
+            config.Port = null;
+            config.HealthCheckUrl = string.Empty;
+            config.UseWindowsService = false;
+
+            // Set NodeApp specific fields
+            config.ProjectPath = ProjectPath;
+            config.NpmCommands = NpmCommands
+                .Where(c => !string.IsNullOrWhiteSpace(c.Name) && !string.IsNullOrWhiteSpace(c.Command))
+                .Select(c => new NpmCommandConfig { Name = c.Name, Command = c.Command })
+                .ToList();
+        }
+        else
+        {
+            // .NET service type
+            config.ExecutablePath = ExecutablePath;
+            config.CsprojPath = CsprojPath;
+            config.Arguments = Arguments;
+            config.WorkingDirectory = WorkingDirectory;
+            
+            if (!IsApiOrGrpcType || string.IsNullOrWhiteSpace(PortText))
+            {
+                config.Port = null;
+            }
+            else if (ushort.TryParse(PortText, out var port) && port > 0)
+            {
+                config.Port = port;
+            }
+
+            config.HealthCheckUrl = IsApiOrGrpcType ? HealthCheckUrl : string.Empty;
+            config.UseWindowsService = IsWorkerType && UseWindowsService;
+
+            // Clear NodeApp specific fields
+            config.ProjectPath = string.Empty;
+            config.NpmCommands = [];
+        }
     }
 
     public ManagedServiceConfig ToConfig()
@@ -225,5 +275,51 @@ public partial class ServiceEditorViewModel : ViewModelBase
         Groups.Add(newGroup);
         GroupId = trimmed;
         NewGroupName = string.Empty;
+    }
+
+    [RelayCommand]
+    private void BrowseProjectPath()
+    {
+        var dialog = new OpenFolderDialog { Title = "Select Node.js Project Folder" };
+        if (dialog.ShowDialog() == true)
+            ProjectPath = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void AddNpmCommand()
+    {
+        var item = new NpmCommandViewModel();
+        NpmCommands.Add(item);
+        SelectedNpmCommand = item;
+    }
+
+    [RelayCommand]
+    private void RemoveNpmCommand(NpmCommandViewModel? item)
+    {
+        if (item is not null)
+            NpmCommands.Remove(item);
+    }
+
+    [RelayCommand]
+    private void AddDefaultNpmCommands()
+    {
+        var defaults = NpmCommandConfig.CreateDefaults();
+        foreach (var cmd in defaults)
+        {
+            // Only add if not already present (by name)
+            if (!NpmCommands.Any(c => c.Name.Equals(cmd.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                NpmCommands.Add(new NpmCommandViewModel(cmd.Name, cmd.Command));
+            }
+        }
+    }
+
+    partial void OnServiceTypeChanged(ServiceType value)
+    {
+        // When switching to NodeApp, add default npm commands if empty
+        if (value == ServiceType.NodeApp && NpmCommands.Count == 0)
+        {
+            AddDefaultNpmCommands();
+        }
     }
 }

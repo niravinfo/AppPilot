@@ -63,6 +63,7 @@ public class ConfigurationService : IConfigurationService
             service.ExecutablePath = ResolveSinglePath(service.ExecutablePath, basePath);
             service.WorkingDirectory = ResolveSinglePath(service.WorkingDirectory, basePath);
             service.CsprojPath = ResolveSinglePath(service.CsprojPath, basePath);
+            service.ProjectPath = ResolveSinglePath(service.ProjectPath, basePath);
         }
 
         foreach (var repo in settings.GitRepositories)
