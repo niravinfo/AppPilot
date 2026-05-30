@@ -316,7 +316,7 @@
             <StackPanel Orientation="Horizontal">
                 <Border Width="36" Height="36" CornerRadius="10" Margin="0,0,12,0"
                         Background="{DynamicResource DialogIconGradient}">
-                    <Path Data="{StaticResource IconServices}"
+                    <Path Data="{StaticResource IconProfileEditor}"
                           Fill="{DynamicResource DialogIconFill}"
                           Width="18" Height="18"
                           Stretch="Uniform"
