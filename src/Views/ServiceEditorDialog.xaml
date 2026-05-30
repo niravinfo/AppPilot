@@ -8,8 +8,10 @@
         d:DataContext="{d:DesignInstance Type=vm:ServiceEditorViewModel}"
         Title="{Binding Title}"
         Width="680"
+        MinWidth="580"
+        MinHeight="400"
         SizeToContent="Height"
-        MaxHeight="860"
+        MaxHeight="720"
         Background="{DynamicResource WindowBg}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -42,8 +44,8 @@
         </Style>
         <Style TargetType="{x:Type ScrollBar}">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
-            <Setter Property="Width" Value="6"/>
-            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ScrollBar}">

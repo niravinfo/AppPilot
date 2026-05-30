@@ -127,5 +127,38 @@
       "DisplayOrder": 4,
       "Dependencies": []
     }
+  ],
+  // --- Profiles ---
+  // Profiles allow you to group services for quick Start All / Stop All operations.
+  // Instead of starting/stopping all 100+ services, you can select a profile
+  // and only the services in that profile will be affected.
+  // Each service can belong to multiple profiles.
+  // Note: NodeApp services cannot be auto-started/stopped and will be skipped.
+  "Profiles": [
+    {
+      "Id": "backend_dev",
+      "Name": "Backend Development",
+      "Description": "Core backend services for development",
+      "IsDefault": true,
+      "DisplayOrder": 1,
+      // ServiceNames: List of service names (not display names) in this profile
+      // The order here determines the start order (first to last) and stop order (last to first)
+      "ServiceNames": [
+        "MyWorkerService",
+        "MyGrpcApi",
+        "MyWebApi"
+      ]
+    },
+    {
+      "Id": "apis_only",
+      "Name": "APIs Only",
+      "Description": "Only API services without workers",
+      "IsDefault": false,
+      "DisplayOrder": 2,
+      "ServiceNames": [
+        "MyGrpcApi",
+        "MyWebApi"
+      ]
+    }
   ]
 }

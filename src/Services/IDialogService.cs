@@ -8,6 +8,7 @@ public interface IDialogService
     bool? ShowGitRepositoryEditor(GitRepositoryEditorViewModel vm);
     bool? ShowServiceDiscovery(ServiceDiscoveryViewModel vm);
     bool? ShowGroupManagement(GroupManagementViewModel vm);
+    bool? ShowProfileEditor(ProfileEditorViewModel vm);
     bool? ShowSettings(SettingsViewModel vm);
     bool Confirm(string message, string title = "Confirm");
 }

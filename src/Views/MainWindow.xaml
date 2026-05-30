@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="AppPilot"
         Height="660"
-        Width="960"
+        Width="840"
         MinHeight="480"
         MinWidth="720"
         Background="{DynamicResource WindowBg}"
@@ -67,6 +67,196 @@
                                    FontSize="11" Foreground="{DynamicResource TextMuted}"
                                    Margin="0,2,0,0"/>
                     </StackPanel>
+
+                    <!-- Profile Selector -->
+                    <Border Margin="24,0,0,0"
+                            Background="{DynamicResource InputBg}"
+                            BorderBrush="{DynamicResource InputBorder}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="4,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <ComboBox x:Name="ProfileComboBox"
+                                      ItemsSource="{Binding Profiles}"
+                                      SelectedItem="{Binding SelectedProfile}"
+                                      DisplayMemberPath="Name"
+                                      MinWidth="140"
+                                      MaxWidth="200"
+                                      Height="32"
+                                      ToolTip="Select profile for Start All / Stop All">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                        <Setter Property="FontSize" Value="12"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="ItemContainerStyle">
+                                            <Setter.Value>
+                                                <Style TargetType="ComboBoxItem">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                                    <Setter Property="Background" Value="Transparent"/>
+                                                    <Setter Property="Padding" Value="10,7"/>
+                                                    <Setter Property="FontSize" Value="12"/>
+                                                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="ComboBoxItem">
+                                                                <Border x:Name="Bd" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                                    <ContentPresenter/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource BtnHoverFg}"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsSelected" Value="True">
+                                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentBg}"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource AccentFg}"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ComboBox">
+                                                    <Grid x:Name="Root">
+                                                        <Border x:Name="Bd"
+                                                                Background="Transparent"
+                                                                BorderThickness="0"
+                                                                CornerRadius="6">
+                                                            <Grid Margin="8,0,0,0">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="24"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0"
+                                                                           VerticalAlignment="Center"
+                                                                           IsHitTestVisible="False">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="{Binding SelectedProfileName}"/>
+                                                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Grid.Column="1" Text="▾"
+                                                                           Foreground="{DynamicResource TextMuted}"
+                                                                           FontSize="10"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           IsHitTestVisible="False"/>
+                                                            </Grid>
+                                                        </Border>
+                                                        <ToggleButton Focusable="False"
+                                                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                                                      Background="Transparent" BorderThickness="0">
+                                                            <ToggleButton.Template>
+                                                                <ControlTemplate TargetType="ToggleButton">
+                                                                    <Border Background="Transparent"/>
+                                                                </ControlTemplate>
+                                                            </ToggleButton.Template>
+                                                        </ToggleButton>
+                                                        <Popup x:Name="PART_Popup"
+                                                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                                                               Placement="Bottom"
+                                                               AllowsTransparency="True"
+                                                               Focusable="False"
+                                                               PopupAnimation="Slide">
+                                                            <Border Background="{DynamicResource InputBg}"
+                                                                    BorderBrush="{DynamicResource InputBorder}"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="6"
+                                                                    MinWidth="{Binding ActualWidth, ElementName=Root}"
+                                                                    Margin="0,2,0,0">
+                                                                <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                                    <StackPanel>
+                                                                        <!-- Default option -->
+                                                                        <Border Padding="10,7" Cursor="Hand"
+                                                                                MouseLeftButtonDown="DefaultProfile_Click">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding SelectedProfile}" Value="{x:Null}">
+                                                                                            <Setter Property="Background" Value="{DynamicResource AccentBg}"/>
+                                                                                        </DataTrigger>
+                                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                                            <Setter Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                                                                        </Trigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <TextBlock Text="Default (All Services)" FontSize="12">
+                                                                                <TextBlock.Style>
+                                                                                    <Style TargetType="TextBlock">
+                                                                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding SelectedProfile}" Value="{x:Null}">
+                                                                                                <Setter Property="Foreground" Value="{DynamicResource AccentFg}"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBlock.Style>
+                                                                            </TextBlock>
+                                                                        </Border>
+                                                                        <Rectangle Height="1" Fill="{DynamicResource CardDivider}" Margin="8,2"/>
+                                                                        <ItemsPresenter/>
+                                                                    </StackPanel>
+                                                                </ScrollViewer>
+                                                            </Border>
+                                                        </Popup>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsDropDownOpen" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                            <!-- Add Profile -->
+                            <Button Style="{StaticResource CardBtn}"
+                                    Width="28" Height="28"
+                                    Command="{Binding AddProfileCommand}"
+                                    ToolTip="Create new profile">
+                                <Path Data="{StaticResource IconPlus}"
+                                      Fill="{DynamicResource TextMuted}"
+                                      Width="12" Height="12"
+                                      Stretch="Uniform"/>
+                            </Button>
+                            <!-- Edit Profile -->
+                            <Button Style="{StaticResource CardBtn}"
+                                    Width="28" Height="28"
+                                    Command="{Binding EditProfileCommand}"
+                                    CommandParameter="{Binding SelectedProfile}"
+                                    IsEnabled="{Binding HasSelectedProfile}"
+                                    ToolTip="Edit selected profile">
+                                <Path Data="{StaticResource IconPencil}"
+                                      Fill="{DynamicResource TextMuted}"
+                                      Width="12" Height="12"
+                                      Stretch="Uniform"/>
+                            </Button>
+                            <!-- Delete Profile -->
+                            <Button Style="{StaticResource CardBtn}"
+                                    Width="28" Height="28"
+                                    Command="{Binding DeleteProfileCommand}"
+                                    CommandParameter="{Binding SelectedProfile}"
+                                    IsEnabled="{Binding HasSelectedProfile}"
+                                    ToolTip="Delete selected profile">
+                                <Path Data="{StaticResource IconDelete}"
+                                      Fill="{DynamicResource TextMuted}"
+                                      Width="12" Height="12"
+                                      Stretch="Uniform"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Search bar + Global action buttons -->
@@ -86,8 +276,21 @@
                     </Button>
                     <!-- Start All -->
                     <Button Style="{StaticResource CardBtn}"
-                            Command="{Binding StartAllCommand}"
-                            ToolTip="Start all services">
+                            Command="{Binding StartAllCommand}">
+                        <Button.ToolTip>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Start all services"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasSelectedProfile}" Value="True">
+                                                <Setter Property="Text" Value="Start profile services"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconPlay}"
                               Fill="{DynamicResource StartFg}"
                               Width="14" Height="14"
@@ -96,8 +299,21 @@
                     </Button>
                     <!-- Stop All -->
                     <Button Style="{StaticResource CardBtn}"
-                            Command="{Binding StopAllCommand}"
-                            ToolTip="Stop all services">
+                            Command="{Binding StopAllCommand}">
+                        <Button.ToolTip>
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="Stop all services"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasSelectedProfile}" Value="True">
+                                                <Setter Property="Text" Value="Stop profile services"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button.ToolTip>
                         <Path Data="{StaticResource IconStop}"
                               Fill="{DynamicResource DangerFg}"
                               Width="14" Height="14"

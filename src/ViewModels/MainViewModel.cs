@@ -73,8 +73,34 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<GitRepositoryViewModel> _gitRepositories = new();
 
+    /// <summary>
+    /// Available profiles for quick service selection.
+    /// </summary>
+    [ObservableProperty]
+    private ObservableCollection<ProfileItemViewModel> _profiles = new();
+
+    /// <summary>
+    /// Currently selected profile. Null means "Default" (all services).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedProfileName))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedProfile))]
+    private ProfileItemViewModel? _selectedProfile;
+
+    /// <summary>
+    /// Display name for the selected profile.
+    /// </summary>
+    public string SelectedProfileName => SelectedProfile?.Name ?? "Default (All Services)";
+
+    /// <summary>
+    /// Whether a specific profile is selected.
+    /// </summary>
+    public bool HasSelectedProfile => SelectedProfile != null;
+
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
+    private List<ProfileConfig> _profileConfigs = new();
+    private bool _isLoadingProfile = false;
 
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
@@ -291,9 +317,71 @@ public partial class MainViewModel : ViewModelBase
 
         _ = Task.WhenAll(gitInitTasks);
 
+        // Load profiles
+        _profileConfigs = settings.Profiles ?? [];
+        LoadProfiles();
+
         RebuildFilteredGroups();
         RebuildFilteredGitRepositories();
         StatusText = $"Loaded {_serviceConfigs.Count} services";
+    }
+
+    private void LoadProfiles()
+    {
+        _isLoadingProfile = true;
+
+        try
+        {
+            Profiles.Clear();
+            SelectedProfile = null;
+
+            foreach (var config in _profileConfigs
+                .OrderBy(p => p.DisplayOrder)
+                    .ThenBy(p => p.Name))
+            {
+                // Ensure deserialized profile has no null properties
+                config.EnsureNotNull();
+                Profiles.Add(new ProfileItemViewModel(config));
+            }
+
+            // Load the default profile or the last selected profile
+            var settings = _configService.Settings;
+            var defaultProfile = Profiles.FirstOrDefault(p => p.IsDefault);
+            var lastSelectedId = settings.AppPilot.LastSelectedProfileId;
+
+            if (defaultProfile != null)
+            {
+                SelectedProfile = defaultProfile;
+            }
+            else if (!string.IsNullOrEmpty(lastSelectedId))
+            {
+                SelectedProfile = Profiles.FirstOrDefault(p => p.Id == lastSelectedId);
+            }
+        }
+        finally
+        {
+            _isLoadingProfile = false;
+        }
+    }
+
+    partial void OnSelectedProfileChanged(ProfileItemViewModel? value)
+    {
+        // Skip processing during initial load to avoid redundant saves and rebuilds
+        if (_isLoadingProfile)
+        {
+            return;
+        }
+
+        // Save the selected profile ID for next session
+        var settings = _configService.Settings;
+        settings.AppPilot.LastSelectedProfileId = value?.Id;
+        _configService.Save();
+
+        // Rebuild the filtered groups to show only services from the selected profile
+        RebuildFilteredGroups();
+
+        OnPropertyChanged(nameof(SelectedProfileName));
+        OnPropertyChanged(nameof(HasSelectedProfile));
     }
 
     [RelayCommand]
@@ -380,14 +468,18 @@ public partial class MainViewModel : ViewModelBase
     private async Task StartAllAsync()
     {
         IsLoading = true;
-        StatusText = "Starting all services...";
+        var profileName = SelectedProfile?.Name ?? "all";
+        StatusText = $"Starting {profileName} services...";
 
         try
         {
+            // Get services to start based on selected profile
+            var servicesToStart = GetServicesForCurrentProfile();
+
             // Optimize: Use List and manual sort to avoid LINQ allocations
             // Exclude NodeApp services from global start (they don't support automatic start/stop)
             var orderedServices = new List<ServiceItemViewModel>();
-            foreach (var s in Services)
+            foreach (var s in servicesToStart)
             {
                 if (s.Status != ServiceStatus.Running && s.Config.Type != ServiceType.NodeApp)
                 {
@@ -409,7 +501,9 @@ public partial class MainViewModel : ViewModelBase
             }
 
             TriggerImmediateRefresh(startedServices);
-            StatusText = "All services started";
+            StatusText = SelectedProfile != null
+                ? $"Profile '{SelectedProfile.Name}' services started"
+                : "All services started";
         }
         finally
         {
@@ -421,14 +515,18 @@ public partial class MainViewModel : ViewModelBase
     private async Task StopAllAsync()
     {
         IsLoading = true;
-        StatusText = "Stopping all services...";
+        var profileName = SelectedProfile?.Name ?? "all";
+        StatusText = $"Stopping {profileName} services...";
 
         try
         {
+            // Get services to stop based on selected profile
+            var servicesToStop = GetServicesForCurrentProfile();
+
             // Optimize: Use List and manual sort to avoid LINQ allocations
             // Exclude NodeApp services from global stop (they don't support automatic start/stop)
             var orderedServices = new List<ServiceItemViewModel>();
-            foreach (var s in Services)
+            foreach (var s in servicesToStop)
             {
                 if (s.Status == ServiceStatus.Running && s.Config.Type != ServiceType.NodeApp)
                 {
@@ -450,12 +548,46 @@ public partial class MainViewModel : ViewModelBase
             }
 
             TriggerImmediateRefresh(stoppedServices);
-            StatusText = "All services stopped";
+            StatusText = SelectedProfile != null
+                ? $"Profile '{SelectedProfile.Name}' services stopped"
+                : "All services stopped";
         }
         finally
         {
             IsLoading = false;
         }
+    }
+
+    /// <summary>
+    /// Gets services for the currently selected profile, or all services if no profile is selected.
+    /// </summary>
+    private IEnumerable<ServiceItemViewModel> GetServicesForCurrentProfile()
+    {
+        if (SelectedProfile == null)
+        {
+            return Services;
+        }
+
+        var serviceNames = SelectedProfile.Config.ServiceNames;
+        if (serviceNames == null || serviceNames.Count == 0)
+        {
+            return Enumerable.Empty<ServiceItemViewModel>();
+        }
+
+        var profileServiceNames = new HashSet<string>(
+            serviceNames,
+            StringComparer.OrdinalIgnoreCase);
+
+        return Services.Where(s => profileServiceNames.Contains(s.Config.Name));
+    }
+
+    /// <summary>
+    /// Gets services for display based on the currently selected profile.
+    /// Used by RebuildFilteredGroups to filter the service grid.
+    /// </summary>
+    private IEnumerable<ServiceItemViewModel> GetServicesForDisplay()
+    {
+        return GetServicesForCurrentProfile();
     }
 
     public async Task StartServiceAsync(ServiceItemViewModel service)
@@ -506,6 +638,9 @@ public partial class MainViewModel : ViewModelBase
     {
         FilteredGroups.Clear();
 
+        // Get services for the selected profile (or all if no profile selected)
+        var displayServices = GetServicesForDisplay();
+
         // Optimize: Use ReadOnlySpan for string comparison where possible
         var searchLower = SearchText?.ToLowerInvariant();
         var hasSearch = !string.IsNullOrWhiteSpace(searchLower);
@@ -514,7 +649,7 @@ public partial class MainViewModel : ViewModelBase
         var groupedServices = new Dictionary<string, List<ServiceItemViewModel>>();
         var groupConfigs = new Dictionary<string, GroupConfig>();
 
-        foreach (var svc in Services)
+        foreach (var svc in displayServices)
         {
             // Optimize: Skip expensive Contains() calls if no search
             if (hasSearch)
@@ -743,7 +878,130 @@ public partial class MainViewModel : ViewModelBase
         settings.Services = _serviceConfigs;
         settings.GitRepositories = _gitRepositoryConfigs;
         settings.Groups = _serviceGroups.ToList();
+
+        // Enforce only one profile is default
+        if (_profileConfigs.Count > 0)
+        {
+            var defaultProfiles = _profileConfigs.Where(p => p.IsDefault).ToList();
+            if (defaultProfiles.Count > 1)
+            {
+                // Only the last one marked as default remains default
+                foreach (var p in defaultProfiles.Take(defaultProfiles.Count - 1))
+                {
+                    p.IsDefault = false;
+                }
+            }
+        }
+
+        settings.Profiles = _profileConfigs;
         _configService.Save();
+    }
+
+    [RelayCommand]
+    private void AddProfile()
+    {
+        var editorVm = new ProfileEditorViewModel(_serviceConfigs);
+        if (_dialogService.ShowProfileEditor(editorVm) != true)
+        {
+            return;
+        }
+
+        var config = editorVm.ToConfig();
+
+        // If this profile is set as default, clear other defaults
+        if (config.IsDefault)
+        {
+            foreach (var p in _profileConfigs)
+            {
+                p.IsDefault = false;
+            }
+        }
+
+        _profileConfigs.Add(config);
+        var profileVm = new ProfileItemViewModel(config);
+        Profiles.Add(profileVm);
+
+        // Update service counts in UI
+        foreach (var p in Profiles)
+        {
+            p.UpdateFromConfig();
+        }
+
+        SaveConfiguration();
+        StatusText = $"Profile '{config.Name}' created";
+    }
+
+    [RelayCommand]
+    private void EditProfile(ProfileItemViewModel? profileVm)
+    {
+        if (profileVm == null)
+            return;
+
+        var editorVm = new ProfileEditorViewModel(profileVm.Config, _serviceConfigs);
+        if (_dialogService.ShowProfileEditor(editorVm) != true)
+        {
+            return;
+        }
+
+        // If this profile is set as default, clear other defaults
+        if (editorVm.IsDefault && !profileVm.Config.IsDefault)
+        {
+            foreach (var p in _profileConfigs)
+            {
+                p.IsDefault = false;
+            }
+        }
+
+        editorVm.ApplyTo(profileVm.Config);
+        profileVm.UpdateFromConfig();
+
+        // Update all profiles in case default flag changed
+        foreach (var p in Profiles)
+        {
+            p.UpdateFromConfig();
+        }
+
+        // If this is the currently selected profile, rebuild the UI to reflect changes
+        if (SelectedProfile == profileVm)
+        {
+            RebuildFilteredGroups();
+        }
+
+        SaveConfiguration();
+        StatusText = $"Profile '{profileVm.Name}' updated";
+    }
+
+    [RelayCommand]
+    private void DeleteProfile(ProfileItemViewModel? profileVm)
+    {
+        if (profileVm == null)
+            return;
+
+        if (!_dialogService.Confirm(
+            $"Delete profile '{profileVm.Name}'?\n\nThis will not affect the services themselves.",
+            "Delete Profile"))
+        {
+            return;
+        }
+
+        _profileConfigs.Remove(profileVm.Config);
+        Profiles.Remove(profileVm);
+
+        if (SelectedProfile == profileVm)
+        {
+            SelectedProfile = null;
+        }
+
+        SaveConfiguration();
+        StatusText = $"Profile '{profileVm.Name}' deleted";
+    }
+
+    [RelayCommand]
+    private void ClearSelectedProfile()
+    {
+        SelectedProfile = null;
+        // Note: OnSelectedProfileChanged will be called automatically, which will trigger RebuildFilteredGroups()
+        StatusText = "Switched to Default (All Services)";
     }
 
     [RelayCommand]

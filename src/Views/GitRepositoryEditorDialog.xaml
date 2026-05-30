@@ -8,8 +8,10 @@
         d:DataContext="{d:DesignInstance Type=vm:GitRepositoryEditorViewModel}"
         Title="{Binding Title}"
         Width="580"
+        MinWidth="480"
+        MinHeight="540"
         SizeToContent="Height"
-        MaxHeight="600"
+        MaxHeight="700"
         Background="{DynamicResource WindowBg}"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -41,8 +43,8 @@
         </Style>
         <Style TargetType="{x:Type ScrollBar}">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
-            <Setter Property="Width" Value="6"/>
-            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ScrollBar}">
@@ -175,9 +177,11 @@
             <StackPanel Orientation="Horizontal">
                 <Border Width="34" Height="34" CornerRadius="9" Margin="0,0,12,0"
                         Background="{DynamicResource DialogIconGradient}">
-                    <TextBlock Text="⎇" FontSize="16"
-                               Foreground="{DynamicResource DialogIconFill}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Path Data="{StaticResource IconSettings}"
+                          Fill="{DynamicResource DialogIconFill}"
+                          Width="18" Height="18"
+                          Stretch="Uniform"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="{Binding Title}"

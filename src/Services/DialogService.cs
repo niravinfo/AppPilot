@@ -1,5 +1,6 @@
 using AppPilot.ViewModels;
 using AppPilot.Views;
+using System;
 using System.Windows;
 
 namespace AppPilot.Services;
@@ -36,6 +37,17 @@ public class DialogService : IDialogService
     public bool? ShowGroupManagement(GroupManagementViewModel vm)
     {
         var dialog = new GroupManagementDialog(vm)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        return dialog.ShowDialog();
+    }
+
+    public bool? ShowProfileEditor(ProfileEditorViewModel vm)
+    {
+        ArgumentNullException.ThrowIfNull(vm);
+        
+        var dialog = new ProfileEditorDialog(vm)
         {
             Owner = Application.Current.MainWindow
         };
