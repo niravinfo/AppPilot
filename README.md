@@ -1,21 +1,43 @@
 # AppPilot
 
-AppPilot is a lightweight Windows desktop application for managing multiple .NET worker services, gRPC APIs, and Web APIs locally during development. It provides a unified UI to install, start, stop, build, and monitor the status of multiple .NET projects ideal for microservices development.
+AppPilot is a powerful yet lightweight Windows desktop application for managing multiple .NET services, Node.js applications, and git repositories locally during development. It provides a unified UI to discover, configure, start, stop, build, and monitor the status of your entire development ecosystem — perfect for microservices and full-stack development.
 
 ![Main Window](images/1%20-%20Main%20Window.png)
 
 ## Key Features
 
-- **Unified Service Management:** Start, stop, and monitor .NET Worker, gRPC, and Web API projects from a single UI.
+### Service Management
+- **Multi-Platform Support:** Manage .NET Worker Services, gRPC APIs, Web APIs, and Node.js/React applications from a single UI.
 - **Windows Service Support:** Install/uninstall .NET Worker Services as Windows Services.
-- **Service Discovery:** Automatically discover .NET services from a root directory — no manual configuration needed.
-- **Group Management:** Organize services into custom groups with names, colors, and display order.
-- **Individual Service Build:** Build any service directly from the UI using its `.csproj` file.
-- **Dependency Handling:** Define and visualize service dependencies.
-- **Environment Management:** Set environment variables per service.
-- **Health Checks:** Monitor service health via configurable endpoints.
-- **Auto-Start & Ordering:** Auto-start services and control their startup order.
-- **Configurable via JSON:** All services, groups, and repositories are defined in easy-to-edit JSON files.
+- **Process Management:** Start, stop, and restart services with real-time status monitoring.
+- **Health Checks:** Monitor service health via configurable HTTP endpoints.
+- **Service Discovery:** Automatically discover .NET services from any directory — no manual configuration needed.
+- **Build Integration:** Build individual services or entire solutions directly from the UI.
+
+### Organization & Workflow
+- **Group Management:** Organize services into custom groups with colors, names, and display order.
+- **Profile Management:** Create profiles to quickly start/stop subsets of services for different development scenarios.
+- **Search & Filter:** Quickly find services with instant search across all tabs.
+- **Service Dependencies:** Define startup dependencies to ensure correct initialization order.
+
+### Git Integration
+- **Repository Management:** Track multiple git repositories with branch and commit information.
+- **Quick Git Operations:** Pull latest changes directly from the UI.
+- **Linked Services:** Link services to repositories for coordinated builds and deployments.
+- **Solution Builds:** Build entire solutions from repository configurations.
+
+### Node.js/React Support
+- **Custom npm Commands:** Configure and run npm scripts (build, start, serve, preview) with one click.
+- **Project Management:** Manage Node.js applications alongside .NET services.
+- **Visual Indicators:** Dedicated badges and colors for Node.js applications.
+
+### Developer Experience
+- **Light & Dark Themes:** Seamless theme switching with optimized color palettes.
+- **Environment Variables:** Configure per-service environment variables.
+- **Auto-Start & Ordering:** Define startup order and auto-start services on application launch.
+- **Configurable Polling:** Adjust status refresh intervals to balance responsiveness and performance.
+- **Minimize to Tray:** Run AppPilot in the background without cluttering your taskbar.
+- **JSON Configuration:** All settings stored in easy-to-edit JSON files for version control and team sharing.
 
 ## Getting Started
 
@@ -103,6 +125,103 @@ AppPilot can automatically discover .NET services from a directory, eliminating 
 - Create new groups on the fly — if a group with the same name already exists, it will be auto-selected.
 - Use the **Clear** button to remove group assignments from selected services.
 
+## Profile Management
+
+Profiles allow you to define subsets of services for different development scenarios (e.g., "Frontend Only", "Backend Services", "Full Stack"). 
+
+### Creating and Using Profiles
+
+1. Click the **Profiles** button in the toolbar to open the Profile Editor.
+2. Create a new profile and give it a meaningful name and optional description.
+3. Select which services should be included in this profile.
+4. Mark a profile as "Default" to automatically load it on startup.
+5. Use the profile dropdown in the main toolbar to switch between profiles quickly.
+
+### Profile Operations
+
+- **Switch Profiles:** Select a profile from the dropdown to filter services in the main view.
+- **Start/Stop Profile:** Use group actions to start or stop all services in the active profile.
+- **Edit Profiles:** Modify profile membership, reorder services, or change the default profile.
+- **Default Profile:** The "Default (All Services)" profile shows all configured services.
+
+Profiles are saved to `AppData.json` and persist across application restarts. The last selected profile is remembered.
+
+## Git Repository Management
+
+Track and manage your git repositories directly from AppPilot.
+
+### Adding Repositories
+
+1. Switch to the **Git Repos** tab.
+2. Click **Add Repository** to open the repository editor.
+3. Configure:
+   - **Name:** Unique identifier for the repository.
+   - **Display Name:** Friendly name shown in the UI.
+   - **Local Path:** Path to your git repository folder.
+   - **Solution Path:** Path to `.sln`, `.slnx`, or `.csproj` for the "Build Solution" feature.
+   - **Default Branch:** The main branch (e.g., `main`, `master`, `develop`).
+   - **Linked Services:** Associate services with this repository for coordinated operations.
+
+### Repository Operations
+
+- **Pull:** Fetch and merge the latest changes from the remote.
+- **View Branch:** See the current active branch.
+- **View Last Commit:** Display the most recent commit hash and message.
+- **Build Solution:** Run `dotnet build` on the configured solution or project file.
+- **Build/Restart Linked Services:** Quickly build and restart all services linked to this repository.
+- **Open in Explorer:** Navigate to the repository folder.
+
+Git repositories are configured in the `GitRepositories` section of `AppData.json`.
+
+## Node.js and React Application Support
+
+AppPilot fully supports Node.js and React applications alongside .NET services.
+
+### Configuring Node.js Applications
+
+1. Set the service `Type` to `NodeApp` in the Service Editor or `AppData.json`.
+2. Configure the `ProjectPath` to point to your Node.js project folder (containing `package.json`).
+3. Define custom npm commands in the `NpmCommands` array:
+
+```json
+{
+  "Name": "MyReactApp",
+  "DisplayName": "React Frontend",
+  "Type": "NodeApp",
+  "ProjectPath": "frontend",
+  "NpmCommands": [
+    { "Name": "Build", "Command": "npm run build" },
+    { "Name": "Start", "Command": "npm run start" },
+    { "Name": "Preview", "Command": "npm run preview" }
+  ]
+}
+```
+
+### Using npm Commands
+
+- Each npm command appears as a clickable button on the Node.js service card.
+- The first letter of the command name is shown on the button (e.g., "B" for Build, "S" for Start).
+- Commands execute in the project's working directory with output logged to the AppPilot log directory.
+
+**Note:** Node.js applications don't have traditional start/stop controls since they're managed via npm commands.
+
+## Theme Support
+
+AppPilot supports both Light and Dark themes with carefully optimized color palettes.
+
+### Switching Themes
+
+- **Quick Toggle:** Click the theme toggle button (sun/moon icon) in the toolbar to instantly switch themes.
+- **Settings:** Open Settings to view and change the theme, with a preview of your selection.
+
+### Theme Features
+
+- **Optimized Colors:** Distinct color schemes for service types, groups, and status indicators in both themes.
+- **Automatic Persistence:** Your theme preference is saved and restored on application restart.
+- **Performance Optimized:** Cached brushes ensure smooth theme transitions without memory overhead.
+
+The current theme is stored in `ui-settings.json` in the application directory.
+
 ## Group Management
 
 Organize your services into logical groups for better visual organization.
@@ -125,19 +244,291 @@ Organize your services into logical groups for better visual organization.
 - New groups are assigned `DisplayOrder = max existing order + 1`.
 - Ungrouped services appear under "Ungrouped" in the main UI.
 
+## Settings & Configuration
+
+### Application Settings
+
+Access Settings via the toolbar button to configure:
+
+- **Polling Interval:** How frequently AppPilot checks service status (1-3600 seconds). Default: 30 seconds.
+- **Log Directory:** Where service logs are stored. Default: `Logs` folder in the application directory.
+- **Theme:** Choose between Light and Dark themes.
+- **Application Info:** View version number, author, and GitHub repository link.
+
+Settings are saved immediately and most take effect without restarting the application.
+
+### Configuration Files
+
+AppPilot uses two main configuration files:
+
+1. **`AppData.json`** — Stores all service, group, repository, and profile configurations.
+   - Located in the application directory or at a custom path (configured via `AppPilot.ConfigurationPath`).
+   - Can be version-controlled and shared across teams.
+   - Supports relative paths (relative to `AppPilot.BasePath`) or absolute paths.
+
+2. **`ui-settings.json`** — Stores UI preferences (theme).
+   - Located in the application directory.
+   - Automatically created and managed by AppPilot.
+
+### Environment Variables
+
+Set environment variables for any service:
+
+1. Open the Service Editor for a service.
+2. Add key-value pairs in the Environment Variables section.
+3. Variables are applied when the service starts.
+
+Common examples:
+- `ASPNETCORE_ENVIRONMENT=Development`
+- `DOTNET_ENVIRONMENT=Development`
+- `ConnectionStrings__DefaultConnection=Server=localhost;...`
+
 ## Advanced Configuration
 
-- Use `Groups` to organize services.
-- Use `GitRepositories` to link code repositories for quick access.
-- Use `Dependencies` to specify service startup order.
+### Service Dependencies
+
+Define dependencies to ensure services start in the correct order:
+
+```json
+{
+  "Name": "WebApi",
+  "Dependencies": ["DatabaseService", "CacheService"]
+}
+```
+
+AppPilot will ensure dependent services start first.
+
+### Auto-Start Configuration
+
+Use `DisplayOrder` to control startup sequence when starting multiple services:
+
+```json
+{
+  "Name": "DatabaseService",
+  "DisplayOrder": 1
+},
+{
+  "Name": "WebApi",
+  "DisplayOrder": 2
+}
+```
+
+### Health Check Configuration
+
+Configure health check URLs for automatic monitoring:
+
+```json
+{
+  "Name": "MyApi",
+  "Port": 5000,
+  "HealthCheckUrl": "http://localhost:5000/health"
+}
+```
+
+If `HealthCheckUrl` is not specified but `Port` is set, AppPilot generates a default URL (`http://localhost:{Port}/`).
 
 ## Who Is It For?
 
-- .NET developers working with multiple local services.
-- Teams needing a simple, shareable way to manage dev environments.
-
+- **.NET Developers:** Working with multiple microservices, Worker Services, gRPC, or Web APIs.
+- **Full-Stack Developers:** Managing both .NET backend services and Node.js/React frontend applications.
+- **Team Leads:** Needing a shareable, version-controlled way to standardize local development environments.
+- **DevOps Engineers:** Prototyping and testing service orchestration locally before deploying to production.
+- **Anyone** who wants a simple, unified interface for managing complex local development setups.
 
 ## Example Config
 
+A comprehensive example showing all features:
+
+```json
+{
+  "AppPilot": {
+    "BasePath": "D:\\MyProjects",
+    "PollingIntervalMs": 30000,
+    "MinimizeToTray": true,
+    "LogDirectory": "Logs",
+    "LastSelectedProfileId": "frontend-dev"
+  },
+  "Services": [
+    {
+      "Name": "AuthService",
+      "DisplayName": "Authentication Service",
+      "Type": "Worker",
+      "GroupId": "backend",
+      "ExecutablePath": "AuthService\\bin\\Debug\\net10.0\\AuthService.exe",
+      "WorkingDirectory": "AuthService\\bin\\Debug\\net10.0",
+      "CsprojPath": "AuthService/AuthService.csproj",
+      "Port": 5001,
+      "HealthCheckUrl": "http://localhost:5001/health",
+      "DisplayOrder": 1,
+      "Environment": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnectionStrings__Redis": "localhost:6379"
+      },
+      "UseWindowsService": false
+    },
+    {
+      "Name": "ApiGateway",
+      "DisplayName": "API Gateway",
+      "Type": "WebApi",
+      "GroupId": "backend",
+      "ExecutablePath": "Gateway\\bin\\Debug\\net10.0\\Gateway.exe",
+      "WorkingDirectory": "Gateway\\bin\\Debug\\net10.0",
+      "CsprojPath": "Gateway/Gateway.csproj",
+      "Port": 5000,
+      "HealthCheckUrl": "http://localhost:5000/health",
+      "DisplayOrder": 2,
+      "Dependencies": ["AuthService"],
+      "Environment": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "Name": "OrderService",
+      "DisplayName": "Order Service (gRPC)",
+      "Type": "Grpc",
+      "GroupId": "backend",
+      "ExecutablePath": "OrderService\\bin\\Debug\\net10.0\\OrderService.exe",
+      "WorkingDirectory": "OrderService\\bin\\Debug\\net10.0",
+      "CsprojPath": "OrderService/OrderService.csproj",
+      "Port": 5002,
+      "DisplayOrder": 3
+    },
+    {
+      "Name": "ReactFrontend",
+      "DisplayName": "React Dashboard",
+      "Type": "NodeApp",
+      "GroupId": "frontend",
+      "ProjectPath": "dashboard-ui",
+      "DisplayOrder": 10,
+      "NpmCommands": [
+        { "Name": "Build", "Command": "npm run build" },
+        { "Name": "Start", "Command": "npm run dev" },
+        { "Name": "Test", "Command": "npm test" },
+        { "Name": "Lint", "Command": "npm run lint" }
+      ]
+    }
+  ],
+  "Groups": [
+    {
+      "Id": "backend",
+      "Name": "Backend Services",
+      "DisplayOrder": 1,
+      "ColorCode": "#6366F1"
+    },
+    {
+      "Id": "frontend",
+      "Name": "Frontend Apps",
+      "DisplayOrder": 2,
+      "ColorCode": "#22C55E"
+    }
+  ],
+  "GitRepositories": [
+    {
+      "Name": "main-repo",
+      "DisplayName": "Main Solution",
+      "LocalPath": "D:\\MyProjects\\MainSolution",
+      "SolutionPath": "MainSolution.slnx",
+      "DefaultBranch": "main",
+      "LinkedServiceNames": ["AuthService", "ApiGateway", "OrderService"]
+    },
+    {
+      "Name": "frontend-repo",
+      "DisplayName": "Dashboard UI",
+      "LocalPath": "D:\\MyProjects\\dashboard-ui",
+      "DefaultBranch": "develop",
+      "LinkedServiceNames": ["ReactFrontend"]
+    }
+  ],
+  "Profiles": [
+    {
+      "Id": "frontend-dev",
+      "Name": "Frontend Development",
+      "Description": "Frontend with minimal backend",
+      "IsDefault": true,
+      "DisplayOrder": 1,
+      "ServiceNames": ["ApiGateway", "ReactFrontend"]
+    },
+    {
+      "Id": "full-stack",
+      "Name": "Full Stack",
+      "Description": "All services for full-stack development",
+      "IsDefault": false,
+      "DisplayOrder": 2,
+      "ServiceNames": ["AuthService", "ApiGateway", "OrderService", "ReactFrontend"]
+    },
+    {
+      "Id": "backend-only",
+      "Name": "Backend Only",
+      "Description": "All backend services for API development",
+      "IsDefault": false,
+      "DisplayOrder": 3,
+      "ServiceNames": ["AuthService", "ApiGateway", "OrderService"]
+    }
+  ]
+}
+```
+
 See [`AppData.example.json`](src/AppData.example.json) for a full example.
+
+---
+
+## Screenshots
+
+### Main Services Tab
+![Main Window](images/1%20-%20Main%20Window.png)
+
+### Git Repositories Tab
+Manage your repositories, pull changes, and build solutions.
+
+### Service Discovery
+Automatically discover services from any directory.
+
+### Dark Theme
+Seamless dark mode for late-night coding sessions.
+
+---
+
+## Tips & Best Practices
+
+1. **Use Profiles:** Create profiles for different development scenarios (frontend-only, backend-only, full-stack).
+2. **Version Control:** Commit `AppData.json` to your repository so the entire team shares the same configuration.
+3. **Relative Paths:** Use relative paths (relative to `BasePath`) for portability across different machines.
+4. **Health Checks:** Configure health check URLs to get instant feedback on service availability.
+5. **Service Discovery:** Use the discovery feature to quickly onboard new projects instead of manual configuration.
+6. **Git Integration:** Link services to repositories to build and restart multiple related services with one click.
+7. **Group Organization:** Use groups and colors to visually separate different layers (database, backend, frontend, infrastructure).
+8. **npm Commands:** Customize npm commands for your Node.js projects beyond the defaults (e.g., "Storybook", "E2E Tests").
+
+---
+
+## Requirements
+
+- **OS:** Windows 10/11
+- **.NET Runtime:** .NET 10 or later
+- **Git:** Required for Git repository features
+- **Node.js:** Required for managing Node.js/React applications
+
+---
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests on [GitHub](https://github.com/niravinfo/AppPilot).
+
+### Feature Requests
+
+Have ideas for new features? Check out our [Feature Ideas](FEATURE_IDEAS.md) document for planned enhancements, or suggest your own!
+
+---
+
+## License
+
+See [LICENSE.txt](LICENSE.txt) for details.
+
+---
+
+## Author
+
+**Nirav Patel**
+
+For questions, suggestions, or issues, visit the [GitHub repository](https://github.com/niravinfo/AppPilot).
 
