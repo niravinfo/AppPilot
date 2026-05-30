@@ -42,6 +42,15 @@ public class DialogService : IDialogService
         return dialog.ShowDialog();
     }
 
+    public bool? ShowProfileEditor(ProfileEditorViewModel vm)
+    {
+        var dialog = new ProfileEditorDialog(vm)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        return dialog.ShowDialog();
+    }
+
     public bool? ShowSettings(SettingsViewModel vm)
     {
         var dialog = new SettingsDialog
