@@ -329,12 +329,15 @@ public partial class MainViewModel : ViewModelBase
     private void LoadProfiles()
     {
         _isLoadingProfile = true;
+
         try
         {
             Profiles.Clear();
             SelectedProfile = null;
 
-            foreach (var config in _profileConfigs.OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name))
+            foreach (var config in _profileConfigs
+                .OrderBy(p => p.DisplayOrder)
+                    .ThenBy(p => p.Name))
             {
                 // Ensure deserialized profile has no null properties
                 config.EnsureNotNull();
@@ -346,14 +349,13 @@ public partial class MainViewModel : ViewModelBase
             var defaultProfile = Profiles.FirstOrDefault(p => p.IsDefault);
             var lastSelectedId = settings.AppPilot.LastSelectedProfileId;
 
-            if (!string.IsNullOrEmpty(lastSelectedId))
-            {
-                SelectedProfile = Profiles.FirstOrDefault(p => p.Id == lastSelectedId);
-            }
-
-            if (SelectedProfile == null && defaultProfile != null)
+            if (defaultProfile != null)
             {
                 SelectedProfile = defaultProfile;
+            }
+            else if (!string.IsNullOrEmpty(lastSelectedId))
+            {
+                SelectedProfile = Profiles.FirstOrDefault(p => p.Id == lastSelectedId);
             }
         }
         finally
@@ -876,6 +878,21 @@ public partial class MainViewModel : ViewModelBase
         settings.Services = _serviceConfigs;
         settings.GitRepositories = _gitRepositoryConfigs;
         settings.Groups = _serviceGroups.ToList();
+
+        // Enforce only one profile is default
+        if (_profileConfigs.Count > 0)
+        {
+            var defaultProfiles = _profileConfigs.Where(p => p.IsDefault).ToList();
+            if (defaultProfiles.Count > 1)
+            {
+                // Only the last one marked as default remains default
+                foreach (var p in defaultProfiles.Take(defaultProfiles.Count - 1))
+                {
+                    p.IsDefault = false;
+                }
+            }
+        }
+
         settings.Profiles = _profileConfigs;
         _configService.Save();
     }

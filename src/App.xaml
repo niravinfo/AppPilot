@@ -1,6 +1,7 @@
 <Application x:Class="AppPilot.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AppPilot.Converters">
     <Application.Resources>
         <ResourceDictionary>
             <!-- SVG Icons as Path Geometries -->
@@ -34,7 +35,7 @@
             <Geometry x:Key="IconLightning">M30.8 2.29a.49.49 0 0 0-.45-.29H16.42a.5.5 0 0 0-.42.23l-10.71 17a.49.49 0 0 0 .41.77h7.67L6.6 33.25a.52.52 0 0 0 .46.75h3a.5.5 0 0 0 .37-.16L28 14.85a.5.5 0 0 0-.37-.85h-6.74l9.83-11.18a.49.49 0 0 0 .08-.53</Geometry>
 
             <!-- Converters -->
-            <local:WorkAreaHeightConverter x:Key="WorkAreaHeightConverter" xmlns:local="clr-namespace:AppPilot.Converters"/>
+            <local:WorkAreaHeightConverter x:Key="WorkAreaHeightConverter"/>
 
             <!-- Scrollbar thumb -->
             <Style x:Key="ScrollThumbStyle" TargetType="{x:Type Thumb}">

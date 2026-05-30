@@ -1,6 +1,5 @@
 using AppPilot.ViewModels;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace AppPilot.Views;
@@ -26,9 +25,17 @@ public partial class ProfileEditorDialog : Window
             Width = workArea.Width * 0.9;
         }
 
-        // Center on screen after resize
-        Left = (workArea.Width - Width) / 2 + workArea.Left;
-        Top = (workArea.Height - Height) / 2 + workArea.Top;
+        // Re-center after resize (prefer owner, fall back to work area)
+        if (Owner != null)
+        {
+            Left = Owner.Left + (Owner.ActualWidth - Width) / 2;
+            Top = Owner.Top + (Owner.ActualHeight - Height) / 2;
+        }
+        else
+        {
+            Left = (workArea.Width - Width) / 2 + workArea.Left;
+            Top = (workArea.Height - Height) / 2 + workArea.Top;
+        }
     }
 
     private void OnSave(object sender, RoutedEventArgs e)
