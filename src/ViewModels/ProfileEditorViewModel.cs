@@ -16,6 +16,7 @@ public partial class ProfileEditorViewModel : ViewModelBase
 {
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(CanSave))]
     private string _name = string.Empty;
 
     [ObservableProperty]
@@ -154,10 +155,30 @@ public partial class ProfileEditorViewModel : ViewModelBase
             return;
 
         var service = SelectedAvailableService;
+        var currentIndex = FilteredAvailableServices.IndexOf(service);
+        
         AvailableServices.Remove(service);
         FilteredAvailableServices.Remove(service);
         ProfileServices.Add(service);
-        SelectedAvailableService = null;
+        
+        // Auto-select the next item in the filtered list
+        if (FilteredAvailableServices.Count > 0)
+        {
+            // If we removed the last item, select the new last item
+            if (currentIndex >= FilteredAvailableServices.Count)
+            {
+                SelectedAvailableService = FilteredAvailableServices[FilteredAvailableServices.Count - 1];
+            }
+            else
+            {
+                // Select the item that is now at the current index (the next item)
+                SelectedAvailableService = FilteredAvailableServices[currentIndex];
+            }
+        }
+        else
+        {
+            SelectedAvailableService = null;
+        }
     }
 
     [RelayCommand]
@@ -179,6 +200,8 @@ public partial class ProfileEditorViewModel : ViewModelBase
             return;
 
         var service = SelectedProfileService;
+        var currentIndex = ProfileServices.IndexOf(service);
+        
         ProfileServices.Remove(service);
         
         // Add back to available services in proper order
@@ -195,7 +218,25 @@ public partial class ProfileEditorViewModel : ViewModelBase
         }
         AvailableServices.Insert(insertIndex, service);
         UpdateFilteredServices();
-        SelectedProfileService = null;
+        
+        // Auto-select the next item in the profile services list
+        if (ProfileServices.Count > 0)
+        {
+            // If we removed the last item, select the new last item
+            if (currentIndex >= ProfileServices.Count)
+            {
+                SelectedProfileService = ProfileServices[ProfileServices.Count - 1];
+            }
+            else
+            {
+                // Select the item that is now at the current index (the next item)
+                SelectedProfileService = ProfileServices[currentIndex];
+            }
+        }
+        else
+        {
+            SelectedProfileService = null;
+        }
     }
 
     [RelayCommand]

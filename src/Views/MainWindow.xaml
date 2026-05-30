@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="AppPilot"
         Height="660"
-        Width="960"
+        Width="840"
         MinHeight="480"
         MinWidth="720"
         Background="{DynamicResource WindowBg}"

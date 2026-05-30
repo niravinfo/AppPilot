@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
         Title="Settings"
         Width="520"
-        Height="580"
+        Height="720"
         MinWidth="480"
         MinHeight="520"
         Background="{DynamicResource WindowBg}"
@@ -45,8 +45,8 @@
         </Style>
         <Style TargetType="{x:Type ScrollBar}">
             <Setter Property="OverridesDefaultStyle" Value="True"/>
-            <Setter Property="Width" Value="6"/>
-            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="MinWidth" Value="10"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ScrollBar}">

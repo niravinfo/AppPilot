@@ -100,6 +100,7 @@ public partial class MainViewModel : ViewModelBase
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
     private List<ProfileConfig> _profileConfigs = new();
+    private bool _isLoadingProfile = false;
 
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
@@ -327,38 +328,55 @@ public partial class MainViewModel : ViewModelBase
 
     private void LoadProfiles()
     {
-        Profiles.Clear();
-        SelectedProfile = null;
-
-        foreach (var config in _profileConfigs.OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name))
+        _isLoadingProfile = true;
+        try
         {
-            // Ensure deserialized profile has no null properties
-            config.EnsureNotNull();
-            Profiles.Add(new ProfileItemViewModel(config));
+            Profiles.Clear();
+            SelectedProfile = null;
+
+            foreach (var config in _profileConfigs.OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name))
+            {
+                // Ensure deserialized profile has no null properties
+                config.EnsureNotNull();
+                Profiles.Add(new ProfileItemViewModel(config));
+            }
+
+            // Load the default profile or the last selected profile
+            var settings = _configService.Settings;
+            var defaultProfile = Profiles.FirstOrDefault(p => p.IsDefault);
+            var lastSelectedId = settings.AppPilot.LastSelectedProfileId;
+
+            if (!string.IsNullOrEmpty(lastSelectedId))
+            {
+                SelectedProfile = Profiles.FirstOrDefault(p => p.Id == lastSelectedId);
+            }
+
+            if (SelectedProfile == null && defaultProfile != null)
+            {
+                SelectedProfile = defaultProfile;
+            }
         }
-
-        // Load the default profile or the last selected profile
-        var settings = _configService.Settings;
-        var defaultProfile = Profiles.FirstOrDefault(p => p.IsDefault);
-        var lastSelectedId = settings.AppPilot.LastSelectedProfileId;
-
-        if (!string.IsNullOrEmpty(lastSelectedId))
+        finally
         {
-            SelectedProfile = Profiles.FirstOrDefault(p => p.Id == lastSelectedId);
-        }
-
-        if (SelectedProfile == null && defaultProfile != null)
-        {
-            SelectedProfile = defaultProfile;
+            _isLoadingProfile = false;
         }
     }
 
     partial void OnSelectedProfileChanged(ProfileItemViewModel? value)
     {
+        // Skip processing during initial load to avoid redundant saves and rebuilds
+        if (_isLoadingProfile)
+        {
+            return;
+        }
+
         // Save the selected profile ID for next session
         var settings = _configService.Settings;
         settings.AppPilot.LastSelectedProfileId = value?.Id;
         _configService.Save();
+
+        // Rebuild the filtered groups to show only services from the selected profile
+        RebuildFilteredGroups();
 
         OnPropertyChanged(nameof(SelectedProfileName));
         OnPropertyChanged(nameof(HasSelectedProfile));
@@ -561,6 +579,15 @@ public partial class MainViewModel : ViewModelBase
         return Services.Where(s => profileServiceNames.Contains(s.Config.Name));
     }
 
+    /// <summary>
+    /// Gets services for display based on the currently selected profile.
+    /// Used by RebuildFilteredGroups to filter the service grid.
+    /// </summary>
+    private IEnumerable<ServiceItemViewModel> GetServicesForDisplay()
+    {
+        return GetServicesForCurrentProfile();
+    }
+
     public async Task StartServiceAsync(ServiceItemViewModel service)
     {
         await service.StartAsync();
@@ -609,6 +636,9 @@ public partial class MainViewModel : ViewModelBase
     {
         FilteredGroups.Clear();
 
+        // Get services for the selected profile (or all if no profile selected)
+        var displayServices = GetServicesForDisplay();
+
         // Optimize: Use ReadOnlySpan for string comparison where possible
         var searchLower = SearchText?.ToLowerInvariant();
         var hasSearch = !string.IsNullOrWhiteSpace(searchLower);
@@ -617,7 +647,7 @@ public partial class MainViewModel : ViewModelBase
         var groupedServices = new Dictionary<string, List<ServiceItemViewModel>>();
         var groupConfigs = new Dictionary<string, GroupConfig>();
 
-        foreach (var svc in Services)
+        foreach (var svc in displayServices)
         {
             // Optimize: Skip expensive Contains() calls if no search
             if (hasSearch)
@@ -914,6 +944,12 @@ public partial class MainViewModel : ViewModelBase
             p.UpdateFromConfig();
         }
 
+        // If this is the currently selected profile, rebuild the UI to reflect changes
+        if (SelectedProfile == profileVm)
+        {
+            RebuildFilteredGroups();
+        }
+
         SaveConfiguration();
         StatusText = $"Profile '{profileVm.Name}' updated";
     }
@@ -947,6 +983,7 @@ public partial class MainViewModel : ViewModelBase
     private void ClearSelectedProfile()
     {
         SelectedProfile = null;
+        // Note: OnSelectedProfileChanged will be called automatically, which will trigger RebuildFilteredGroups()
         StatusText = "Switched to Default (All Services)";
     }
 
