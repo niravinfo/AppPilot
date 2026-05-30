@@ -304,7 +304,7 @@ public partial class ProfileEditorViewModel : ViewModelBase
     {
         var config = new ProfileConfig
         {
-            Id = _originalId ?? Guid.NewGuid().ToString("N")[..8]
+            Id = string.IsNullOrEmpty(_originalId) ? Guid.NewGuid().ToString("N")[..8] : _originalId
         };
         ApplyTo(config);
         return config;

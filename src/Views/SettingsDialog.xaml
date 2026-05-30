@@ -12,6 +12,7 @@
         Height="720"
         MinWidth="480"
         MinHeight="520"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height, Converter={StaticResource WorkAreaHeightConverter}}"
         Background="{DynamicResource WindowBg}"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
