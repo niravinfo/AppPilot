@@ -1,5 +1,6 @@
 using AppPilot.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System;
 
 namespace AppPilot.ViewModels;
 
@@ -26,19 +27,21 @@ public partial class ProfileItemViewModel : ViewModelBase
 
     public ProfileItemViewModel(ProfileConfig config)
     {
+        ArgumentNullException.ThrowIfNull(config);
+        
         Config = config;
-        Name = config.Name;
-        Description = config.Description;
+        Name = config.Name ?? string.Empty;
+        Description = config.Description ?? string.Empty;
         IsDefault = config.IsDefault;
-        ServiceCount = config.ServiceNames.Count;
+        ServiceCount = config.ServiceNames?.Count ?? 0;
     }
 
     public void UpdateFromConfig()
     {
-        Name = Config.Name;
-        Description = Config.Description;
+        Name = Config.Name ?? string.Empty;
+        Description = Config.Description ?? string.Empty;
         IsDefault = Config.IsDefault;
-        ServiceCount = Config.ServiceNames.Count;
+        ServiceCount = Config.ServiceNames?.Count ?? 0;
     }
 
     public override string ToString() => Name;

@@ -21,9 +21,6 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- Converter for max height to respect small screens -->
-        <local:WorkAreaHeightConverter x:Key="WorkAreaHeightConverter" xmlns:local="clr-namespace:AppPilot.Converters"/>
-
         <!-- Scrollbar styles -->
         <Style x:Key="DlgScrollThumb" TargetType="{x:Type Thumb}">
             <Setter Property="OverridesDefaultStyle" Value="True"/>

@@ -40,4 +40,15 @@ public class ProfileConfig
     public List<string> ServiceNames { get; set; } = [];
 
     public override string ToString() => Name;
+
+    /// <summary>
+    /// Ensures properties are never null after deserialization.
+    /// </summary>
+    public void EnsureNotNull()
+    {
+        Id ??= string.Empty;
+        Name ??= string.Empty;
+        Description ??= string.Empty;
+        ServiceNames ??= [];
+    }
 }

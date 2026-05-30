@@ -62,6 +62,8 @@ public partial class ProfileEditorViewModel : ViewModelBase
     /// </summary>
     public ProfileEditorViewModel(IEnumerable<ManagedServiceConfig> allServices)
     {
+        ArgumentNullException.ThrowIfNull(allServices);
+        
         IsNew = true;
         _originalId = null;
         InitializeAvailableServices(allServices, []);
@@ -73,21 +75,25 @@ public partial class ProfileEditorViewModel : ViewModelBase
     /// </summary>
     public ProfileEditorViewModel(ProfileConfig config, IEnumerable<ManagedServiceConfig> allServices)
     {
+        ArgumentNullException.ThrowIfNull(config);
+        ArgumentNullException.ThrowIfNull(allServices);
+        
         IsNew = false;
         _originalId = config.Id;
-        _name = config.Name;
-        _description = config.Description;
+        _name = config.Name ?? string.Empty;
+        _description = config.Description ?? string.Empty;
         _isDefault = config.IsDefault;
         _displayOrder = config.DisplayOrder;
 
-        InitializeAvailableServices(allServices, config.ServiceNames);
+        InitializeAvailableServices(allServices, config.ServiceNames ?? []);
         UpdateFilteredServices();
     }
 
     private void InitializeAvailableServices(IEnumerable<ManagedServiceConfig> allServices, IReadOnlyList<string> profileServiceNames)
     {
-        var profileServiceSet = new HashSet<string>(profileServiceNames, StringComparer.OrdinalIgnoreCase);
-        var serviceOrder = profileServiceNames
+        var profileServiceList = profileServiceNames ?? [];
+        var profileServiceSet = new HashSet<string>(profileServiceList, StringComparer.OrdinalIgnoreCase);
+        var serviceOrder = profileServiceList
             .Select((name, index) => (name, index))
             .ToDictionary(x => x.name, x => x.index, StringComparer.OrdinalIgnoreCase);
 

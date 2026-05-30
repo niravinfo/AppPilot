@@ -332,6 +332,8 @@ public partial class MainViewModel : ViewModelBase
 
         foreach (var config in _profileConfigs.OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name))
         {
+            // Ensure deserialized profile has no null properties
+            config.EnsureNotNull();
             Profiles.Add(new ProfileItemViewModel(config));
         }
 
@@ -546,8 +548,14 @@ public partial class MainViewModel : ViewModelBase
             return Services;
         }
 
+        var serviceNames = SelectedProfile.Config.ServiceNames;
+        if (serviceNames == null || serviceNames.Count == 0)
+        {
+            return Enumerable.Empty<ServiceItemViewModel>();
+        }
+
         var profileServiceNames = new HashSet<string>(
-            SelectedProfile.Config.ServiceNames,
+            serviceNames,
             StringComparer.OrdinalIgnoreCase);
 
         return Services.Where(s => profileServiceNames.Contains(s.Config.Name));
