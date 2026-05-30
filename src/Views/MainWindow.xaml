@@ -181,12 +181,12 @@
                                                                                 <Style TargetType="Border">
                                                                                     <Setter Property="Background" Value="Transparent"/>
                                                                                     <Style.Triggers>
-                                                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                                                            <Setter Property="Background" Value="{DynamicResource BtnHoverBg}"/>
-                                                                                        </Trigger>
                                                                                         <DataTrigger Binding="{Binding SelectedProfile}" Value="{x:Null}">
                                                                                             <Setter Property="Background" Value="{DynamicResource AccentBg}"/>
                                                                                         </DataTrigger>
+                                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                                            <Setter Property="Background" Value="{DynamicResource BtnHoverBg}"/>
+                                                                                        </Trigger>
                                                                                     </Style.Triggers>
                                                                                 </Style>
                                                                             </Border.Style>
