@@ -347,6 +347,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="16"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="120"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Name -->
@@ -361,6 +363,16 @@
                         <TextBlock Text="DESCRIPTION (OPTIONAL)" Style="{StaticResource SectionTitle}" Margin="0,0,0,6"/>
                         <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FormInput}"/>
+                    </StackPanel>
+
+                    <!-- Display Order -->
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="DISPLAY ORDER" Style="{StaticResource SectionTitle}" Margin="0,0,0,6"/>
+                        <TextBox x:Name="DisplayOrderTextBox"
+                                 Text="{Binding DisplayOrder, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FormInput}"
+                                 PreviewTextInput="NumericTextBox_PreviewTextInput"
+                                 DataObject.Pasting="NumericTextBox_Pasting"/>
                     </StackPanel>
                 </Grid>
 

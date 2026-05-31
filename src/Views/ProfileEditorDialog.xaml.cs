@@ -1,4 +1,5 @@
 using AppPilot.ViewModels;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Input;
 
@@ -64,5 +65,32 @@ public partial class ProfileEditorDialog : Window
         {
             vm.RemoveServiceCommand.Execute(null);
         }
+    }
+
+    private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // Allow only digits
+        e.Handled = !IsNumeric(e.Text);
+    }
+
+    private void NumericTextBox_Pasting(object sender, DataObjectPastingEventArgs e)
+    {
+        if (e.DataObject.GetDataPresent(typeof(string)))
+        {
+            var text = (string)e.DataObject.GetData(typeof(string));
+            if (!IsNumeric(text))
+            {
+                e.CancelCommand();
+            }
+        }
+        else
+        {
+            e.CancelCommand();
+        }
+    }
+
+    private static bool IsNumeric(string text)
+    {
+        return Regex.IsMatch(text, "^[0-9]+$");
     }
 }

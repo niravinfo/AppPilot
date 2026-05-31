@@ -918,14 +918,9 @@ public partial class MainViewModel : ViewModelBase
         }
 
         _profileConfigs.Add(config);
-        var profileVm = new ProfileItemViewModel(config);
-        Profiles.Add(profileVm);
 
-        // Update service counts in UI
-        foreach (var p in Profiles)
-        {
-            p.UpdateFromConfig();
-        }
+        // Reload profiles to ensure proper display order sorting
+        LoadProfiles();
 
         SaveConfiguration();
         StatusText = $"Profile '{config.Name}' created";
@@ -953,22 +948,27 @@ public partial class MainViewModel : ViewModelBase
         }
 
         editorVm.ApplyTo(profileVm.Config);
-        profileVm.UpdateFromConfig();
 
-        // Update all profiles in case default flag changed
-        foreach (var p in Profiles)
+        // Store the currently selected profile ID before reloading
+        var selectedProfileId = SelectedProfile?.Id;
+
+        // Reload profiles to ensure proper display order sorting
+        LoadProfiles();
+
+        // Restore the selected profile
+        if (!string.IsNullOrEmpty(selectedProfileId))
         {
-            p.UpdateFromConfig();
+            SelectedProfile = Profiles.FirstOrDefault(p => p.Id == selectedProfileId);
         }
 
-        // If this is the currently selected profile, rebuild the UI to reflect changes
-        if (SelectedProfile == profileVm)
+        // If the edited profile was selected, rebuild the UI to reflect changes
+        if (SelectedProfile?.Id == profileVm.Id)
         {
             RebuildFilteredGroups();
         }
 
         SaveConfiguration();
-        StatusText = $"Profile '{profileVm.Name}' updated";
+        StatusText = $"Profile '{profileVm.Config.Name}' updated";
     }
 
     [RelayCommand]
