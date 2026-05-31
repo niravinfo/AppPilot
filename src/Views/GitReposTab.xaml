@@ -55,11 +55,11 @@
                           Stretch="Uniform"
                           HorizontalAlignment="Center"
                           Margin="0,0,0,12"/>
-                    <TextBlock Text="No Git repositories configured"
+                    <TextBlock Text="No git repositories found"
                                FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                HorizontalAlignment="Center"/>
-                    <TextBlock Text="Click the button above to add a repository"
+                    <TextBlock Text="Try adjusting your search or add a new git repository"
                                FontSize="12" Foreground="{DynamicResource TextMuted}"
                                HorizontalAlignment="Center" Margin="0,6,0,0"/>
                 </StackPanel>

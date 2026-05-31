@@ -62,6 +62,7 @@ public partial class MainViewModel : ViewModelBase
 
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFilteredServices))]
     private ObservableCollection<ServiceGroupViewModel> _filteredGroups = new();
 
     [ObservableProperty]
@@ -96,6 +97,11 @@ public partial class MainViewModel : ViewModelBase
     /// Whether a specific profile is selected.
     /// </summary>
     public bool HasSelectedProfile => SelectedProfile != null;
+
+    /// <summary>
+    /// Whether there are any filtered services to display.
+    /// </summary>
+    public bool HasFilteredServices => FilteredGroups.Any(g => g.Items.Any());
 
     private List<ManagedServiceConfig> _serviceConfigs = new();
     private List<GitRepositoryConfig> _gitRepositoryConfigs = new();
@@ -714,6 +720,7 @@ public partial class MainViewModel : ViewModelBase
             FilteredGroups.Add(groupVm);
         }
 
+        OnPropertyChanged(nameof(HasFilteredServices));
         RebuildFilteredGitRepositories();
     }
 

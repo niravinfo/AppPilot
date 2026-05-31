@@ -121,7 +121,6 @@
       "NpmCommands": [
         { "Name": "Build", "Command": "npm run build" },
         { "Name": "Start", "Command": "npm run start" },
-        { "Name": "Serve", "Command": "npm run serve" },
         { "Name": "Preview", "Command": "npm run preview" }
       ],
       "DisplayOrder": 4,

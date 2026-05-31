@@ -27,7 +27,6 @@ public class NpmCommandConfig
         [
             new NpmCommandConfig { Name = "Build", Command = "npm run build" },
             new NpmCommandConfig { Name = "Start", Command = "npm run start" },
-            new NpmCommandConfig { Name = "Serve", Command = "npm run serve" },
             new NpmCommandConfig { Name = "Preview", Command = "npm run preview" }
         ];
     }
