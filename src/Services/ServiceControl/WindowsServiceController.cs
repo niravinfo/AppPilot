@@ -18,46 +18,47 @@ public interface IServiceController
     ServiceStatus GetStatus(ManagedServiceConfig config);
 }
 
+/// <summary>
+/// Controls Windows Services with on-demand UAC elevation.
+/// Administrator permissions are requested only when needed for service operations.
+/// </summary>
 public class WindowsServiceController : IServiceController
 {
     private readonly ILogger<WindowsServiceController> _logger;
+    private readonly IElevationService _elevationService;
 
     private const int ServiceTimeoutSeconds = 30;
 
-    public WindowsServiceController(ILogger<WindowsServiceController> logger)
+    public WindowsServiceController(
+        ILogger<WindowsServiceController> logger,
+        IElevationService elevationService)
     {
         _logger = logger;
+        _elevationService = elevationService;
     }
 
     public async Task<bool> InstallAsync(ManagedServiceConfig config, CancellationToken cancellationToken = default)
     {
         try
         {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "sc.exe",
-                Arguments = $"create {config.Name} binPath= \"{config.ExecutablePath} {config.Arguments}\" start= demand",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
+            // Use sc.exe with elevation to create the service
+            var arguments = $"create \"{config.Name}\" binPath= \"{config.ExecutablePath} {config.Arguments}\" start= demand";
 
-            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to launch sc.exe.");
-            var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-            var output = await outputTask;
+            var result = await _elevationService.RunElevatedAsync(
+                "sc.exe",
+                arguments,
+                $"Install service '{config.DisplayName}'",
+                cancellationToken);
 
-            if (process.ExitCode != 0)
+            if (!result.Success)
             {
-                var msg = string.IsNullOrWhiteSpace(output)
-                    ? $"sc.exe exited with code {process.ExitCode}."
-                    : output.Trim();
-                _logger.LogError("Failed to install service {Name}: {Message}", config.Name, msg);
-                throw new InvalidOperationException(msg);
+                _logger.LogError("Failed to install service {Name}: {Message}", config.Name, result.ErrorMessage);
+                throw new InvalidOperationException(result.ErrorMessage);
             }
 
+            // Set the description (also requires elevation)
             await SetDescriptionAsync(config, cancellationToken);
+
             _logger.LogInformation("Service {Name} installed successfully", config.Name);
             return true;
         }
@@ -74,16 +75,17 @@ public class WindowsServiceController : IServiceController
     {
         try
         {
-            var startInfo = new ProcessStartInfo
+            var result = await _elevationService.RunElevatedAsync(
+                "sc.exe",
+                $"description \"{config.Name}\" \"{config.DisplayName}\"",
+                $"Set description for service '{config.DisplayName}'",
+                cancellationToken);
+
+            if (!result.Success)
             {
-                FileName = "sc.exe",
-                Arguments = $"description {config.Name} \"{config.DisplayName}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using var process = Process.Start(startInfo);
-            if (process != null)
-                await process.WaitForExitAsync(cancellationToken);
+                _logger.LogWarning("Failed to set service description for {Name}: {Message}",
+                    config.Name, result.ErrorMessage);
+            }
         }
         catch (Exception ex)
         {
@@ -99,28 +101,16 @@ public class WindowsServiceController : IServiceController
             if (status == ServiceStatus.Running || status == ServiceStatus.Starting)
                 await StopAsync(config, cancellationToken);
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "sc.exe",
-                Arguments = $"delete {config.Name}",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
+            var result = await _elevationService.RunElevatedAsync(
+                "sc.exe",
+                $"delete \"{config.Name}\"",
+                $"Uninstall service '{config.DisplayName}'",
+                cancellationToken);
 
-            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to launch sc.exe.");
-            var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-            var output = await outputTask;
-
-            if (process.ExitCode != 0)
+            if (!result.Success)
             {
-                var msg = string.IsNullOrWhiteSpace(output)
-                    ? $"sc.exe exited with code {process.ExitCode}."
-                    : output.Trim();
-                _logger.LogError("Failed to uninstall service {Name}: {Message}", config.Name, msg);
-                throw new InvalidOperationException(msg);
+                _logger.LogError("Failed to uninstall service {Name}: {Message}", config.Name, result.ErrorMessage);
+                throw new InvalidOperationException(result.ErrorMessage);
             }
 
             _logger.LogInformation("Service {Name} uninstalled successfully", config.Name);
@@ -139,31 +129,42 @@ public class WindowsServiceController : IServiceController
     {
         try
         {
-            using var sc = new ServiceController(config.Name);
-            sc.Refresh();
-
-            if (sc.Status == ServiceControllerStatus.Running)
+            // Check current status first (doesn't require elevation)
+            var currentStatus = GetStatus(config);
+            if (currentStatus == ServiceStatus.Running)
             {
                 _logger.LogInformation("Service {Name} is already running", config.Name);
                 return true;
             }
 
-            sc.Start();
+            // Use sc.exe start with elevation
+            var result = await _elevationService.RunElevatedAsync(
+                "sc.exe",
+                $"start \"{config.Name}\"",
+                $"Start service '{config.DisplayName}'",
+                cancellationToken);
 
+            if (!result.Success)
+            {
+                _logger.LogError("Failed to start service {Name}: {Message}", config.Name, result.ErrorMessage);
+                throw new InvalidOperationException(result.ErrorMessage);
+            }
+
+            // Wait for the service to reach the running state
             var deadline = DateTime.UtcNow.AddSeconds(ServiceTimeoutSeconds);
             while (DateTime.UtcNow < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Delay(500, cancellationToken);
-                sc.Refresh();
 
-                if (sc.Status == ServiceControllerStatus.Running)
+                var status = GetStatus(config);
+                if (status == ServiceStatus.Running)
                 {
                     _logger.LogInformation("Service {Name} started successfully", config.Name);
                     return true;
                 }
 
-                if (sc.Status == ServiceControllerStatus.Stopped)
+                if (status == ServiceStatus.Stopped || status == ServiceStatus.Error)
                 {
                     throw new InvalidOperationException(
                         $"'{config.DisplayName}' stopped immediately after launching. " +
@@ -189,25 +190,36 @@ public class WindowsServiceController : IServiceController
     {
         try
         {
-            using var sc = new ServiceController(config.Name);
-            sc.Refresh();
-
-            if (sc.Status == ServiceControllerStatus.Stopped)
+            // Check current status first (doesn't require elevation)
+            var currentStatus = GetStatus(config);
+            if (currentStatus == ServiceStatus.Stopped || currentStatus == ServiceStatus.NotInstalled)
             {
                 _logger.LogInformation("Service {Name} is already stopped", config.Name);
                 return true;
             }
 
-            sc.Stop();
+            // Use sc.exe stop with elevation
+            var result = await _elevationService.RunElevatedAsync(
+                "sc.exe",
+                $"stop \"{config.Name}\"",
+                $"Stop service '{config.DisplayName}'",
+                cancellationToken);
 
+            if (!result.Success)
+            {
+                _logger.LogError("Failed to stop service {Name}: {Message}", config.Name, result.ErrorMessage);
+                throw new InvalidOperationException(result.ErrorMessage);
+            }
+
+            // Wait for the service to stop
             var deadline = DateTime.UtcNow.AddSeconds(ServiceTimeoutSeconds);
             while (DateTime.UtcNow < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await Task.Delay(500, cancellationToken);
-                sc.Refresh();
 
-                if (sc.Status == ServiceControllerStatus.Stopped)
+                var status = GetStatus(config);
+                if (status == ServiceStatus.Stopped || status == ServiceStatus.NotInstalled)
                 {
                     _logger.LogInformation("Service {Name} stopped successfully", config.Name);
                     return true;
@@ -232,11 +244,15 @@ public class WindowsServiceController : IServiceController
         }
     }
 
+    /// <summary>
+    /// Gets the current status of a Windows service.
+    /// This operation does not require elevation.
+    /// </summary>
     public ServiceStatus GetStatus(ManagedServiceConfig config)
     {
         try
         {
-            using var serviceController = new System.ServiceProcess.ServiceController(config.Name);
+            using var serviceController = new ServiceController(config.Name);
 
             return serviceController.Status switch
             {
