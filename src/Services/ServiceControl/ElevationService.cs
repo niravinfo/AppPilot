@@ -117,7 +117,6 @@ public class ElevationService : IElevationService
     private readonly ILogger<ElevationService> _logger;
     private readonly Lazy<bool> _isElevated;
     private readonly SemaphoreSlim _helperLock = new(1, 1);
-    private readonly object _pipeLock = new();
     
     private Process? _helperProcess;
     private NamedPipeClientStream? _pipeClient;
@@ -318,19 +317,30 @@ public class ElevationService : IElevationService
 
             var commandJson = JsonSerializer.Serialize(command);
 
-            lock (_pipeLock)
-            {
-                _pipeWriter.WriteLine(commandJson);
-            }
+            // Use async write to avoid blocking the UI thread
+            await _pipeWriter.WriteLineAsync(commandJson.AsMemory(), cancellationToken);
+            await _pipeWriter.FlushAsync(cancellationToken);
 
-            // Read response with timeout
+            // Read response with timeout using async I/O
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             cts.CancelAfter(TimeSpan.FromSeconds(CommandTimeoutSeconds));
 
             string? responseJson;
-            lock (_pipeLock)
+            try
             {
-                responseJson = _pipeReader.ReadLine();
+                responseJson = await _pipeReader.ReadLineAsync(cts.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                // Timeout occurred (not user cancellation)
+                _logger.LogError("Timeout waiting for response from elevated helper");
+                CleanupHelper();
+                return new ElevatedCommandResult
+                {
+                    Success = false,
+                    ExitCode = -1,
+                    ErrorMessage = "Timeout waiting for response from elevated helper."
+                };
             }
 
             if (string.IsNullOrEmpty(responseJson))
@@ -382,6 +392,11 @@ public class ElevationService : IElevationService
                 ExitCode = -1,
                 ErrorMessage = "Communication with elevated helper failed. Please try again."
             };
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // User cancellation - re-throw
+            throw;
         }
         catch (Exception ex)
         {
