@@ -412,7 +412,17 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" Grid.Column="0">
                     <!-- Services tab -->
-                    <Border Padding="0">
+                    <Border BorderThickness="0,0,0,1" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedTab}" Value="0">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <Button Style="{StaticResource TabBtn}" Command="{Binding SelectServicesTabCommand}" Padding="10,0">
                             <StackPanel Orientation="Horizontal" Background="Transparent">
                                 <Path Data="{StaticResource IconServices}"
@@ -455,7 +465,17 @@
                         </Button>
                     </Border>
                     <!-- Git Repos tab -->
-                    <Border Padding="0" Margin="6,0,0,0">
+                    <Border BorderThickness="0,0,0,1" Padding="0" Margin="6,0,0,0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedTab}" Value="1">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <Button Style="{StaticResource TabBtn}" Command="{Binding SelectGitTabCommand}" Padding="10,0">
                             <StackPanel Orientation="Horizontal" Background="Transparent">
                                 <Path Data="{StaticResource IconGit}"

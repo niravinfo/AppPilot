@@ -191,8 +191,6 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <DataTrigger Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsKeyboardFocused}" Value="True">
-                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="{DynamicResource TabActiveBorder}"/>
-                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="2"/>
                                 </DataTrigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
