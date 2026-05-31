@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +29,18 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Check if this is the elevated helper process
+        if (e.Args.Length >= 2 && e.Args[0] == ElevationService.HelperModeArgument)
+        {
+            if (int.TryParse(e.Args[1], out int parentPid))
+            {
+                // Run as elevated helper - no UI, just service commands via named pipe
+                ElevatedHelper.Run(parentPid);
+            }
+            Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
 
         var logDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs");
@@ -158,6 +171,18 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _logger?.LogInformation("AppPilot shutting down");
+
+        // Shutdown the elevated helper process if running
+        try
+        {
+            var elevationService = _host?.Services.GetService<IElevationService>();
+            elevationService?.Shutdown();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Error shutting down elevation service");
+        }
+
         Log.CloseAndFlush();
         _host?.Dispose();
         base.OnExit(e);
