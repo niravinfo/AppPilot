@@ -19,7 +19,48 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="16,8,10,8">
-            <ItemsControl ItemsSource="{Binding FilteredGroups}">
+            <StackPanel>
+                <!-- Empty state -->
+                <Border Padding="40,60">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasFilteredServices}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel HorizontalAlignment="Center">
+                        <Path Data="{StaticResource IconServices}"
+                              Fill="{DynamicResource TextMuted}"
+                              Width="48" Height="48"
+                              Stretch="Uniform"
+                              HorizontalAlignment="Center"
+                              Margin="0,0,0,12"/>
+                        <TextBlock Text="No services found"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock FontSize="12" Foreground="{DynamicResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Try adjusting your search or add a new service"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText.Length}" Value="0">
+                                            <Setter Property="Text" Value="Click the + button above to add a service"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Services list -->
+                <ItemsControl ItemsSource="{Binding FilteredGroups}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Margin="0,4,0,8">
@@ -500,6 +541,7 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+            </StackPanel>
         </ScrollViewer>
     </DockPanel>
 </UserControl>
