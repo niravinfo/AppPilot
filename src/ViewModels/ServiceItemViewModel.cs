@@ -301,25 +301,39 @@ public partial class ServiceItemViewModel : ViewModelBase
         OnPropertyChanged(nameof(StatusTypeBarBrush));
     }
 
+    /// <summary>
+    /// Starts API/Worker. Uses TryStartAsync which validates and logs only
+    /// startup errors to standard Serilog. No per-service file — AppPilot is
+    /// kill-anytime. On failure, ErrorMessage stays visible in UI.
+    /// </summary>
     [RelayCommand]
     public async Task StartAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
 
         try
         {
             ErrorMessage = string.Empty;
+
             var originalStatus = Status;
+
             Status = ServiceStatus.Starting;
 
             if (Config.Port.HasValue)
             {
                 var portError = _processService.GetPortOwner(Config.Port.Value);
+
                 if (portError != null)
                 {
                     ErrorMessage = portError;
+
                     Status = ServiceStatus.Error;
+
                     return;
                 }
             }
@@ -331,7 +345,9 @@ public partial class ServiceItemViewModel : ViewModelBase
                     if (!System.IO.File.Exists(Config.ExecutablePath))
                     {
                         ErrorMessage = $"Executable not found: {Config.ExecutablePath}";
+
                         Status = ServiceStatus.Error;
+
                         return;
                     }
 
@@ -339,40 +355,50 @@ public partial class ServiceItemViewModel : ViewModelBase
                 }
 
                 await _windowsServiceController.StartAsync(Config);
+
                 Status = ServiceStatus.Running;
             }
             else
             {
-                if (!System.IO.File.Exists(Config.ExecutablePath))
+                var result = await _processService.TryStartAsync(Config);
+
+                if (!result.Success)
                 {
-                    ErrorMessage = $"Executable not found: {Config.ExecutablePath}";
+                    ErrorMessage = result.ErrorMessage ?? "Failed to start process";
+
                     Status = ServiceStatus.Error;
+
                     return;
                 }
 
-                var process = _processService.Start(Config);
-                if (process == null)
+                if (result.Process != null)
                 {
-                    ErrorMessage = "Failed to start process";
-                    Status = ServiceStatus.Error;
+                    ProcessId = result.Process.Id;
+
+                    Status = ServiceStatus.Running;
+
+                    OnPropertyChanged(nameof(StatusTypeBarBrush));
                 }
                 else
                 {
-                    ProcessId = process.Id;
-                    Status = ServiceStatus.Running;
-                    OnPropertyChanged(nameof(StatusTypeBarBrush));
+                    ErrorMessage = result.ErrorMessage ?? "Failed to start process";
+
+                    Status = ServiceStatus.Error;
                 }
             }
         }
         catch (OperationCanceledException)
         {
             ErrorMessage = "Operation timed out or was cancelled.";
+
             Status = ServiceStatus.Error;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error starting service {Name}", Config.Name);
+
             ErrorMessage = ex.Message;
+
             Status = ServiceStatus.Error;
         }
         finally
@@ -384,7 +410,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     public async Task StopAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
 
         try
@@ -436,6 +466,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         if (Status == ServiceStatus.Running)
         {
             await StopAsync();
+
             await Task.Delay(1000);
         }
 
@@ -445,7 +476,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     public async Task InstallAsync()
     {
-        if (Config.Type != ServiceType.Worker || IsBusy) return;
+        if (Config.Type != ServiceType.Worker || IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
 
         try
@@ -480,7 +515,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     public async Task UninstallAsync()
     {
-        if (Config.Type != ServiceType.Worker || IsBusy) return;
+        if (Config.Type != ServiceType.Worker || IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
 
         try
@@ -506,10 +545,17 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void OpenInBrowser()
     {
-        if (string.IsNullOrEmpty(BrowserUrl)) return;
+        if (string.IsNullOrEmpty(BrowserUrl))
+        {
+            return;
+        }
+
         try
         {
-            Process.Start(new ProcessStartInfo(BrowserUrl) { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo(BrowserUrl)
+            {
+                UseShellExecute = true
+            });
         }
         catch (Exception ex)
         {
@@ -520,7 +566,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void OpenDirectory()
     {
-        if (!HasWorkingDirectory) return;
+        if (!HasWorkingDirectory)
+        {
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo("explorer.exe", $"\"{Config.WorkingDirectory}\"")
@@ -537,7 +587,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void OpenTerminal()
     {
-        if (!HasWorkingDirectory) return;
+        if (!HasWorkingDirectory)
+        {
+            return;
+        }
+
         try
         {
             try
@@ -591,29 +645,41 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private async Task BuildAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            return;
+        }
+
         IsBusy = true;
+
         ErrorMessage = string.Empty;
 
         var wasRunning = Status == ServiceStatus.Running;
+
         try
         {
             if (wasRunning)
             {
                 await StopAsync();
+
                 await Task.Delay(300);
             }
 
             var exitCode = await _buildService.LaunchBuildAsync(Config.CsprojPath, Config.DisplayName);
 
             if (exitCode == 0 && wasRunning)
+            {
                 await StartAsync();
+            }
             else if (exitCode != 0)
+            {
                 ErrorMessage = "Build failed — check the terminal for details.";
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Build failed for {Name}", Config.Name);
+
             ErrorMessage = ex.Message;
         }
         finally
@@ -689,7 +755,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void OpenProjectFolder()
     {
-        if (!HasProjectPath) return;
+        if (!HasProjectPath)
+        {
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo("explorer.exe", $"\"{Config.ProjectPath}\"")
@@ -709,7 +779,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     private void OpenProjectTerminal()
     {
-        if (!HasProjectPath) return;
+        if (!HasProjectPath)
+        {
+            return;
+        }
+
         try
         {
             try
