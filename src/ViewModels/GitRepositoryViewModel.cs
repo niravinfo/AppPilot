@@ -131,48 +131,68 @@ public partial class GitRepositoryViewModel : ViewModelBase
         IsBusy = true;
         LastOperationFailed = false;
 
-        var stoppedServices = LinkedServices
-            .Where(s => s.Status == ServiceStatus.Running)
-            .ToList();
-
-        if (stoppedServices.Count > 0)
+        try
         {
-            StatusText = $"Stopping {stoppedServices.Count} service(s)…";
-            foreach (var svc in stoppedServices)
-            {
-                await svc.StopAsync();
-                await Task.Delay(300);
-            }
-        }
+            var stoppedServices = LinkedServices
+                .Where(s => s.Status == ServiceStatus.Running)
+                .ToList();
 
-        StatusText = "Building solution…";
-        var solutionName = Path.GetFileNameWithoutExtension(Config.SolutionPath);
-        var exitCode = await _buildService.LaunchBuildAsync(Config.SolutionPath, solutionName);
-
-        if (exitCode == 0)
-        {
             if (stoppedServices.Count > 0)
             {
-                StatusText = $"Build succeeded — restarting {stoppedServices.Count} service(s)…";
+                StatusText = $"Stopping {stoppedServices.Count} service(s)…";
                 foreach (var svc in stoppedServices)
                 {
-                    await svc.StartAsync();
-                    await Task.Delay(400);
+                    await svc.StopAsync();
+                    await Task.Delay(300);
                 }
             }
 
-            StatusText = "Build succeeded";
-        }
-        else
-        {
-            StatusText = stoppedServices.Count > 0
-                ? $"Build failed — {stoppedServices.Count} service(s) remain stopped"
-                : "Build failed";
+            StatusText = "Building solution…";
+            var solutionName = Path.GetFileNameWithoutExtension(Config.SolutionPath);
+            var exitCode = await _buildService.LaunchBuildAsync(Config.SolutionPath, solutionName);
 
+            if (exitCode == 0)
+            {
+                if (stoppedServices.Count > 0)
+                {
+                    StatusText = $"Build succeeded — restarting {stoppedServices.Count} service(s)…";
+                    foreach (var svc in stoppedServices)
+                    {
+                        // Best effort: one failing restart must not strand the rest.
+                        try
+                        {
+                            await svc.StartAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to restart {Service} after solution build", svc.Config.Name);
+                        }
+                        await Task.Delay(400);
+                    }
+                }
+
+                StatusText = "Build succeeded";
+            }
+            else
+            {
+                StatusText = stoppedServices.Count > 0
+                    ? $"Build failed — {stoppedServices.Count} service(s) remain stopped"
+                    : "Build failed";
+
+                LastOperationFailed = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Solution build failed for {Repo}", Config.Name);
+            StatusText = $"Build error: {ex.Message}";
             LastOperationFailed = true;
         }
-
-        IsBusy = false;
+        finally
+        {
+            // Must always run, otherwise IsBusy stays true and Pull/Build stay disabled forever.
+            IsBusy = false;
+        }
     }
 
     // ── Toggle output panel ───────────────────────────────────────────────────

@@ -309,6 +309,24 @@ public partial class ServiceItemViewModel : ViewModelBase
 
         try
         {
+            await StartCoreAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual start logic without touching <see cref="IsBusy"/>.
+    /// Orchestrating callers (Build/Restart) already hold <see cref="IsBusy"/>, so they must
+    /// use this instead of <see cref="StartAsync"/> — the command wrapper returns early when
+    /// <see cref="IsBusy"/> is already set, which would silently skip the start.
+    /// </summary>
+    private async Task StartCoreAsync()
+    {
+        try
+        {
             ErrorMessage = string.Empty;
             var originalStatus = Status;
             Status = ServiceStatus.Starting;
@@ -375,10 +393,6 @@ public partial class ServiceItemViewModel : ViewModelBase
             ErrorMessage = ex.Message;
             Status = ServiceStatus.Error;
         }
-        finally
-        {
-            IsBusy = false;
-        }
     }
 
     [RelayCommand]
@@ -387,6 +401,23 @@ public partial class ServiceItemViewModel : ViewModelBase
         if (IsBusy) return;
         IsBusy = true;
 
+        try
+        {
+            await StopCoreAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Performs the actual stop logic without touching <see cref="IsBusy"/>.
+    /// See <see cref="StartCoreAsync"/> for why orchestrating callers must use this
+    /// rather than <see cref="StopAsync"/>.
+    /// </summary>
+    private async Task StopCoreAsync()
+    {
         try
         {
             ErrorMessage = string.Empty;
@@ -422,10 +453,6 @@ public partial class ServiceItemViewModel : ViewModelBase
             _logger.LogError(ex, "Error stopping service {Name}", Config.Name);
             ErrorMessage = ex.Message;
         }
-        finally
-        {
-            IsBusy = false;
-        }
         // Ensure CanStop/CanRestart are correct for worker services in both modes
         // Status logic is handled in MainViewModel, which is now correct for both modes
     }
@@ -433,13 +460,23 @@ public partial class ServiceItemViewModel : ViewModelBase
     [RelayCommand]
     public async Task RestartAsync()
     {
-        if (Status == ServiceStatus.Running)
-        {
-            await StopAsync();
-            await Task.Delay(1000);
-        }
+        if (IsBusy) return;
+        IsBusy = true;
 
-        await StartAsync();
+        try
+        {
+            if (Status == ServiceStatus.Running)
+            {
+                await StopCoreAsync();
+                await Task.Delay(1000);
+            }
+
+            await StartCoreAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]
@@ -600,14 +637,17 @@ public partial class ServiceItemViewModel : ViewModelBase
         {
             if (wasRunning)
             {
-                await StopAsync();
+                // Use the *Core variants: they skip the IsBusy re-entrancy guard that the
+                // Build command has already armed, so the process is actually released
+                // before dotnet build tries to overwrite the output binary.
+                await StopCoreAsync();
                 await Task.Delay(300);
             }
 
             var exitCode = await _buildService.LaunchBuildAsync(Config.CsprojPath, Config.DisplayName);
 
             if (exitCode == 0 && wasRunning)
-                await StartAsync();
+                await StartCoreAsync();
             else if (exitCode != 0)
                 ErrorMessage = "Build failed — check the terminal for details.";
         }
