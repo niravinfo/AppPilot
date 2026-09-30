@@ -4,12 +4,18 @@ on:
   push:
     tags:
       - 'v*.*.*'
+      - 'v*.*.*-*'
   workflow_dispatch:
     inputs:
       version_override:
-        description: 'Version to release (e.g. 1.2.3). Leave blank to use version from .csproj.'
+        description: 'Version to release (e.g. 1.2.3 or 1.2.3-beta.1). Leave blank to use version from .csproj.'
         required: false
         default: ''
+      prerelease:
+        description: 'Force pre-release (auto-detected when version contains hyphen if unchecked)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -31,7 +37,7 @@ jobs:
         id: version
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            # Tag push: version is already in the tag name, e.g. v0.0.2
+            # Tag push: version is already in the tag name, e.g. v0.0.2 or v0.11.0-beta.1
             TAG="${{ github.ref_name }}"
             VERSION="${TAG#v}"
             echo "Using tag version: $VERSION"
@@ -46,6 +52,17 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+          # Detect pre-release (SemVer hyphen, e.g. 1.0.0-beta.1 / 1.0.0-rc.1)
+          # Manual workflow_dispatch `prerelease` input forces pre-release when checked.
+          if [ "${{ github.event.inputs.prerelease }}" = "true" ] || [[ "$VERSION" == *"-"* ]]; then
+            IS_PRERELEASE=true
+          else
+            IS_PRERELEASE=false
+          fi
+          echo "IS_PRERELEASE=$IS_PRERELEASE" >> $GITHUB_ENV
+          echo "prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Pre-release: $IS_PRERELEASE"
 
       - name: Publish single-file framework-dependent exe
         run: |
@@ -69,6 +86,7 @@ jobs:
 
       # softprops/action-gh-release automatically creates the release if the tag
       # does not exist, or updates it (replacing assets) if it already does.
+      # `prerelease` is auto-detected from the version (contains '-') or forced via workflow_dispatch.
       - name: Create or update GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -76,4 +94,5 @@ jobs:
           name: AppPilot v${{ env.VERSION }}
           token: ${{ secrets.GITHUB_TOKEN }}
           generate_release_notes: true
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           files: AppPilot-v${{ env.VERSION }}-win-x64.zip
