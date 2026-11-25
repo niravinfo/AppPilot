@@ -134,7 +134,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
         try
         {
             var stoppedServices = LinkedServices
-                .Where(s => s.Status == ServiceStatus.Running)
+                .Where(s => s.IsProcessRunning)
                 .ToList();
 
             if (stoppedServices.Count > 0)
@@ -142,7 +142,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
                 StatusText = $"Stopping {stoppedServices.Count} service(s)…";
                 foreach (var svc in stoppedServices)
                 {
-                    await svc.StopAsync();
+                    await svc.StopCoreAsync();
                     await Task.Delay(300);
                 }
             }
@@ -161,7 +161,7 @@ public partial class GitRepositoryViewModel : ViewModelBase
                         // Best effort: one failing restart must not strand the rest.
                         try
                         {
-                            await svc.StartAsync();
+                            await svc.StartCoreAsync();
                         }
                         catch (Exception ex)
                         {

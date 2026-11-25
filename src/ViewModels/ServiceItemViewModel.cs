@@ -162,6 +162,11 @@ public partial class ServiceItemViewModel : ViewModelBase
     public bool CanStop => Config.Type != ServiceType.NodeApp && Status == ServiceStatus.Running;
     public bool CanRestart => Config.Type != ServiceType.NodeApp && Status == ServiceStatus.Running;
 
+    public bool IsProcessRunning =>
+        Config.Type == ServiceType.Worker && Config.UseWindowsService
+            ? _windowsServiceController.GetStatus(Config) == ServiceStatus.Running
+            : _processService.IsRunning(Config);
+
     public bool HasBrowserUrl => Config.Type != ServiceType.Worker && Config.Type != ServiceType.NodeApp && (!string.IsNullOrWhiteSpace(Config.HealthCheckUrl) || Config.Port.HasValue);
     public bool HasWorkingDirectory => !string.IsNullOrWhiteSpace(Config.WorkingDirectory);
     public bool HasCsprojPath => !string.IsNullOrWhiteSpace(Config.CsprojPath);
@@ -323,7 +328,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     /// use this instead of <see cref="StartAsync"/> — the command wrapper returns early when
     /// <see cref="IsBusy"/> is already set, which would silently skip the start.
     /// </summary>
-    private async Task StartCoreAsync()
+    internal async Task StartCoreAsync()
     {
         try
         {
@@ -416,7 +421,7 @@ public partial class ServiceItemViewModel : ViewModelBase
     /// See <see cref="StartCoreAsync"/> for why orchestrating callers must use this
     /// rather than <see cref="StopAsync"/>.
     /// </summary>
-    private async Task StopCoreAsync()
+    internal async Task StopCoreAsync()
     {
         try
         {
@@ -632,7 +637,7 @@ public partial class ServiceItemViewModel : ViewModelBase
         IsBusy = true;
         ErrorMessage = string.Empty;
 
-        var wasRunning = Status == ServiceStatus.Running;
+        var wasRunning = IsProcessRunning;
         try
         {
             if (wasRunning)
