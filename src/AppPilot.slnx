@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="AppPilot.csproj" />
+  <Project Path="..\AppPilot.AdminBroker\AppPilot.AdminBroker.csproj" />
+  <Project Path="..\tests\AppPilot.Tests\AppPilot.Tests.csproj" />
 </Solution>
