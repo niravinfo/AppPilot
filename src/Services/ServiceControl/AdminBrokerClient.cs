@@ -39,6 +39,9 @@ public sealed class AdminBrokerClient : IAdminBrokerClient
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            if (!BrokerProtocol.IsValidServiceName(config.Name))
+                return new AdminBrokerResult(false, "invalid_service_name", false);
+
             if (_pipe == null)
             {
                 var startResult = StartBroker();
@@ -62,6 +65,7 @@ public sealed class AdminBrokerClient : IAdminBrokerClient
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                Reset();
                 throw;
             }
             catch (Exception ex) when (ex is IOException or TimeoutException or UnauthorizedAccessException)

@@ -76,6 +76,7 @@ public class AdminBrokerClientTests
         Assert.False(first.Success);
         Assert.True(second.Success);
         Assert.Equal(2, factory.CreateCount);
+        Assert.Equal(2, launcher.Calls);
     }
 
     [Fact]
@@ -93,6 +94,45 @@ public class AdminBrokerClientTests
         Assert.False(result.Success);
         Assert.Contains("declined", result.Error, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, factory.CreateCount);
+    }
+
+    [Fact]
+    public async Task InvalidServiceName_DoesNotStartBroker()
+    {
+        var factory = new FakePipeFactory();
+        var launcher = new FakeLauncher(() => Process.GetCurrentProcess());
+        using var client = new AdminBrokerClient(launcher, factory);
+        var config = new ManagedServiceConfig { Name = "bad;name" };
+
+        var result = await client.ExecuteAsync(BrokerOperation.Start, config, CancellationToken.None);
+
+        Assert.False(result.Success);
+        Assert.Contains("invalid_service_name", result.Error, StringComparison.Ordinal);
+        Assert.Equal(0, launcher.Calls);
+    }
+
+    [Fact]
+    public async Task Cancellation_ResetsBroker()
+    {
+        var cts = new CancellationTokenSource();
+        var cancelingPipe = new FakePipe(() =>
+        {
+            cts.Cancel();
+            throw new OperationCanceledException(cts.Token);
+        });
+        var workingPipe = new FakePipe(() => new BrokerResponse { Success = true });
+        var factory = new FakePipeFactory(cancelingPipe, workingPipe);
+        var launcher = new FakeLauncher(() => Process.GetCurrentProcess());
+        using var client = new AdminBrokerClient(launcher, factory);
+        var config = new ManagedServiceConfig { Name = "MyWorker" };
+
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => client.ExecuteAsync(BrokerOperation.Start, config, cts.Token));
+        var second = await client.ExecuteAsync(
+            BrokerOperation.Start, config, CancellationToken.None);
+
+        Assert.True(second.Success);
+        Assert.Equal(2, factory.CreateCount);
     }
 
     [Fact]

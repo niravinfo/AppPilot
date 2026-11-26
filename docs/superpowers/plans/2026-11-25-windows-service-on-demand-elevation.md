@@ -286,6 +286,8 @@ Launch AppPilot as a normal user → no UAC. Start a process-based service → n
 
 Status: cannot be executed in this environment. The human partner must run this on a real desktop before merge.
 
+Partial automated smoke completed: `BrokerEndToEndTests` launches the real broker (hosted by `dotnet`, so no UAC) and verifies the named-pipe ACL permits the caller, unknown operations and invalid names are rejected, and shutdown responses work. This does not cover the UAC prompt flow or medium→high integrity elevation.
+
 - [x] **Step 5: Commit**
 
 ```bash

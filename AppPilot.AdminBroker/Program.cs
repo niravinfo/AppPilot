@@ -41,9 +41,19 @@ internal static class Program
             return 2;
         }
 
+        // Explicit rights only: the client needs to read/write the pipe, not create
+        // additional pipe instances (which PipeAccessRights.ReadWrite would allow).
+        var clientRights = PipeAccessRights.ReadData |
+                           PipeAccessRights.WriteData |
+                           PipeAccessRights.ReadAttributes |
+                           PipeAccessRights.ReadExtendedAttributes |
+                           PipeAccessRights.WriteAttributes |
+                           PipeAccessRights.WriteExtendedAttributes |
+                           PipeAccessRights.ReadPermissions |
+                           PipeAccessRights.Synchronize;
         var pipeSecurity = new PipeSecurity();
         pipeSecurity.AddAccessRule(new PipeAccessRule(
-            callerSid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
+            callerSid, clientRights, AccessControlType.Allow));
 
         await using var server = NamedPipeServerStreamAcl.Create(
             pipeName,
@@ -54,10 +64,15 @@ internal static class Program
             0, 0,
             pipeSecurity);
 
-        var connectTask = server.WaitForConnectionAsync();
-        if (await Task.WhenAny(connectTask, Task.Delay(TimeSpan.FromSeconds(30))) != connectTask)
+        using var connectTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await server.WaitForConnectionAsync(connectTimeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
             return 3;
-        await connectTask;
+        }
 
         if (!TryGetClientProcessId(server, out var connectedPid) || connectedPid != clientPid)
             return 4;
@@ -107,7 +122,10 @@ internal static class Program
             }
 
             if (request.Operation == BrokerOperation.Shutdown)
+            {
+                await WriteResponseAsync(writer, new BrokerResponse { Success = true });
                 break;
+            }
 
             var response = await ServiceOperations.ExecuteAsync(request);
             await WriteResponseAsync(writer, response);
