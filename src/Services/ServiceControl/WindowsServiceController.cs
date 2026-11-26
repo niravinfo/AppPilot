@@ -1,11 +1,11 @@
-using AppPilot.Domain.Enums;
-using AppPilot.Models;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using AppPilot.AdminBroker;
+using AppPilot.Domain.Enums;
+using AppPilot.Models;
+using Microsoft.Extensions.Logging;
 
 namespace AppPilot.Services.ServiceControl;
 
@@ -18,225 +18,74 @@ public interface IServiceController
     ServiceStatus GetStatus(ManagedServiceConfig config);
 }
 
+/// <summary>
+/// Controls Windows Services through a single elevated broker process. Status reads
+/// are performed locally because they do not require administrator privileges.
+/// </summary>
 public class WindowsServiceController : IServiceController
 {
     private readonly ILogger<WindowsServiceController> _logger;
+    private readonly IAdminBrokerClient _broker;
 
-    private const int ServiceTimeoutSeconds = 30;
-
-    public WindowsServiceController(ILogger<WindowsServiceController> logger)
+    public WindowsServiceController(
+        ILogger<WindowsServiceController> logger,
+        IAdminBrokerClient broker)
     {
         _logger = logger;
+        _broker = broker;
     }
 
     public async Task<bool> InstallAsync(ManagedServiceConfig config, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "sc.exe",
-                Arguments = $"create {config.Name} binPath= \"{config.ExecutablePath} {config.Arguments}\" start= demand",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to launch sc.exe.");
-            var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-            var output = await outputTask;
-
-            if (process.ExitCode != 0)
-            {
-                var msg = string.IsNullOrWhiteSpace(output)
-                    ? $"sc.exe exited with code {process.ExitCode}."
-                    : output.Trim();
-                _logger.LogError("Failed to install service {Name}: {Message}", config.Name, msg);
-                throw new InvalidOperationException(msg);
-            }
-
-            await SetDescriptionAsync(config, cancellationToken);
-            _logger.LogInformation("Service {Name} installed successfully", config.Name);
-            return true;
-        }
-        catch (OperationCanceledException) { throw; }
-        catch (InvalidOperationException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while installing service {Name}", config.Name);
-            throw new InvalidOperationException($"Failed to install '{config.DisplayName}': {ex.Message}", ex);
-        }
-    }
-
-    private async Task SetDescriptionAsync(ManagedServiceConfig config, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "sc.exe",
-                Arguments = $"description {config.Name} \"{config.DisplayName}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using var process = Process.Start(startInfo);
-            if (process != null)
-                await process.WaitForExitAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to set service description for {Name}", config.Name);
-        }
+        await ExecuteAsync(BrokerOperation.Install, config, cancellationToken);
+        _logger.LogInformation("Service {Name} installed successfully", config.Name);
+        return true;
     }
 
     public async Task<bool> UninstallAsync(ManagedServiceConfig config, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var status = GetStatus(config);
-            if (status == ServiceStatus.Running || status == ServiceStatus.Starting)
-                await StopAsync(config, cancellationToken);
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "sc.exe",
-                Arguments = $"delete {config.Name}",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to launch sc.exe.");
-            var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-            var output = await outputTask;
-
-            if (process.ExitCode != 0)
-            {
-                var msg = string.IsNullOrWhiteSpace(output)
-                    ? $"sc.exe exited with code {process.ExitCode}."
-                    : output.Trim();
-                _logger.LogError("Failed to uninstall service {Name}: {Message}", config.Name, msg);
-                throw new InvalidOperationException(msg);
-            }
-
-            _logger.LogInformation("Service {Name} uninstalled successfully", config.Name);
-            return true;
-        }
-        catch (OperationCanceledException) { throw; }
-        catch (InvalidOperationException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception while uninstalling service {Name}", config.Name);
-            throw new InvalidOperationException($"Failed to uninstall '{config.DisplayName}': {ex.Message}", ex);
-        }
+        await ExecuteAsync(BrokerOperation.Uninstall, config, cancellationToken);
+        _logger.LogInformation("Service {Name} uninstalled successfully", config.Name);
+        return true;
     }
 
     public async Task<bool> StartAsync(ManagedServiceConfig config, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            using var sc = new ServiceController(config.Name);
-            sc.Refresh();
-
-            if (sc.Status == ServiceControllerStatus.Running)
-            {
-                _logger.LogInformation("Service {Name} is already running", config.Name);
-                return true;
-            }
-
-            sc.Start();
-
-            var deadline = DateTime.UtcNow.AddSeconds(ServiceTimeoutSeconds);
-            while (DateTime.UtcNow < deadline)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await Task.Delay(500, cancellationToken);
-                sc.Refresh();
-
-                if (sc.Status == ServiceControllerStatus.Running)
-                {
-                    _logger.LogInformation("Service {Name} started successfully", config.Name);
-                    return true;
-                }
-
-                if (sc.Status == ServiceControllerStatus.Stopped)
-                {
-                    throw new InvalidOperationException(
-                        $"'{config.DisplayName}' stopped immediately after launching. " +
-                        "Ensure the project calls UseWindowsService() and references the " +
-                        "Microsoft.Extensions.Hosting.WindowsServices NuGet package.");
-                }
-            }
-
-            throw new System.TimeoutException(
-                $"'{config.DisplayName}' did not reach Running state within {ServiceTimeoutSeconds} seconds.");
-        }
-        catch (OperationCanceledException) { throw; }
-        catch (InvalidOperationException) { throw; }
-        catch (System.TimeoutException) { throw; }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to start service {Name}", config.Name);
-            throw new InvalidOperationException($"Failed to start '{config.DisplayName}': {ex.Message}", ex);
-        }
+        await ExecuteAsync(BrokerOperation.Start, config, cancellationToken);
+        _logger.LogInformation("Service {Name} started successfully", config.Name);
+        return true;
     }
 
     public async Task<bool> StopAsync(ManagedServiceConfig config, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            using var sc = new ServiceController(config.Name);
-            sc.Refresh();
+        await ExecuteAsync(BrokerOperation.Stop, config, cancellationToken);
+        _logger.LogInformation("Service {Name} stopped successfully", config.Name);
+        return true;
+    }
 
-            if (sc.Status == ServiceControllerStatus.Stopped)
-            {
-                _logger.LogInformation("Service {Name} is already stopped", config.Name);
-                return true;
-            }
+    private async Task ExecuteAsync(
+        BrokerOperation operation,
+        ManagedServiceConfig config,
+        CancellationToken cancellationToken)
+    {
+        var result = await _broker.ExecuteAsync(operation, config, cancellationToken);
+        if (result.Success)
+            return;
 
-            sc.Stop();
+        var message = result.WasCancelled
+            ? "Administrator permission was declined. No changes were made."
+            : result.Error;
 
-            var deadline = DateTime.UtcNow.AddSeconds(ServiceTimeoutSeconds);
-            while (DateTime.UtcNow < deadline)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                await Task.Delay(500, cancellationToken);
-                sc.Refresh();
-
-                if (sc.Status == ServiceControllerStatus.Stopped)
-                {
-                    _logger.LogInformation("Service {Name} stopped successfully", config.Name);
-                    return true;
-                }
-            }
-
-            throw new System.TimeoutException(
-                $"'{config.DisplayName}' did not stop within {ServiceTimeoutSeconds} seconds.");
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (System.TimeoutException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to stop service {Name}", config.Name);
-            throw new InvalidOperationException($"Failed to stop '{config.DisplayName}': {ex.Message}", ex);
-        }
+        _logger.LogError("Broker operation {Operation} failed for {Name}: {Message}",
+            operation, config.Name, message);
+        throw new InvalidOperationException(message);
     }
 
     public ServiceStatus GetStatus(ManagedServiceConfig config)
     {
         try
         {
-            using var serviceController = new System.ServiceProcess.ServiceController(config.Name);
+            using var serviceController = new ServiceController(config.Name);
 
             return serviceController.Status switch
             {
