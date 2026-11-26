@@ -10,8 +10,14 @@ public static class ServiceOperations
 {
     private const int TimeoutSeconds = 30;
 
-    public static async Task<BrokerResponse> ExecuteAsync(BrokerRequest request)
+    public static async Task<BrokerResponse> ExecuteAsync(
+        BrokerRequest request,
+        Func<string, ServiceControllerStatus?>? getStatus = null,
+        Func<IEnumerable<string>, Task<(bool Success, string Error)>>? runSc = null)
     {
+        getStatus ??= GetStatus;
+        runSc ??= RunScAsync;
+
         if (!Enum.IsDefined(request.Operation))
             return Failure("unsupported_operation");
 
@@ -21,94 +27,110 @@ public static class ServiceOperations
 
         return request.Operation switch
         {
-            BrokerOperation.Install => await InstallAsync(request),
-            BrokerOperation.Uninstall => await UninstallAsync(request),
-            BrokerOperation.Start => await StartAsync(request),
-            BrokerOperation.Stop => await StopAsync(request),
+            BrokerOperation.Install => await InstallAsync(request, runSc),
+            BrokerOperation.Uninstall => await UninstallAsync(request, getStatus, runSc),
+            BrokerOperation.Start => await StartAsync(request, getStatus, runSc),
+            BrokerOperation.Stop => await StopAsync(request, getStatus, runSc),
             _ => Failure("unsupported_operation")
         };
     }
 
-    private static async Task<BrokerResponse> InstallAsync(BrokerRequest request)
+    private static async Task<BrokerResponse> InstallAsync(
+        BrokerRequest request,
+        Func<IEnumerable<string>, Task<(bool Success, string Error)>> runSc)
     {
-        var (success, error) = await RunScAsync(ScArgumentBuilder.Create(
+        var (success, error) = await runSc(ScArgumentBuilder.Create(
             request.Name, request.ExecutablePath, request.Arguments));
         if (!success)
             return Failure(error);
 
         // A missing description does not prevent the service from working.
-        await RunScAsync(ScArgumentBuilder.Description(request.Name, request.DisplayName));
+        await runSc(ScArgumentBuilder.Description(request.Name, request.DisplayName));
         return Success();
     }
 
-    private static async Task<BrokerResponse> UninstallAsync(BrokerRequest request)
+    private static async Task<BrokerResponse> UninstallAsync(
+        BrokerRequest request,
+        Func<string, ServiceControllerStatus?> getStatus,
+        Func<IEnumerable<string>, Task<(bool Success, string Error)>> runSc)
     {
-        var status = GetStatus(request.Name);
+        var status = getStatus(request.Name);
         if (status is ServiceControllerStatus.Running or ServiceControllerStatus.StartPending)
         {
-            var (stopSuccess, stopError) = await RunScAsync(ScArgumentBuilder.Stop(request.Name));
+            var (stopSuccess, stopError) = await runSc(ScArgumentBuilder.Stop(request.Name));
             if (!stopSuccess)
                 return Failure(stopError);
 
-            var stopped = await WaitForStatusAsync(request.Name, ServiceControllerStatus.Stopped);
+            var stopped = await WaitForStatusAsync(
+                request.Name, ServiceControllerStatus.Stopped, getStatus);
             if (!stopped.Success)
                 return stopped;
         }
 
-        var (success, error) = await RunScAsync(ScArgumentBuilder.Delete(request.Name));
+        var (success, error) = await runSc(ScArgumentBuilder.Delete(request.Name));
         return success ? Success() : Failure(error);
     }
 
-    private static async Task<BrokerResponse> StartAsync(BrokerRequest request)
+    private static async Task<BrokerResponse> StartAsync(
+        BrokerRequest request,
+        Func<string, ServiceControllerStatus?> getStatus,
+        Func<IEnumerable<string>, Task<(bool Success, string Error)>> runSc)
     {
-        var status = GetStatus(request.Name);
+        var status = getStatus(request.Name);
         if (status == ServiceControllerStatus.Running)
             return Success();
 
-        var (success, error) = await RunScAsync(ScArgumentBuilder.Start(request.Name));
-        if (!success && status != ServiceControllerStatus.Stopped)
-            return Failure(error);
-
-        return await WaitForStatusAsync(request.Name, ServiceControllerStatus.Running,
-            failIfStopped: true, startError: error);
-    }
-
-    private static async Task<BrokerResponse> StopAsync(BrokerRequest request)
-    {
-        var status = GetStatus(request.Name);
-        if (status is null or ServiceControllerStatus.Stopped)
-            return Success();
-
-        var (success, error) = await RunScAsync(ScArgumentBuilder.Stop(request.Name));
+        var (success, error) = await runSc(ScArgumentBuilder.Start(request.Name));
         if (!success)
             return Failure(error);
 
-        return await WaitForStatusAsync(request.Name, ServiceControllerStatus.Stopped);
+        return await WaitForStatusAsync(
+            request.Name,
+            ServiceControllerStatus.Running,
+            getStatus,
+            failIfStopped: true);
+    }
+
+    private static async Task<BrokerResponse> StopAsync(
+        BrokerRequest request,
+        Func<string, ServiceControllerStatus?> getStatus,
+        Func<IEnumerable<string>, Task<(bool Success, string Error)>> runSc)
+    {
+        var status = getStatus(request.Name);
+        if (status == null)
+            return Failure("service_not_found");
+
+        if (status == ServiceControllerStatus.Stopped)
+            return Success();
+
+        var (success, error) = await runSc(ScArgumentBuilder.Stop(request.Name));
+        if (!success)
+            return Failure(error);
+
+        return await WaitForStatusAsync(
+            request.Name, ServiceControllerStatus.Stopped, getStatus);
     }
 
     private static async Task<BrokerResponse> WaitForStatusAsync(
         string name,
         ServiceControllerStatus target,
-        bool failIfStopped = false,
-        string startError = "")
+        Func<string, ServiceControllerStatus?> getStatus,
+        bool failIfStopped = false)
     {
         var deadline = DateTime.UtcNow.AddSeconds(TimeoutSeconds);
         while (DateTime.UtcNow < deadline)
         {
             await Task.Delay(300);
-            var status = GetStatus(name);
+            var status = getStatus(name);
 
             if (status == target)
                 return Success();
 
             if (failIfStopped && status == ServiceControllerStatus.Stopped)
-            {
-                var detail = string.IsNullOrWhiteSpace(startError) ? "" : $" {startError}";
                 return Failure(
                     $"'{name}' stopped immediately after launching. " +
                     "Ensure the project calls UseWindowsService() and references " +
-                    "Microsoft.Extensions.Hosting.WindowsServices." + detail);
-            }
+                    "Microsoft.Extensions.Hosting.WindowsServices.");
         }
 
         return Failure($"'{name}' did not reach {target} within {TimeoutSeconds} seconds.");

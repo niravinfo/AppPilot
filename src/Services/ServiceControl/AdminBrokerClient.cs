@@ -140,24 +140,31 @@ public sealed class AdminBrokerClient : IAdminBrokerClient
 
     public void Dispose()
     {
-        if (_pipe != null)
+        _gate.Wait();
+        try
         {
-            try
+            if (_pipe != null)
             {
-                using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                _pipe.SendAsync(
-                        new BrokerRequest { Operation = BrokerOperation.Shutdown },
-                        timeout.Token)
-                    .GetAwaiter().GetResult();
+                try
+                {
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                    _pipe.SendAsync(
+                            new BrokerRequest { Operation = BrokerOperation.Shutdown },
+                            timeout.Token)
+                        .GetAwaiter().GetResult();
+                }
+                catch (Exception)
+                {
+                    // Best effort; the broker also exits when this process ends.
+                }
             }
-            catch (Exception)
-            {
-                // Best effort; the broker also exits when this process ends.
-            }
-        }
 
-        Reset();
-        _gate.Dispose();
+            Reset();
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 }
 

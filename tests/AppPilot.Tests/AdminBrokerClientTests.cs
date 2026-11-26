@@ -95,6 +95,60 @@ public class AdminBrokerClientTests
         Assert.Equal(0, factory.CreateCount);
     }
 
+    [Fact]
+    public async Task Dispose_WaitsForInFlightCall()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var pipe = new BlockingPipe(entered, release);
+        var factory = new FakePipeFactory(pipe);
+        var launcher = new FakeLauncher(() => Process.GetCurrentProcess());
+        var client = new AdminBrokerClient(launcher, factory);
+        var config = new ManagedServiceConfig { Name = "MyWorker" };
+
+        var execute = Task.Run(() => client.ExecuteAsync(
+            BrokerOperation.Start, config, CancellationToken.None));
+        await entered.Task;
+
+        var dispose = Task.Run(() => client.Dispose());
+        await Task.Delay(100);
+        Assert.False(dispose.IsCompleted, "Dispose must not tear down the pipe mid-request");
+
+        release.SetResult();
+        await dispose;
+        var result = await execute;
+
+        Assert.True(result.Success);
+    }
+
+    private sealed class BlockingPipe : IBrokerPipeClient
+    {
+        private readonly TaskCompletionSource _entered;
+        private readonly TaskCompletionSource _release;
+        private int _calls;
+
+        public BlockingPipe(TaskCompletionSource entered, TaskCompletionSource release)
+        {
+            _entered = entered;
+            _release = release;
+        }
+
+        public async Task<BrokerResponse> SendAsync(BrokerRequest request, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _calls) == 1)
+            {
+                _entered.TrySetResult();
+                await _release.Task;
+            }
+
+            return new BrokerResponse { Success = true };
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
     private sealed class FakeLauncher : IBrokerProcessLauncher
     {
         private readonly Func<Process> _start;
