@@ -43,11 +43,11 @@
 **Interfaces:**
 - Produces: `BrokerOperation` enum (`Install`, `Uninstall`, `Start`, `Stop`, `Shutdown`), `BrokerRequest`, `BrokerResponse`, `BrokerProtocol.IsValidServiceName(string)`, `BrokerProtocol.PipePrefix`.
 
-- [ ] **Step 1: Create broker project and manifest**
+- [x] **Step 1: Create broker project and manifest**
 
 `src/AppPilot.AdminBroker/AppPilot.AdminBroker.csproj`: `OutputType=Exe`, `TargetFramework=net10.0-windows`, `RuntimeIdentifier=win-x64`, `AssemblyName=AppPilot.AdminBroker`, `ApplicationManifest=app.manifest`. `app.manifest`: copy `src/app.manifest` but with `requireAdministrator`.
 
-- [ ] **Step 2: Create the protocol types in `BrokerProtocol.cs`**
+- [x] **Step 2: Create the protocol types in `BrokerProtocol.cs`**
 
 ```csharp
 public enum BrokerOperation { Install, Uninstall, Start, Stop, Shutdown }
@@ -73,7 +73,7 @@ public static class BrokerProtocol
 
 `IsValidServiceName` returns true only for 1–80 chars of letters, digits, `.`, `_`, `-` and spaces, with no quote, backslash, slash or control characters.
 
-- [ ] **Step 3: Write failing protocol tests**
+- [x] **Step 3: Write failing protocol tests**
 
 `tests/AppPilot.Tests/BrokerProtocolTests.cs` with xUnit:
 - `Request_RoundTripsThroughJson`: serialize `BrokerRequest` with `JsonStringEnumConverter`, deserialize, assert operation and all four string fields equal.
@@ -81,16 +81,16 @@ public static class BrokerProtocol
 - `UnsafeServiceName_IsRejected`: Theory with `""`, `"a\"b"`, `"a\\b"`, `"a/b"`, `"a\nb"`, `"a;b"`, and 81 chars — all false; `"My.Service_1-2"` true.
 - `PipePrefix_IsNamespaced`: assert `BrokerProtocol.PipePrefix == "AppPilot.AdminBroker."`.
 
-- [ ] **Step 4: Create the xUnit test project**
+- [x] **Step 4: Create the xUnit test project**
 
 `tests/AppPilot.Tests/AppPilot.Tests.csproj`: `net10.0-windows`, references `src/AppPilot.csproj` and `src/AppPilot.AdminBroker/AppPilot.AdminBroker.csproj`; packages `xunit` 2.9.3, `xunit.runner.visualstudio` 2.8.2, `Microsoft.NET.Test.Sdk` 17.14.1.
 
-- [ ] **Step 5: Run tests and see them fail**
+- [x] **Step 5: Run tests and see them fail**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj`
 Expected: FAIL — broker project/types not found.
 
-- [ ] **Step 6: Wire projects and make tests pass**
+- [x] **Step 6: Wire projects and make tests pass**
 
 Add to `src/AppPilot.csproj`:
 ```xml
@@ -99,7 +99,7 @@ Add to `src/AppPilot.csproj`:
 Add both projects to `src/AppPilot.slnx`. Run `dotnet test` again.
 Expected: PASS (4 tests).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/AppPilot.AdminBroker src/AppPilot.csproj src/AppPilot.slnx tests/AppPilot.Tests
@@ -120,23 +120,23 @@ git commit -m "feat: add admin broker project and protocol"
 - Consumes: `BrokerRequest`, `BrokerResponse`, `BrokerOperation`, `BrokerProtocol.IsValidServiceName` from Task 1.
 - Produces: `ScArgumentBuilder.Create(string name, string executablePath, string arguments)`, `.Description(string name, string displayName)`, `.Delete(string name)`, `.Start(string name)`, `.Stop(string name)` each returning `string[]`; `ServiceOperations.ExecuteAsync(BrokerRequest request) : Task<BrokerResponse>`.
 
-- [ ] **Step 1: Write failing argument-builder tests**
+- [x] **Step 1: Write failing argument-builder tests**
 
 `ScArgumentBuilderTests`:
 - `Create_UsesDemandStart`: array is `["create", name, "binPath=", "<exe> <args>", "start=", "demand"]`.
 - `Create_QuotesAreHandledByArgumentList`: assert no element contains an embedded `"` used for shell quoting.
 - `Delete_And_Start_And_Stop_AreSingleVerbCommands`: assert exact arrays.
 
-- [ ] **Step 2: Run tests and see them fail**
+- [x] **Step 2: Run tests and see them fail**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj --filter FullyQualifiedName~ScArgumentBuilderTests`
 Expected: FAIL — type not found.
 
-- [ ] **Step 3: Implement `ScArgumentBuilder`**
+- [x] **Step 3: Implement `ScArgumentBuilder`**
 
 Use `System.Diagnostics.ProcessStartInfo.ArgumentList` semantics: return argument tokens without shell quotes.
 
-- [ ] **Step 4: Implement `ServiceOperations.ExecuteAsync`**
+- [x] **Step 4: Implement `ServiceOperations.ExecuteAsync`**
 
 Allowlist switch on `request.Operation`:
 - `Install`: validate name; `sc.exe create` then `sc.exe description` (description failure is non-fatal); return success/error.
@@ -147,16 +147,16 @@ Allowlist switch on `request.Operation`:
 
 All `sc.exe` launches use `UseShellExecute=false`, `RedirectStandardOutput/Error=true`, `CreateNoWindow=true`, and `ArgumentList`.
 
-- [ ] **Step 5: Implement `Program.cs`**
+- [x] **Step 5: Implement `Program.cs`**
 
 Parse `--pipe`, `--client-pid`, `--client-sid` (exit 2 if missing/invalid). Build `PipeSecurity` granting `ReadWrite` to the supplied SID. Create the server with `NamedPipeServerStreamAcl.Create` and a unique pipe name. Wait up to 30 s for a connection; verify `GetNamedPipeClientProcessId()` matches; then loop reading one JSON request per line, dispatch via `ServiceOperations.ExecuteAsync`, write one JSON response per line. Exit on `Shutdown`, client disconnect, or parent exit. Never use `PipeOptions.CurrentUserOnly`.
 
-- [ ] **Step 6: Run tests and see them pass**
+- [x] **Step 6: Run tests and see them pass**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/AppPilot.AdminBroker tests/AppPilot.Tests
@@ -177,36 +177,36 @@ git commit -m "feat: add elevated broker endpoint and service handlers"
 - Produces: `AdminBrokerResult(bool Success, string Error, bool WasCancelled)`, `IAdminBrokerClient.ExecuteAsync(BrokerOperation, ManagedServiceConfig, CancellationToken)`.
 - Consumes: `BrokerRequest`, `BrokerResponse`, `BrokerProtocol` from Task 1.
 
-- [ ] **Step 1: Write failing pipe-client tests**
+- [x] **Step 1: Write failing pipe-client tests**
 
 `tests/AppPilot.Tests/AdminBrokerClientTests.cs` starts a real `NamedPipeServerStream` on a test pipe name on a background task:
 - `SendAsync_ReturnsBrokerResponse`: server reads one `BrokerRequest`, asserts operation/name, writes `BrokerResponse { Success = true }`; client `SendAsync` returns success.
 - `PipeFailure_ResetsBroker`: with the server disposed, `SendAsync` throws `IOException`; a following `SendAsync` uses a fresh connection.
 - `CanceledElevation_IsReportedWithoutStartingPipe`: inject a fake launcher whose `Start` throws `Win32Exception(1223)`; `ExecuteAsync` returns `WasCancelled = true` and no pipe connection is attempted.
 
-- [ ] **Step 2: Run tests and see them fail**
+- [x] **Step 2: Run tests and see them fail**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj --filter FullyQualifiedName~AdminBrokerClientTests`
 Expected: FAIL — types not found.
 
-- [ ] **Step 3: Define `IAdminBrokerClient` and `AdminBrokerResult`**
+- [x] **Step 3: Define `IAdminBrokerClient` and `AdminBrokerResult`**
 
 `AdminBrokerResult` is a record with `Success`, `Error`, `WasCancelled`. `IAdminBrokerClient : IDisposable`.
 
-- [ ] **Step 4: Implement `BrokerPipeClient`**
+- [x] **Step 4: Implement `BrokerPipeClient`**
 
 `Task<BrokerResponse> SendAsync(BrokerRequest request, CancellationToken ct)`: connect if needed (10 s), write JSON line, read JSON line (60 s), deserialize with `JsonStringEnumConverter`, disconnect on any `IOException`/timeout.
 
-- [ ] **Step 5: Implement `AdminBrokerClient`**
+- [x] **Step 5: Implement `AdminBrokerClient`**
 
 Lazy broker start on first call: pipe name `BrokerProtocol.PipePrefix + Environment.ProcessId + "." + Guid.NewGuid():N`; SID from `WindowsIdentity.GetCurrent().User`; absolute path `Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "AppPilot.AdminBroker.exe")`; `UseShellExecute=true`, `Verb="runas"`, `WindowStyle=Hidden`. Catch `Win32Exception` 1223 → `WasCancelled`. Serialize calls with `SemaphoreSlim`; on pipe failure dispose and null the client so the next call re-prompts. `Dispose()` sends `Shutdown`, then kills the broker if still alive.
 
-- [ ] **Step 6: Run tests and see them pass**
+- [x] **Step 6: Run tests and see them pass**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj`
 Expected: PASS (all tests).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/Services/ServiceControl tests/AppPilot.Tests
@@ -226,7 +226,7 @@ git commit -m "feat: add reusable elevated broker client"
 **Interfaces:**
 - Consumes: `IAdminBrokerClient` from Task 3; existing `IServiceController` unchanged.
 
-- [ ] **Step 1: Write failing controller tests**
+- [x] **Step 1: Write failing controller tests**
 
 With a fake `IAdminBrokerClient`:
 - `InstallAsync_DelegatesInstall`: assert captured operation `Install` and config identity; result success returns true.
@@ -234,25 +234,25 @@ With a fake `IAdminBrokerClient`:
 - `StopAsync_DeclinedElevation_ThrowsWithClearMessage`: `WasCancelled=true`; message contains "Administrator permission was declined".
 - `GetStatus_DoesNotTouchBroker`: fake call count remains zero after `GetStatus`.
 
-- [ ] **Step 2: Run tests and see them fail**
+- [x] **Step 2: Run tests and see them fail**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj --filter FullyQualifiedName~WindowsServiceControllerTests`
 Expected: FAIL — constructor signature mismatch.
 
-- [ ] **Step 3: Refactor `WindowsServiceController`**
+- [x] **Step 3: Refactor `WindowsServiceController`**
 
 Inject `IAdminBrokerClient` alongside `ILogger<WindowsServiceController>`. Replace `sc.exe`/`ServiceController.Start()/Stop()` calls with broker calls; keep `GetStatus()` local. Map `WasCancelled` to the declined-permission message. Keep existing exception types so `ServiceItemViewModel` error handling is unchanged.
 
-- [ ] **Step 4: Update `App.xaml.cs` and `app.manifest`**
+- [x] **Step 4: Update `App.xaml.cs` and `app.manifest`**
 
 Remove `IsRunningAsAdministrator`, `RestartAsAdministrator`, the startup elevation branch and now-unused usings. Register `services.AddSingleton<IAdminBrokerClient, AdminBrokerClient>()`. Change `requestedExecutionLevel` to `asInvoker`.
 
-- [ ] **Step 5: Run tests and see them pass**
+- [x] **Step 5: Run tests and see them pass**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/Services/ServiceControl/WindowsServiceController.cs src/App.xaml.cs src/app.manifest tests/AppPilot.Tests
@@ -265,26 +265,28 @@ git commit -m "feat: route Windows service actions through the elevated broker"
 
 **Files:** none (verification only)
 
-- [ ] **Step 1: Build with warnings as errors**
+- [x] **Step 1: Build with warnings as errors**
 
 Run: `dotnet build src/AppPilot.csproj -warnaserror`
 Expected: PASS, and `AppPilot.AdminBroker.exe` exists in `src/bin/Debug/net10.0-windows/win-x64/`.
 
-- [ ] **Step 2: Publish and verify broker is present**
+- [x] **Step 2: Publish and verify broker is present**
 
 Run: `dotnet publish src/AppPilot.csproj -c Release -o <temp>`
 Expected: both `AppPilot.exe` and `AppPilot.AdminBroker.exe` in the output.
 
-- [ ] **Step 3: Full test run**
+- [x] **Step 3: Full test run**
 
 Run: `dotnet test tests/AppPilot.Tests/AppPilot.Tests.csproj`
 Expected: PASS.
 
-- [ ] **Step 4: Manual smoke checklist (document in commit message)**
+- [ ] **Step 4: Manual smoke checklist (NOT COMPLETED — requires an interactive elevated desktop)**
 
 Launch AppPilot as a normal user → no UAC. Start a process-based service → no UAC. Install/start/stop a Windows service → exactly one UAC prompt for the session, action succeeds; second action → no prompt. Cancel UAC → app stays open with clear error. Close app → broker process exits.
 
-- [ ] **Step 5: Commit**
+Status: cannot be executed in this environment. The human partner must run this on a real desktop before merge.
+
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
